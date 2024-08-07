@@ -8,6 +8,7 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.example.demo2.Model.parameter;
 
 @RestController // 标记这个类为一个 Spring MVC 控制器，能够处理 HTTP 请求并返回数据
 @RequestMapping("/user") // 指定这个控制器处理的基础 URL 路径为 /user
@@ -27,15 +28,17 @@ public class UserController {
      */
     @PostMapping("/register")
     public ApiResponse addUser(@RequestBody User user) {
+        System.out.println("Received: " + user);
         User existingUser = userMapper.findByUsername(user.getUsername());
         if (existingUser != null) {
-            return new ApiResponse(1, "用户已存在"); // 用户名已存在，返回相应信息
+            return new ApiResponse(1, "用户已存在");
         }
-        // 加密用户密码
+        //给用户密码加密
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        int insert = userMapper.insert(user);
-        return new ApiResponse(0, "注册成功"); // 注册成功，返回相应信息
+        userMapper.insert(user);
+        return new ApiResponse(0, "注册成功");
     }
+
 
     /**
      * 处理用户登录请求
