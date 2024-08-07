@@ -1,66 +1,42 @@
 <script setup>
-import { User, Lock } from '@element-plus/icons-vue'
-import { ref } from 'vue'
+import { Lock, User } from '@element-plus/icons-vue';
+import { ref } from 'vue';
+import { calculatePublicKey, generatePrivateKey } from '../utils/CountKey.js'; //计算密钥对
+// 调用后台接口完成注册和登录函数
+import { userLoginService, userRegisterService } from '@/api/user.js';
 
 // 控制注册与登录表单的显示， 默认显示注册
-const isRegister = ref(false)
+const isRegister = ref(false);
 
-//定义数据模型
+// 定义数据模型
 const registerData = ref({
-  username:'',
-  password:'',
-  rePassword:''
-})
+  username: '',
+  password: '',
+  rePassword: '',
+  public_key: '',
+});
 
-//二次校验密码的函数
-const checkRePassword = (rule,value,callback) => {
-  if(value === ''){
-    callback(new Error('请再次确认密码'))
-  } else if( value !== registerData.value.password){
-    callback('二次确认密码不相同请重新输入')
+// 二次校验密码的函数
+const checkRePassword = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请再次确认密码'));
+  } else if (value !== registerData.value.password) {
+    callback('二次确认密码不相同请重新输入');
   }
-}
+};
 
-//定义表单校验规则
+// 定义表单校验规则
 const rules = ref({
-  username:[
-    {required:true,message:'请输入用户名',trigger:'blur'},
-    {min:5,max:16,message:'请输入长度5~16非空字符',trigger:'blur'}
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 5, max: 16, message: '请输入长度5~16非空字符', trigger: 'blur' },
   ],
-  password:[
-    {required:true,message:'请输入密码',trigger:'blur'},
-    {min:5,max:16,message:'请输入长度5~16非空字符',trigger:'blur'}
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 5, max: 16, message: '请输入长度5~16非空字符', trigger: 'blur' },
   ],
-  rePassword:[{validator:checkRePassword,trigger:'blur'}] //校验二次输入密码是否相同
-})
-
-//生成私钥的函数
-const generateKeyPair = async () => {
-  const keyPair = await window.crypto.subtle.generateKey(
-    {
-      name: "RSA-OAEP",
-      modulusLength: 1024, // 修改为1024位
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: "SHA-256",
-    },
-    true,
-    ["encrypt", "decrypt"]
-  );
-
-  const privateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-  return arrayBufferToBase64(privateKey);
-}
-
-const arrayBufferToBase64 = (buffer) => {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
-}
-
+  rePassword: [{ validator: checkRePassword, trigger: 'blur' }], // 校验二次输入密码是否相同
+});
 
 // 使用文件系统访问 API 保存私钥到指定位置
 const savePrivateKey = async () => {
@@ -70,7 +46,7 @@ const savePrivateKey = async () => {
       {
         description: 'Text Files',
         accept: {
-          'text/plain': ['.txt'],
+          'text/plain': ['.pem'],
         },
       },
     ],
@@ -85,10 +61,7 @@ const savePrivateKey = async () => {
   } catch (error) {
     console.error('保存失败', error);
   }
-}
-
-//调用后台接口完成注册
-import { userRegisterService } from '@/api/user.js';
+};
 
 const register = async () => {
   try {
@@ -97,49 +70,50 @@ const register = async () => {
       alert('两次输入的密码不一致');
       return; // 阻止继续执行注册
     }
-
+    // 生成私钥
+    const privateKey = generatePrivateKey();
+    // 生成公钥
+    registerData.value.public_key = calculatePublicKey(privateKey);
+    console.log(registerData.value);
     // 调用后台接口进行注册
     let result = await userRegisterService(registerData.value);
     if (result.code === 0) {
       alert(result.msg || '注册成功');
-      //生成密钥
-      const privateKey = await generateKeyPair();
+
       localStorage.setItem('privateKey', privateKey);
+
       document.getElementById('savePrivateKeyButton').style.display = 'block';
     } else {
       alert(result.msg || '注册失败');
     }
   } catch (error) {
-    alert('服务异常');
+    alert('注册异常');
   }
-}
+};
 
-//登录函数
-import {userLoginService} from '@/api/user.js'
-const login = async () =>{
-  //调用接口完成登录
+const login = async () => {
+  // 调用接口完成登录
   let result = await userLoginService(registerData.value);
-  if(result.code === 0){
-    alert(result.msg ? result.msg : '登录成功')
-  }else if (result.code === 1){
-    alert(result.msg ? result.msg : '用户不存在')
+  if (result.code === 0) {
+    alert(result.msg ? result.msg : '登录成功');
+  } else if (result.code === 1) {
+    alert(result.msg ? result.msg : '用户不存在');
+  } else {
+    alert(result.msg ? result.msg : '密码错误');
   }
-  else{
-    alert(result.msg ? result.msg : '密码错误')
-  }
+};
 
-}
-
-//定义函数，清空数据模型
-const clearRegisterData = () =>{
+// 定义函数，清空数据模型
+const clearRegisterData = () => {
   registerData.value = {
-    username:'',
-    password:'',
-    rePassword:''
-  }
-}
-
+    username: '',
+    password: '',
+    rePassword: '',
+    public_key: '',
+  };
+};
 </script>
+
 
 <template>
   <el-row class="login-page">
