@@ -1,12 +1,16 @@
 <script setup>
-import { Lock, User } from '@element-plus/icons-vue';
+import { Download, Lock, User } from '@element-plus/icons-vue'
 import { ref } from 'vue';
 import { calculatePublicKey, generatePrivateKey } from '../utils/CountKey.js'; //计算密钥对
+import { useRouter } from 'vue-router'
+
 // 调用后台接口完成注册和登录函数
 import { userLoginService, userRegisterService } from '@/api/user.js';
 
+
 // 控制注册与登录表单的显示， 默认显示注册
 const isRegister = ref(false);
+const router = useRouter()
 
 // 定义数据模型
 const registerData = ref({
@@ -15,6 +19,12 @@ const registerData = ref({
   rePassword: '',
   public_key: '',
 });
+
+// 定义数据模型
+const loginData = ref({
+  username: '',
+  password: ''
+})
 
 // 二次校验密码的函数
 const checkRePassword = (rule, value, callback) => {
@@ -74,7 +84,7 @@ const register = async () => {
     const privateKey = generatePrivateKey();
     // 生成公钥
     registerData.value.public_key = calculatePublicKey(privateKey);
-    console.log(registerData.value);
+
     // 调用后台接口进行注册
     let result = await userRegisterService(registerData.value);
     if (result.code === 0) {
@@ -93,13 +103,18 @@ const register = async () => {
 
 const login = async () => {
   // 调用接口完成登录
-  let result = await userLoginService(registerData.value);
-  if (result.code === 0) {
-    alert(result.msg ? result.msg : '登录成功');
-  } else if (result.code === 1) {
-    alert(result.msg ? result.msg : '用户不存在');
-  } else {
-    alert(result.msg ? result.msg : '密码错误');
+  try {
+    let result = await userLoginService(loginData.value)
+    if (result.code === 0) {
+      alert(result.msg ? result.msg : '登录成功')
+      await router.push({ name: 'Home' }) // 重定向到 Home.vue
+    } else if (result.code === 1) {
+      alert(result.msg ? result.msg : '用户不存在')
+    } else {
+      alert(result.msg ? result.msg : '密码错误')
+    }
+  } catch (error) {
+    alert('登录异常')
   }
 };
 
@@ -122,6 +137,7 @@ const clearRegisterData = () => {
       <el-form ref="form" size="large" autocomplete="off" v-if="isRegister" :model="registerData" :rules="rules">
         <el-form-item>
           <h1>注册</h1>
+
         </el-form-item>
         <el-form-item prop="username">
           <el-input :prefix-icon="User" placeholder="请输入用户名" v-model="registerData.username" ></el-input>
@@ -137,9 +153,12 @@ const clearRegisterData = () => {
           <el-button class="button" type="primary" auto-insert-space @click="register">
             注册
           </el-button>
+
         </el-form-item>
         <el-form-item>
-          <el-button class="button" id="savePrivateKeyButton" style="display:none;" @click="savePrivateKey">保存私钥</el-button>
+          <el-button class="button" id="savePrivateKeyButton" style="display:none;" @click="savePrivateKey">
+            保存私钥<el-icon><Download /></el-icon>
+          </el-button>
         </el-form-item>
         <el-form-item class="flex">
           <el-link type="info" :underline="false" @click="isRegister = false; clearRegisterData()" >
@@ -149,15 +168,15 @@ const clearRegisterData = () => {
         </el-form-item>
       </el-form>
       <!-- 登录表单 -->
-      <el-form ref="form" size="large" autocomplete="off" v-else :model="registerData" :rules="rules">
+      <el-form ref="form" size="large" autocomplete="off" v-else :model="loginData" :rules="rules" @submit.prevent="login">
         <el-form-item>
           <h1>登录</h1>
         </el-form-item>
         <el-form-item prop="username">
-          <el-input :prefix-icon="User" placeholder="请输入用户名" v-model="registerData.username"></el-input>
+          <el-input :prefix-icon="User" placeholder="请输入用户名" v-model="loginData.username"></el-input>
         </el-form-item>
         <el-form-item prop="password">
-          <el-input name="password" :prefix-icon="Lock" type="password" placeholder="请输入密码" v-model="registerData.password"></el-input>
+          <el-input name="password" :prefix-icon="Lock" type="password" placeholder="请输入密码" v-model="loginData.password"></el-input>
         </el-form-item>
         <el-form-item class="flex">
           <div class="flex">
