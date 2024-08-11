@@ -1,9 +1,10 @@
-
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+
 const activeMenu = ref('1');
 const router = useRouter();
+const radio1 = ref('')
 
 const form = ref({
   dataId: '',
@@ -23,10 +24,10 @@ const handleSelect = (index) => {
       router.push('/home');
       break;
     case '2':
-      router.push('/home');
+      router.push('/application');
       break;
     case '3':
-      router.push('/');
+      router.push('/approvalProcess');
       break;
   }
 };
@@ -52,23 +53,22 @@ const onReset = () => {
 };
 </script>
 <template>
-    <el-container style="height: 97.8vh; width: 100%;">
+    <el-container style="height: 100vh; width: 100%;">
       <!-- 侧边栏 -->
-      <el-aside width="250px" class="custom-aside">
+      <el-aside width="230px" class="custom-aside">
         <div class="logo"> <strong>数据流转平台</strong></div>
         <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
           <el-menu-item index="1">
-            <span>主页</span>
+            <span >主页</span>
           </el-menu-item>
           <el-menu-item index="2">
-            <span>数据</span>
+            <span>申请</span>
           </el-menu-item>
           <el-menu-item index="3">
-            <span>登录</span>
+            <span>审批</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
-
       <!-- 右侧内容区 -->
       <el-container>
         <!-- 顶部栏 -->
@@ -87,82 +87,7 @@ const onReset = () => {
 
         <!-- 主内容区 -->
         <el-container>
-          <!-- 右侧未申请流程展示区 -->
-          <el-aside width="100%" style="padding: 20px;">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-card style="height: 85vh;">
-                  <div class = "qianming">
-                    流程申请
-                  </div>
-                  <el-divider />
-                  <el-form :model="form" label-width="100px">
-                    <!-- 数据编号部分 -->
-                    <el-row class="form-row">
-                      <el-col :span="6" class="label-col">
-                        数据编号：
-                      </el-col>
-                      <el-col :span="12" class="input-col">
-                        <el-input v-model="form.dataId"></el-input>
-                      </el-col>
-                      <el-col :span="5" class="button-col">
-                        <el-button type="primary" @click="addData">添加</el-button>
-                      </el-col>
-                    </el-row>
-
-                    <!-- 参与成员部分 -->
-                    <el-row class="form-row">
-                      <el-col :span="6" class="label-col">
-                        参与成员：
-                      </el-col>
-                      <el-col :span="12" class="input-col">
-                        <el-input v-model="form.memberSearch" placeholder="输入用户名查找"></el-input>
-                      </el-col>
-                      <el-col :span="5" class="button-col">
-                        <el-button type="primary" @click="addMember">添加</el-button>
-                      </el-col>
-                    </el-row>
-
-                    <el-table :data="form.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                      <el-table-column prop="Name" label="已添加的成员" />
-                    </el-table>
-                    <el-row>
-                      <el-col :offset="7">
-                        <el-button type="primary" @click="onSubmit">提交</el-button>
-                        <el-button @click="onReset">重置</el-button>
-                      </el-col>
-                    </el-row>
-                  </el-form>
-                </el-card>
-              </el-col>
-              <el-col :span="8">
-                <el-card style="height: 85vh;">
-                  <div class = "qianming">
-                    正在进行的签名
-                  </div>
-                  <el-divider />
-                  <el-table :data="tableData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="Name" label="用户名" />
-                    <el-table-column prop="Status" label="状态"/>
-                  </el-table>
-                  <el-button type="primary" plain style="width: 100%;">添加私钥计算</el-button>
-                </el-card>
-              </el-col>
-              <el-col :span="8">
-                <el-card style="height: 85vh;">
-                  <div class = "qianming">
-                    正在进行的确权
-                  </div>
-                  <el-divider />
-                  <el-table :data="tableData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="Name" label="用户名" />
-                    <el-table-column prop="Status" label="状态"/>
-                  </el-table>
-                  <el-button type="primary" plain style="width: 100%;">添加私钥计算</el-button>
-                </el-card>
-              </el-col>
-            </el-row>
-          </el-aside>
+          主页
         </el-container>
       </el-container>
     </el-container>

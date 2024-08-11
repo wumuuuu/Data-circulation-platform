@@ -5,11 +5,13 @@ import App from './App.vue'
 import router from './router'
 import locale from 'element-plus/dist/locale/zh-cn'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import InfiniteScroll from 'vue-infinite-scroll';
 
 const app = createApp(App)
 
 app.use(router)
 app.use(ElementPlus, { locale })
+app.use(InfiniteScroll);
 
 // 注册所有图标组件
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
