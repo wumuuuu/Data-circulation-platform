@@ -2,22 +2,15 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox} from 'element-plus';
-
+// 调用后台接口查找用户名是否存在
+import { checkUserExists } from '@/api/user.js';
 const activeMenu = ref('3');
 const router = useRouter();
 // 文件列表
-const fileList = ref([
-  {
-    name: 'element-plus-logo.svg',
-    url: 'https://element-plus.org/images/element-plus-logo.svg',
-  },
-  {
-    name: 'element-plus-logo2.svg',
-    url: 'https://element-plus.org/images/element-plus-logo.svg',
-  },
-])
-
-
+const fileList = ref([])
+const keyList = ref([])
+const dataFile = ref(null);
+const privateKeyFile = ref(null);
 // 模拟申请数据
 const tableData = ref([
   { id: 1, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
@@ -69,24 +62,36 @@ const paginatedData = computed(() => {
   const end = start + pageSize.value;
   return tableData.value.slice(start, end);
 });
-// 上传文件前的验证
-const beforeUpload = (file) => {
-  const isValid = file.size / 1024 / 1024 < 10; // 限制文件大小为10MB
-  if (!isValid) {
-    ElMessage.error('文件大小不能超过 10MB!');
+
+//点击登出并跳转到登录界面
+const handleCommand = (command) => {
+  if (command === 'logout') {
+    // 清理登录状态，例如移除 token 或用户信息
+    localStorage.clear();
+    console.log('localStorage');
+    // 然后跳转到登录页面
+    router.push('/');
   }
-  return isValid;
 };
+
+// 上传文件前的验证
+const handleDataFileUpload = (file) => {
+  dataFile.value = file;
+  fileList.value = [file];
+  return false; // 阻止自动上传
+};
+
+const handleKeyFileUpload = (file) => {
+  privateKeyFile.value = file;
+  keyList.value = [file];
+  return false; // 阻止自动上传
+};
+
+
 // 文件删除时的处理函数
 const handleRemove = (file, uploadFiles) => {
   // 打印被删除的文件信息和当前文件列表到控制台
   console.log(file, uploadFiles)
-}
-
-// 文件预览时的处理函数
-const handlePreview = (uploadFile) => {
-  // 打印被预览的文件信息到控制台
-  console.log(uploadFile)
 }
 
 // 文件数量超过限制时的处理函数
@@ -156,20 +161,46 @@ const removeMember = (member) => {
   }
 };
 
-// 添加成员
-const addMember = () => {
+// 添加成员，并在添加前向后端查找是否有此用户
+const addMember = async () => {
   if (form.value.memberSearch) {
-    form.value.members.push({ name: form.value.memberSearch });
-    form.value.memberSearch = ''; // 清空输入框
+    // 检查成员列表中是否已经存在该用户
+    const userAlreadyExists = form.value.members.some(member => member.name === form.value.memberSearch);
+    if (userAlreadyExists) {
+      alert('该用户已在成员列表中，不能重复添加。');
+      form.value.memberSearch = ''; // 清空输入框
+      return; // 终止添加流程
+    }
+    try {
+      // 向后端发送请求，查找是否存在此用户
+      const response = await checkUserExists(form.value.memberSearch);
+      if (response.code === 0) {
+        // 如果用户存在，将其添加到成员列表中
+        form.value.members.push({ name: form.value.memberSearch });
+        form.value.memberSearch = ''; // 清空输入框
+        alert('用户添加成功。');
+      } else {
+        // 如果用户不存在，提示用户
+        alert('用户不存在，请检查用户名。');
+      }
+    } catch (error) {
+      // 如果请求出错，提示错误信息
+      alert('无法检查用户，请稍后重试。');
+    }
   }
 };
+
 
 // 提交表单
 const onSubmit = () => {
   const uploadRef = $refs.uploadRef;
-  if (fileList.value.length === 0) {
-    ElMessage.error('请上传文件后再提交!');
-    return;
+  if (dataFile.value && privateKeyFile.value) {
+    // 在这里处理任务计算，使用 dataFile.value 和 privateKeyFile.value
+    console.log('提交表单，进行任务计算');
+    console.log('数据文件:', dataFile.value);
+    console.log('私钥文件:', privateKeyFile.value);
+  } else {
+    alert('请上传数据文件和私钥文件');
   }
 
   uploadRef.submit(); // 提交上传文件
@@ -284,16 +315,15 @@ const onReset = () => {
                       </el-table>
                   </div>
 
-                  <!-- 上传文件部分 -->
+                  <!-- 上传文件和添加私钥部分 -->
                   <div style="height: 13vh;">
                     <el-row class="form-row">
-                      <el-col :span="24" class="input-col">
+                      <el-col :span="12" class="input-col">
                         <el-upload
                           v-model:file-list="fileList"
                           class="upload-demo"
-                          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
                           multiple
-                          :on-preview="handlePreview"
+                          :before-upload="handleDataFileUpload"
                           :on-remove="handleRemove"
                           :before-remove="beforeRemove"
                           :limit="1"
@@ -302,6 +332,21 @@ const onReset = () => {
                           <el-button size="large" type="primary">上传数据文件</el-button>
                         </el-upload>
                       </el-col>
+                      <el-col :span="12" class="input-col">
+                        <el-upload
+                          v-model:file-list="keyList"
+                          class="upload-demo"
+                          multiple
+                          :before-upload="handleKeyFileUpload"
+                          :on-remove="handleRemove"
+                          :before-remove="beforeRemove"
+                          :limit="1"
+                          :on-exceed="handleExceed"
+                        >
+                          <el-button size="large" type="primary">添加私钥</el-button>
+                        </el-upload>
+                      </el-col>
+
                     </el-row>
                   </div>
 

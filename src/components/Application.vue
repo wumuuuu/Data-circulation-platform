@@ -5,7 +5,6 @@ import { useRouter } from 'vue-router';
 
 const activeMenu = ref('2');
 const router = useRouter();
-const radio1 = ref('')
 
 const form = ref({
   dataId: '',
@@ -13,9 +12,14 @@ const form = ref({
   members: []
 });
 
+//点击登出并跳转到登录界面
 const handleCommand = (command) => {
   if (command === 'logout') {
-    router.push('/'); // 返回到登录界面
+    // 清理登录状态，例如移除 token 或用户信息
+    localStorage.clear();
+    console.log(localStorage);
+    // 然后跳转到登录页面
+    router.push('/');
   }
 };
 const handleSelect = (index) => {

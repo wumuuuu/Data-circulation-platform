@@ -4,17 +4,16 @@ import { useRouter } from 'vue-router';
 
 const activeMenu = ref('1');
 const router = useRouter();
-const radio1 = ref('')
 
-const form = ref({
-  dataId: '',
-  memberSearch: '',
-  members: []
-});
 
+//点击登出并跳转到登录界面
 const handleCommand = (command) => {
   if (command === 'logout') {
-    router.push('/'); // 返回到登录界面
+    // 清理登录状态，例如移除 token 或用户信息
+    localStorage.clear();
+    console.log('localStorage');
+    // 然后跳转到登录页面
+    router.push('/');
   }
 };
 const handleSelect = (index) => {
@@ -31,26 +30,7 @@ const handleSelect = (index) => {
       break;
   }
 };
-const addData = () => {
-  console.log('数据编号已添加:', form.value.dataId);
-};
 
-const addMember = () => {
-  if (form.value.memberSearch) {
-    form.value.members.push({ name: form.value.memberSearch });
-    form.value.memberSearch = ''; // 清空输入框
-  }
-};
-
-const onSubmit = () => {
-  console.log('表单提交:', form.value);
-};
-
-const onReset = () => {
-  form.value.dataId = '';
-  form.value.memberSearch = '';
-  form.value.members = [];
-};
 </script>
 <template>
     <el-container style="height: 100vh; width: 100%;">

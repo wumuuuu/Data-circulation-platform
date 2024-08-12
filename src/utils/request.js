@@ -47,5 +47,5 @@ const get = (url) => {
 // 导出请求函数
 export default {
   post,
-  get
+  get,
 };

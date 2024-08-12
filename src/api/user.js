@@ -25,3 +25,15 @@ export const userLoginService = async (loginData) => {
     throw error;
   }
 };
+
+// 提供调用检查用户名是否存在的接口的函数
+export const checkUserExists = async (username) => {
+  try {
+    const response = await request.get(`/user/exists?username=${encodeURIComponent(username)}`);
+    console.log('Check user exists response:', response);
+    return response;
+  } catch (error) {
+    console.error('Check user exists error:', error);
+    throw error;
+  }
+};

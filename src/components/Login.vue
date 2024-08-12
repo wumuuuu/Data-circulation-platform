@@ -102,21 +102,36 @@ const register = async () => {
 };
 
 const login = async () => {
-  // 调用接口完成登录
   try {
-    let result = await userLoginService(loginData.value)
-    if (result.code === 0) {
-      alert(result.msg ? result.msg : '登录成功')
-      await router.push({ name: 'Home' }) // 重定向到 Home.vue
-    } else if (result.code === 1) {
-      alert(result.msg ? result.msg : '用户不存在')
-    } else {
-      alert(result.msg ? result.msg : '密码错误')
+    // 调用接口完成登录
+    const result = await userLoginService(loginData.value);
+
+    // 根据返回的结果代码进行处理
+    switch (result.code) {
+      case 0:
+        // 登录成功，保存 token，并重定向到 Home 页面
+        localStorage.setItem('userToken', result.token || 'dummy-token'); // 使用返回的 token 或默认值
+        alert(result.msg || '登录成功');
+        await router.push({ name: 'Home' });
+        break;
+
+      case 1:
+        // 用户不存在
+        alert(result.msg || '用户不存在');
+        break;
+
+      default:
+        // 密码错误或其他情况
+        alert(result.msg || '密码错误');
+        break;
     }
   } catch (error) {
-    alert('登录异常')
+    // 捕获并处理登录过程中的异常
+    console.error('登录异常:', error);
+    alert('登录异常');
   }
 };
+
 
 // 定义函数，清空数据模型
 const clearRegisterData = () => {
