@@ -111,6 +111,7 @@ const login = async () => {
       case 0:
         // 登录成功，保存 token，并重定向到 Home 页面
         localStorage.setItem('userToken', result.token || 'dummy-token'); // 使用返回的 token 或默认值
+        localStorage.setItem('username', result.data);
         alert(result.msg || '登录成功');
         await router.push({ name: 'Home' });
         break;

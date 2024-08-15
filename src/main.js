@@ -12,6 +12,7 @@ const app = createApp(App)
 app.use(router)
 app.use(ElementPlus, { locale })
 app.use(InfiniteScroll);
+window.global = window;
 
 // 注册所有图标组件
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

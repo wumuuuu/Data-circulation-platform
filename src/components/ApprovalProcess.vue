@@ -1,7 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox} from 'element-plus';
+import { Application, getApplications } from '@/api/user.js'
+
 // 调用后台接口查找用户名是否存在
 import { checkUserExists } from '@/api/user.js';
 const activeMenu = ref('3');
@@ -9,48 +11,34 @@ const router = useRouter();
 // 文件列表
 const fileList = ref([])
 const keyList = ref([])
-const dataFile = ref(null);
-const privateKeyFile = ref(null);
-// 模拟申请数据
-const tableData = ref([
-  { id: 1, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 2, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 3, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 4, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 5, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 6, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 7, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 8, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 9, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 10, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 11, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 12, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 13, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 14, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 15, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 16, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-  { id: 17, date: '2024-08-11', username: 'User1', type: '签名申请', details: '需要签名的数据详情1' },
-  { id: 18, date: '2024-08-11', username: 'User2', type: '确权申请', details: '需要确权的数据详情2' },
-]);
 
+// 模拟申请数据
+const tableData = ref([]);
+const username = localStorage.getItem('username');
 // 表单数据
 const form = ref({
   memberSearch: '',
-  members: [
-    { name: '张三' },
-    { name: '李四' },
-    { name: '王五' },
-    { name: '赵六' },
-    { name: '钱七' },
-    { name: '孙八' },
-    { name: '张三' },
-    { name: '李四' },
-    { name: '王五' },
-    { name: '赵六' },
-    { name: '钱七' },
-    { name: '孙八' }
-  ]
+  members: []
 });
+
+// 连接WebSocket并订阅消息
+onMounted(() => {
+  fetchApplications();
+});
+
+// 获取申请列表
+const fetchApplications = async () => {
+  try {
+    const response = await getApplications();
+    if (response && response.code === 200) {
+      tableData.value = response.data;
+    } else {
+      console.error('Error fetching applications:', response);
+    }
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+  }
+};
 
 // 分页相关数据
 const currentPage = ref(1); // 当前页
@@ -74,42 +62,48 @@ const handleCommand = (command) => {
   }
 };
 
-// 上传文件前的验证
-const handleDataFileUpload = (file) => {
-  dataFile.value = file;
-  fileList.value = [file];
+// 处理私钥文件选择（但不上传）
+const handleDataSelection = (file) => {
+  if (fileList.value.length >= 1) {
+    ElMessage.warning('只能上传一个私钥文件');
+    return false; // 阻止文件添加
+  }
+  ElMessage.success("文件添加成功");
+  fileList.value.push(file);
   return false; // 阻止自动上传
 };
 
-const handleKeyFileUpload = (file) => {
-  privateKeyFile.value = file;
-  keyList.value = [file];
+const handleKeySelection = (file) => {
+  if (keyList.value.length >= 1) {
+    // 如果文件列表中已经有一个文件，提示用户只能上传一个文件
+    ElMessage.warning('只能上传一个私钥文件');
+    return false; // 阻止文件添加
+  }
+  ElMessage.success("文件添加成功");
+  keyList.value.push(file);  // 手动添加文件到列表
   return false; // 阻止自动上传
 };
 
+// 自定义删除文件的逻辑
+const removeDataFile = () => {
+  const index = 0; // 始终删除第一个文件
+  if (fileList.value.length > 0) {
+    fileList.value.splice(index, 1); // 删除索引为 0 的文件
+    ElMessage.success('第一个文件已删除');
+  } else {
+    ElMessage.warning('没有可删除的文件');
+  }
+};
+const removeKeyFile = () => {
+  const index = 0; // 始终删除第一个文件
+  if (keyList.value.length > 0) {
+    keyList.value.splice(index, 1); // 删除索引为 0 的文件
+    ElMessage.success('第一个文件已删除');
+  } else {
+    ElMessage.warning('没有可删除的文件');
+  }
+};
 
-// 文件删除时的处理函数
-const handleRemove = (file, uploadFiles) => {
-  // 打印被删除的文件信息和当前文件列表到控制台
-  console.log(file, uploadFiles)
-}
-
-// 文件数量超过限制时的处理函数
-const handleExceed = (files, uploadFiles) => {
-  // 显示警告消息，提示用户上传的文件数量已超过限制
-  ElMessage.warning(`只能上传一个文件`)
-}
-
-// 在文件删除之前执行的钩子函数
-const beforeRemove = (uploadFile, uploadFiles) => {
-  // 弹出确认对话框，用户确认后返回 true 执行删除操作，取消则返回 false
-  return ElMessageBox.confirm(
-    `删除${uploadFile.name} 文件?`
-  ).then(
-    () => true,  // 确认删除
-    () => false  // 取消删除
-  )
-}
 // 处理不同的菜单选择
 const handleSelect = (index) => {
   switch (index) {
@@ -127,30 +121,65 @@ const handleSelect = (index) => {
 
 // 显示申请详情
 const handleClick = (row) => {
-  ElMessageBox.alert(row.details, '申请详情', {
+  // 格式化日期，假设你想使用某种特定格式
+  const startDate = row.startDate ? new Date(row.startDate).toLocaleString() : 'N/A';
+  const endDate = row.endDate ? new Date(row.endDate).toLocaleString() : 'N/A';
+
+  // 拼接详细信息
+  const details = `
+    申请详情: ${row.text}<br/>
+    时间范围: ${startDate} ~ ${endDate}<br/>
+  `;
+  ElMessageBox.alert(details, '申请详情', {
+    dangerouslyUseHTMLString: true, // 启用 HTML 字符串渲染
     confirmButtonText: '确定',
     callback: () => {}
   });
 };
 
-// 同意申请的处理函数
-const handleAgree = (id) => {
-  const row = tableData.value.find(item => item.id === id); // 根据ID找到对应的记录
-  ElMessage({
-    message: `已通过${row.username}的${row.type}`,
-    type: 'success',
-  });
-  tableData.value = tableData.value.filter(item => item.id !== id); // 移除记录
+// 同意申请
+const handleAgree = async (id) => {
+  // 查找对应的申请记录
+  const row = tableData.value.find(item => item.id === id);
+  if (!row) return;
+  const applicationData = {
+    id: id,
+    applicationStatus: 'APPROVED', // 确保与后端的字段名一致
+    username: row.username, // 添加必要的字段
+    applicationType: row.applicationType,
+  };
+  console.log(applicationData);
+  try {
+    // 调用后端API，同意申请
+    await Application(applicationData);    // 显示成功消息，并从列表中移除该申请
+    ElMessage.success(`已通过${row.username}的${row.applicationType}`);
+    tableData.value = tableData.value.filter(item => item.id !== id);
+  } catch (error) {
+    console.error('Error approving application:', error);
+  }
 };
 
-// 拒绝申请的处理函数
-const handleReject = (id) => {
-  const row = tableData.value.find(item => item.id === id); // 根据ID找到对应的记录
-  ElMessage({
-    message: `已拒绝${row.username}的${row.type}`,
-    type: 'warning',
-  });
-  tableData.value = tableData.value.filter(item => item.id !== id); // 移除记录
+
+// 拒绝申请
+const handleReject = async (id) => {
+  // 查找对应的申请记录
+  const row = tableData.value.find(item => item.id === id);
+  if (!row) return;
+  const applicationData = {
+    id: id,
+    applicationStatus: 'REJECT', // 确保与后端的字段名一致
+    username: row.username, // 添加必要的字段
+    applicationType: row.applicationType,
+  };
+
+  try {
+    // 调用后端API，同意申请
+    await Application(applicationData);    // 显示成功消息，并从列表中移除该申请
+    ElMessage.success(`已拒绝${row.username}的${row.applicationType}`);
+    tableData.value = tableData.value.filter(item => item.id !== id);
+  } catch (error) {
+    console.error('Error approving application:', error);
+  }
 };
 
 // 删除成员
@@ -167,21 +196,23 @@ const addMember = async () => {
     // 检查成员列表中是否已经存在该用户
     const userAlreadyExists = form.value.members.some(member => member.name === form.value.memberSearch);
     if (userAlreadyExists) {
-      alert('该用户已在成员列表中，不能重复添加。');
+      ElMessage.error('该用户已在成员列表中，不能重复添加。');
       form.value.memberSearch = ''; // 清空输入框
       return; // 终止添加流程
     }
     try {
       // 向后端发送请求，查找是否存在此用户
       const response = await checkUserExists(form.value.memberSearch);
-      if (response.code === 0) {
+      if (response.code === 2) {
         // 如果用户存在，将其添加到成员列表中
         form.value.members.push({ name: form.value.memberSearch });
         form.value.memberSearch = ''; // 清空输入框
-        alert('用户添加成功。');
-      } else {
+        ElMessage.success('用户添加成功');
+      } else if (response.code === 0) {
+        ElMessage.error('用户名不能为空');
+      }else{
         // 如果用户不存在，提示用户
-        alert('用户不存在，请检查用户名。');
+        ElMessage.error('用户名不存在');
       }
     } catch (error) {
       // 如果请求出错，提示错误信息
@@ -214,13 +245,14 @@ const onReset = () => {
   form.value.members = [];
   fileList.value = []; // 清空文件列表
 };
-</script>
 
+
+</script>
 
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
-    <el-aside width="230px" class="custom-aside">
+    <el-aside width="205px" class="custom-aside">
       <div class="logo"><strong>数据流转平台</strong></div>
       <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
         <el-menu-item index="1">
@@ -240,7 +272,7 @@ const onReset = () => {
       <!-- 顶部栏 -->
       <el-header>
         <el-dropdown @command="handleCommand">
-          <span class="el-dropdown-link">用户名</span>
+          <el-avatar> {{username}} </el-avatar>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
@@ -259,9 +291,9 @@ const onReset = () => {
                 <el-divider />
                 <div style="height: 66vh;">
                   <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="date" label="申请时间" align="center" />
+                    <el-table-column prop="applicationTime" label="申请时间" align="center" />
                     <el-table-column prop="username" label="用户名" align="center" />
-                    <el-table-column prop="type" label="申请类型" align="center" />
+                    <el-table-column prop="applicationType" label="申请类型" align="center" />
                     <el-table-column fixed="right" label="操作" align="center">
                       <template #default="scope">
                         <el-button link type="primary" size="small" @click="handleClick(scope.row)">详细</el-button>
@@ -307,6 +339,15 @@ const onReset = () => {
                   <div style="height: 45vh; margin-bottom: 20px">
                       <el-table  max-height="45vh" :data="form.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                         <el-table-column prop="name" label="成员名称" align="center" />
+                        <el-table-column label="数据权限" align="center">
+                          <template #default="scope">
+                            <el-select v-model="scope.row.permission"  style="width:100%">
+                              <el-option label="可查看" value="view"></el-option>
+                              <el-option label="可下载" value="download"></el-option>
+                              <el-option label="可流转" value="transfer"></el-option>
+                            </el-select>
+                          </template>
+                        </el-table-column>
                         <el-table-column fixed="right" label="操作" align="center">
                           <template #default="scope">
                             <el-button type="text" size="small" @click="removeMember(scope.row)">删除</el-button>
@@ -320,33 +361,38 @@ const onReset = () => {
                     <el-row class="form-row">
                       <el-col :span="12" class="input-col">
                         <el-upload
-                          v-model:file-list="fileList"
                           class="upload-demo"
-                          multiple
-                          :before-upload="handleDataFileUpload"
-                          :on-remove="handleRemove"
-                          :before-remove="beforeRemove"
-                          :limit="1"
-                          :on-exceed="handleExceed"
+                          :before-upload="handleDataSelection"
                         >
                           <el-button size="large" type="primary">上传数据文件</el-button>
                         </el-upload>
+
                       </el-col>
                       <el-col :span="12" class="input-col">
                         <el-upload
-                          v-model:file-list="keyList"
                           class="upload-demo"
-                          multiple
-                          :before-upload="handleKeyFileUpload"
-                          :on-remove="handleRemove"
-                          :before-remove="beforeRemove"
-                          :limit="1"
-                          :on-exceed="handleExceed"
+                          :before-upload="handleKeySelection"
                         >
-                          <el-button size="large" type="primary">添加私钥</el-button>
+                          <el-button size="large" type="primary">添加私钥计算</el-button>
                         </el-upload>
-                      </el-col>
 
+                      </el-col>
+                    </el-row>
+                    <el-row class="form-row">
+                      <el-col :span="12" class="input-col">
+                        <!-- 自定义文件列表显示 -->
+                        <ul v-if="fileList.length > 0">
+                          {{ fileList[0].name }}
+                         <el-button type="text" @click="removeDataFile">删除</el-button>
+                        </ul>
+                      </el-col>
+                      <el-col :span="12" class="input-col">
+                        <!-- 自定义文件列表显示 -->
+                        <ul v-if="keyList.length > 0">
+                          {{ keyList[0].name }}
+                          <el-button type="text" @click="removeKeyFile">删除</el-button>
+                        </ul>
+                      </el-col>
                     </el-row>
                   </div>
 
@@ -385,7 +431,7 @@ const onReset = () => {
 .form-row {
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px; /* 行之间的间隔 */
+  margin-bottom: 10px; /* 行之间的间隔 */
 }
 
 .label-col {

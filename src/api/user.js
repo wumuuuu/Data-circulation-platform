@@ -37,3 +37,37 @@ export const checkUserExists = async (username) => {
     throw error;
   }
 };
+
+// 提供调用申请提交接口的函数
+export const submitApplication = async (applicationData) => {
+  try {
+    const response = await request.post('/application/submit', applicationData);
+    console.log('Application submit response:', response);
+    return response;
+  } catch (error) {
+    console.error('Application submit error:', error);
+    throw error;
+  }
+};
+
+// 调用后端同意/拒绝申请接口的函数
+export const Application = async (application) => {
+  return request.post(`/application/updateApplication`, application);
+};
+
+// 调用后端获取所有申请记录
+export const getApplications = async () => {
+  return request.get('/application/pending');
+};
+
+// 调用后端获取用户申请状态的函数
+export const getApplicationStatus = async (username) => {
+  try {
+    const response = await request.get(`/application/status?username=${username}`);
+    console.log('Get application status response:', response);
+    return response;
+  } catch (error) {
+    console.error('Get application status error:', error);
+    throw error;
+  }
+};

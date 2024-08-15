@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 
 const activeMenu = ref('1');
 const router = useRouter();
-
+const username = localStorage.getItem('username');
 
 //点击登出并跳转到登录界面
 const handleCommand = (command) => {
@@ -35,7 +35,7 @@ const handleSelect = (index) => {
 <template>
     <el-container style="height: 100vh; width: 100%;">
       <!-- 侧边栏 -->
-      <el-aside width="230px" class="custom-aside">
+      <el-aside width="205px" class="custom-aside">
         <div class="logo"> <strong>数据流转平台</strong></div>
         <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
           <el-menu-item index="1">
@@ -54,9 +54,7 @@ const handleSelect = (index) => {
         <!-- 顶部栏 -->
         <el-header>
           <el-dropdown @command="handleCommand">
-      <span class="el-dropdown-link">
-        用户名
-      </span>
+            <el-avatar> {{username}} </el-avatar>
             <template v-slot:dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="logout">登出</el-dropdown-item>
