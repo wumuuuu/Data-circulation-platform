@@ -71,3 +71,15 @@ export const getApplicationStatus = async (username) => {
     throw error;
   }
 };
+
+// 获取历史签名者的函数
+export const getHistoricalSigners = async (dataId) => {
+  try {
+    const response = await request.get(`/process/getSigners?data_id=${dataId}`);
+    console.log('Historical signers response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error fetching historical signers:', error);
+    throw error;
+  }
+};

@@ -1,21 +1,17 @@
 <template>
   <div id="app">
-<!--    <Home></Home>-->
-<!--    <Application></Application>-->
-<!--    <ApprovalProcess></ApprovalProcess>-->
     <router-view></router-view>
   </div>
 </template>
 
-<script>
+<script setup>
 import Home from '@/components/Home.vue'
-import ApprovalProcess from '@/components/ApprovalProcess.vue'
+import ApprovalProcess from '@/components/ApplicationsProcess.vue'
 import Application from '@/components/Application.vue'
+import {useWebSocket} from './service/wsService.js'
 
-export default {
-  name: 'App',
-  components: { Application, ApprovalProcess, Home }
-}
+// 在 setup 中调用 useWebSocket 函数，确保在应用启动时建立 WebSocket 连接
+useWebSocket();
 </script>
 <style>
 * {

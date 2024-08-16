@@ -2,42 +2,46 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox} from 'element-plus';
-import { Application, getApplications } from '@/api/user.js'
+import { addUser, checkUser, handleAgree, handleReject, ListApplications } from '@/service/ApprovalProcessAPI.js'
+import { OpenTheSignProcess } from '@/service/SignProcessService.js'
 
-// 调用后台接口查找用户名是否存在
-import { checkUserExists } from '@/api/user.js';
 const activeMenu = ref('3');
 const router = useRouter();
+
 // 文件列表
 const fileList = ref([])
 const keyList = ref([])
 
+//选择申请类型
+const options = ['签名申请', '确权申请', '仲裁申请'];
+const ApplicationType =ref(null);
+
 // 模拟申请数据
 const tableData = ref([]);
 const username = localStorage.getItem('username');
-// 表单数据
-const form = ref({
-  memberSearch: '',
+
+const memberSearch = ref(null);
+
+// 准备上传的签名人
+const signer = ref({
   members: []
 });
 
-// 连接WebSocket并订阅消息
+//提交进行计算的表单
+const form = ref({
+  fileList: [],
+  keyList: [],
+  signer: []
+});
+
+
 onMounted(() => {
   fetchApplications();
 });
 
 // 获取申请列表
 const fetchApplications = async () => {
-  try {
-    const response = await getApplications();
-    if (response && response.code === 200) {
-      tableData.value = response.data;
-    } else {
-      console.error('Error fetching applications:', response);
-    }
-  } catch (error) {
-    console.error('Error fetching applications:', error);
-  }
+  await ListApplications(tableData);
 };
 
 // 分页相关数据
@@ -63,24 +67,30 @@ const handleCommand = (command) => {
 };
 
 // 处理私钥文件选择（但不上传）
-const handleDataSelection = (file) => {
+const handleDataSelection = async (file) => {
+  console.log(file instanceof File);
   if (fileList.value.length >= 1) {
-    ElMessage.warning('只能上传一个私钥文件');
+    ElMessage.warning('只能上传一个数据文件');
     return false; // 阻止文件添加
   }
   ElMessage.success("文件添加成功");
   fileList.value.push(file);
+  form.value.fileList.push(file);
+  await addUser(file, signer);
+
   return false; // 阻止自动上传
 };
 
 const handleKeySelection = (file) => {
+
   if (keyList.value.length >= 1) {
     // 如果文件列表中已经有一个文件，提示用户只能上传一个文件
-    ElMessage.warning('只能上传一个私钥文件');
+    ElMessage.warning('只能上传一个数据文件');
     return false; // 阻止文件添加
   }
-  ElMessage.success("文件添加成功");
+  ElMessage.success("私钥添加成功");
   keyList.value.push(file);  // 手动添加文件到列表
+  form.value.keyList.push(file);
   return false; // 阻止自动上传
 };
 
@@ -138,112 +148,59 @@ const handleClick = (row) => {
 };
 
 // 同意申请
-const handleAgree = async (id) => {
-  // 查找对应的申请记录
-  const row = tableData.value.find(item => item.id === id);
-  if (!row) return;
-  const applicationData = {
-    id: id,
-    applicationStatus: 'APPROVED', // 确保与后端的字段名一致
-    username: row.username, // 添加必要的字段
-    applicationType: row.applicationType,
-  };
-  console.log(applicationData);
-  try {
-    // 调用后端API，同意申请
-    await Application(applicationData);    // 显示成功消息，并从列表中移除该申请
-    ElMessage.success(`已通过${row.username}的${row.applicationType}`);
-    tableData.value = tableData.value.filter(item => item.id !== id);
-  } catch (error) {
-    console.error('Error approving application:', error);
-  }
+const onAgree = async (id) => {
+  await handleAgree(id, tableData);
 };
 
 
 // 拒绝申请
-const handleReject = async (id) => {
+const onReject = async (id) => {
   // 查找对应的申请记录
-  const row = tableData.value.find(item => item.id === id);
-  if (!row) return;
-  const applicationData = {
-    id: id,
-    applicationStatus: 'REJECT', // 确保与后端的字段名一致
-    username: row.username, // 添加必要的字段
-    applicationType: row.applicationType,
-  };
-
-  try {
-    // 调用后端API，同意申请
-    await Application(applicationData);    // 显示成功消息，并从列表中移除该申请
-    ElMessage.success(`已拒绝${row.username}的${row.applicationType}`);
-    tableData.value = tableData.value.filter(item => item.id !== id);
-  } catch (error) {
-    console.error('Error approving application:', error);
-  }
+  await handleReject(id, tableData);
 };
 
 // 删除成员
 const removeMember = (member) => {
-  const index = form.value.members.findIndex(m => m.name === member.name);
+  const index = signer.value.members.findIndex(m => m.name === member.name);
   if (index !== -1) {
-    form.value.members.splice(index, 1);
+    signer.value.members.splice(index, 1);
   }
 };
 
 // 添加成员，并在添加前向后端查找是否有此用户
-const addMember = async () => {
-  if (form.value.memberSearch) {
+const addMember = async (memberSearch) => {
+  if (memberSearch) {
     // 检查成员列表中是否已经存在该用户
-    const userAlreadyExists = form.value.members.some(member => member.name === form.value.memberSearch);
-    if (userAlreadyExists) {
-      ElMessage.error('该用户已在成员列表中，不能重复添加。');
-      form.value.memberSearch = ''; // 清空输入框
-      return; // 终止添加流程
-    }
-    try {
-      // 向后端发送请求，查找是否存在此用户
-      const response = await checkUserExists(form.value.memberSearch);
-      if (response.code === 2) {
-        // 如果用户存在，将其添加到成员列表中
-        form.value.members.push({ name: form.value.memberSearch });
-        form.value.memberSearch = ''; // 清空输入框
-        ElMessage.success('用户添加成功');
-      } else if (response.code === 0) {
-        ElMessage.error('用户名不能为空');
-      }else{
-        // 如果用户不存在，提示用户
-        ElMessage.error('用户名不存在');
-      }
-    } catch (error) {
-      // 如果请求出错，提示错误信息
-      alert('无法检查用户，请稍后重试。');
-    }
+    await checkUser(signer, memberSearch);
   }
 };
 
-
 // 提交表单
-const onSubmit = () => {
-  const uploadRef = $refs.uploadRef;
-  if (dataFile.value && privateKeyFile.value) {
-    // 在这里处理任务计算，使用 dataFile.value 和 privateKeyFile.value
-    console.log('提交表单，进行任务计算');
-    console.log('数据文件:', dataFile.value);
-    console.log('私钥文件:', privateKeyFile.value);
-  } else {
-    alert('请上传数据文件和私钥文件');
-  }
-
-  uploadRef.submit(); // 提交上传文件
-  console.log('表单提交:', form.value);
+const onSubmit = async () => {
+  // const uploadRef = $refs.uploadRef;
+  // if (dataFile.value && privateKeyFile.value) {
+  //   let Type = ApplicationType.value;
+  //   if (Type === '签名申请') {
+      console.log(form.value);
+      await OpenTheSignProcess(form);
+  //
+  //   } else if (Type === '确权申请') {
+  //
+  //   } else {
+  //
+  //   }
+  // } else {
+  //   alert('请上传数据文件和私钥文件');
+  // }
+  // uploadRef.submit(); // 提交上传文件
+  console.log('表单提交:', signer.value);
 };
 
 // 重置表单
 const onReset = () => {
-  form.value.dataId = '';
-  form.value.memberSearch = '';
-  form.value.members = [];
+  signer.value.members = [];
   fileList.value = []; // 清空文件列表
+  keyList.value = []; // 清空私钥列表
 };
 
 
@@ -287,7 +244,7 @@ const onReset = () => {
           <el-row :gutter="20">
             <el-col :span="16">
               <el-card style="height: 87vh;">
-                <div class="qianming">需要处理的申请</div>
+                <div class="sign">需要处理的申请</div>
                 <el-divider />
                 <div style="height: 66vh;">
                   <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
@@ -297,10 +254,10 @@ const onReset = () => {
                     <el-table-column fixed="right" label="操作" align="center">
                       <template #default="scope">
                         <el-button link type="primary" size="small" @click="handleClick(scope.row)">详细</el-button>
-                        <el-button link type="primary" size="small" @click="handleAgree(scope.row.id)">
+                        <el-button link type="primary" size="small" @click="onAgree(scope.row.id)">
                           同意
                         </el-button>
-                        <el-button link type="primary" size="small" @click="handleReject(scope.row.id)">
+                        <el-button link type="primary" size="small" @click="onReject(scope.row.id)">
                           拒绝
                         </el-button>
                       </template>
@@ -320,31 +277,31 @@ const onReset = () => {
             </el-col>
             <el-col :span="8">
               <el-card style="height: 87vh;">
-                <div class="qianming">流程申请</div>
+                <div class="sign">流程申请</div>
                 <el-divider />
-                <el-form :model="form" label-width="100px">
+                <el-form :model="signer" label-width="100px">
 
 
                   <!-- 参与成员部分 -->
                   <el-row class="form-row">
                     <el-col :span="6" class="label-col">参与成员：</el-col>
                     <el-col :span="12" class="input-col">
-                      <el-input v-model="form.memberSearch" placeholder="输入用户名"></el-input>
+                      <el-input v-model="memberSearch" placeholder="输入用户名"></el-input>
                     </el-col>
                     <el-col :span="5" class="button-col">
-                      <el-button type="primary" @click="addMember">添加</el-button>
+                      <el-button type="primary" @click="addMember(memberSearch)">添加</el-button>
                     </el-col>
                   </el-row>
 
-                  <div style="height: 45vh; margin-bottom: 20px">
-                      <el-table  max-height="45vh" :data="form.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                        <el-table-column prop="name" label="成员名称" align="center" />
+                  <div style="height: 40vh; margin-bottom: 20px">
+                      <el-table  max-height="45vh" :data="signer.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                        <el-table-column prop="username" label="成员名称" align="center" />
                         <el-table-column label="数据权限" align="center">
                           <template #default="scope">
-                            <el-select v-model="scope.row.permission"  style="width:100%">
-                              <el-option label="可查看" value="view"></el-option>
-                              <el-option label="可下载" value="download"></el-option>
-                              <el-option label="可流转" value="transfer"></el-option>
+                            <el-select v-model="scope.row.role"  style="width:100%">
+                              <el-option label="可查看" value="可查看"></el-option>
+                              <el-option label="可下载" value="可下载"></el-option>
+                              <el-option label="可流转" value="可流转"></el-option>
                             </el-select>
                           </template>
                         </el-table-column>
@@ -357,7 +314,12 @@ const onReset = () => {
                   </div>
 
                   <!-- 上传文件和添加私钥部分 -->
-                  <div style="height: 13vh;">
+                  <div style="height: 17vh;margin-bottom: 20px">
+                    <el-row style="margin-bottom: 20px">
+                      <el-col style="display: flex; justify-content: center;">
+                        <el-segmented v-model="ApplicationType" :options="options" block style="width: 86%"/>
+                      </el-col>
+                    </el-row>
                     <el-row class="form-row">
                       <el-col :span="12" class="input-col">
                         <el-upload
@@ -394,9 +356,8 @@ const onReset = () => {
                         </ul>
                       </el-col>
                     </el-row>
+
                   </div>
-
-
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
                       <el-button type="primary" @click="onSubmit">提交</el-button>
@@ -424,7 +385,7 @@ const onReset = () => {
   color: #fff;
   cursor: pointer;
 }
-.qianming{
+.sign{
   text-align: center;
   font-size: 22px;
 }

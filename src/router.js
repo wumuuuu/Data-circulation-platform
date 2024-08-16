@@ -2,7 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './components/Home.vue'
 import Login from './components/Login.vue'
-import ApprovalProcess from './components/ApprovalProcess.vue'
+import ApprovalProcess from './components/ApplicationsProcess.vue'
 import Application from '@/components/Application.vue'
 
 const BASE_URL = '/'; // 这里手动设置 BASE_URL
