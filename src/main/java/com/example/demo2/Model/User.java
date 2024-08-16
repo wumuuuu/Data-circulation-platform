@@ -18,6 +18,15 @@ public class User {
     private String rePassword;
     @TableField("public_key") // 映射数据库字段
     private String public_key;
+    private String role;
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     // getter 和 setter 方法
     public String getUsername() {
@@ -51,15 +60,4 @@ public class User {
     public void setPublic_key(String public_key) {
         this.public_key = public_key;
     }
-
-    @Override
-    public String toString() {
-        return "UserRegisterRequest{" +
-                "username='" + username + '\'' +
-                ", password='" + password + '\'' +
-                ", public_key='" + public_key + '\'' +
-                '}';
-    }
-
-
 }

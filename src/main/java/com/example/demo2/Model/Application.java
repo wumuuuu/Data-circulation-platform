@@ -1,71 +1,44 @@
 package com.example.demo2.Model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 
 @TableName("saveapplication")
-public class UserApplication {
+public class Application {
+    @TableId(type = IdType.AUTO)
+    private int id;
     private String username;
     private String text;
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date startDate;
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date endDate;
+
     private String applicationType;
     private Date applicationTime;
+    private String applicationStatus;
 
-    public Date getApplicationTime() {
-        return applicationTime;
+    public int getId() {
+        return id;
     }
 
-    @Override
-    public String toString() {
-        return "Application{" +
-                ", username='" + username + '\'' +
-                ", text='" + text + '\'' +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", applicationType='" + applicationType + '\'' +
-                ", applicationTime=" + applicationTime +
-                '}';
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public String getApplicationType() {
-        return applicationType;
+    public String getUsername() {
+        return username;
     }
 
-    public void setApplicationType(String applicationType) {
-        this.applicationType = applicationType;
-    }
-
-    public void setApplicationTime(Date applicationTime) {
-        this.applicationTime = applicationTime;
-    }
-
-    public String getType() {
-        return applicationType;
-    }
-
-    public void setType(String type) {
-        this.applicationType = type;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getText() {
@@ -76,11 +49,57 @@ public class UserApplication {
         this.text = text;
     }
 
-    public String getUsername() {
-        return username;
+    public Date getStartDate() {
+        return startDate;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getApplicationType() {
+        return applicationType;
+    }
+
+    public void setApplicationType(String applicationType) {
+        this.applicationType = applicationType;
+    }
+
+    public Date getApplicationTime() {
+        return applicationTime;
+    }
+
+    public void setApplicationTime(Date applicationTime) {
+        this.applicationTime = applicationTime;
+    }
+
+    public String getApplicationStatus() {
+        return applicationStatus;
+    }
+
+    public void setApplicationStatus(String applicationStatus) {
+        this.applicationStatus = applicationStatus;
+    }
+
+    @Override
+    public String toString() {
+        return "Application{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", text='" + text + '\'' +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", applicationType='" + applicationType + '\'' +
+                ", applicationTime=" + applicationTime +
+                ", applicationStatus='" + applicationStatus + '\'' +
+                '}';
     }
 }
