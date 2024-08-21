@@ -45,17 +45,29 @@ export const fApplicationStatus = async (applyStep1, applyStep2,applyStep3) => {
     applyStep2.value = 0;
     applyStep3.value = 0;
 
+    if(localStorage.getItem('signTaskId')) {
+      applyStep1.value = 3;
+      return;
+    }else if (localStorage.getItem('2TaskId')) {
+      applyStep2.value = 3;
+      return;
+    }else if(localStorage.getItem('3taskId')) {
+      applyStep3.value = 3;
+      return;
+    }
+
     const response = await getApplicationStatus(username);
     if (response && response.code === 200) {
+      localStorage.setItem('ApplicationId', response.data.id);
       const type = response.data.applicationType;
       const status = response.data.applicationStatus;
       let step = 0;
-      if (status === 'REJECT' || status === null) {
-        step = 0;
-      } else if (status === 'PENDING') {
+      if (status === 'PENDING') {
         step = 1;
       } else if (status === 'APPROVED') {
         step = 2;
+      }else {
+        step = 0;
       }
       if (type === '签名申请') {
         applyStep1.value = step;

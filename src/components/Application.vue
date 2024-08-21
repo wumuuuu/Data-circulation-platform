@@ -1,7 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { fApplicationStatus, handleSubmit } from '@/service/ApprovalAPI.js'
+import { fApplicationStatus, handleSubmit } from '@/service/ApplicationAPI.js'
+import { SignTaskUpdates } from '../service/wsService.js'
+import { ElMessage } from 'element-plus'
+import { CountKey } from '@/service/SignProcessService.js'
 
 const activeMenu = ref('2');
 const router = useRouter();
@@ -66,6 +69,12 @@ const onSubmit = async (formData, Type) => {
 const onReset = (formData) => {
   formData.text = '';
   formData.dateTimeRange = null;
+};
+
+//添加私钥进行计算
+const handleKeySelection = async(file) => {
+  await CountKey(file);
+  return false; // 阻止自动上传
 };
 
 </script>
@@ -153,17 +162,41 @@ const onReset = (formData) => {
                 </div>
               </el-card>
               <el-card style="height: 87vh;" v-else-if="applyStep1 === 2">
+                <!-- 等待流程开始界面 -->
+                <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                  <div style="text-align: center;">
+                    <el-icon style="font-size: 48px; margin-bottom: 20px;">
+                      <i class="el-icon-loading"></i>
+                    </el-icon>
+                    <div class="sign" style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">
+                      申请已通过等待流程开始
+                    </div>
+                  </div>
+                </div>
+              </el-card>
+              <el-card style="height: 87vh;" v-else-if="applyStep1 === 3">
                 <div class = "sign">
                   正在进行的签名
                 </div>
                 <el-divider />
                 <div style="height: 65vh; overflow: auto;">
-                  <el-table :data="tableData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="Name" label="用户名" />
-                    <el-table-column prop="Status" label="状态"/>
+                  <el-table :data="SignTaskUpdates" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                    <el-table-column prop="username" label="用户名" align="center" />
+                    <el-table-column prop="status" label="状态" align="center"/>
                   </el-table>
+
                 </div>
-                <el-button type="primary" plain style="width: 100%;">添加私钥计算</el-button>
+                <el-row>
+                  <el-col :span="24" class="input-col">
+                    <el-upload
+                      class="upload-demo"
+                      :before-upload="handleKeySelection"
+                    >
+                      <el-button type="primary" plain style="width: 100%;">添加私钥计算</el-button>
+                    </el-upload>
+                  </el-col>
+                </el-row>
+
               </el-card>
             </el-col>
             <el-col :span="8">
@@ -212,7 +245,20 @@ const onReset = (formData) => {
                   </div>
                 </div>
               </el-card>
-              <el-card style="height: 87vh;" v-else-if="applyStep2 === 2">
+              <el-card style="height: 87vh;" v-else-if="applyStep1 === 2">
+                <!-- 等待流程开始界面 -->
+                <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                  <div style="text-align: center;">
+                    <el-icon style="font-size: 48px; margin-bottom: 20px;">
+                      <i class="el-icon-loading"></i>
+                    </el-icon>
+                    <div class="sign" style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">
+                      申请已通过等待流程开始
+                    </div>
+                  </div>
+                </div>
+              </el-card>
+              <el-card style="height: 87vh;" v-else-if="applyStep2 === 3">
                 <div class = "sign">
                   正在进行的确权
                 </div>
@@ -272,7 +318,20 @@ const onReset = (formData) => {
                   </div>
                 </div>
               </el-card>
-              <el-card style="height: 87vh;" v-else-if="applyStep3 === 2">
+              <el-card style="height: 87vh;" v-else-if="applyStep1 === 2">
+                <!-- 等待流程开始界面 -->
+                <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                  <div style="text-align: center;">
+                    <el-icon style="font-size: 48px; margin-bottom: 20px;">
+                      <i class="el-icon-loading"></i>
+                    </el-icon>
+                    <div class="sign" style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">
+                      申请已通过等待流程开始
+                    </div>
+                  </div>
+                </div>
+              </el-card>
+              <el-card style="height: 87vh;" v-else-if="applyStep3 === 3">
                 <div class = "sign">
                   正在仲裁的确权
                 </div>

@@ -1,68 +1,92 @@
-import { ref, onMounted } from 'vue';
-import Stomp from 'stompjs';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { getTaskStatus } from '@/api/api.js'
+import { SignProcess } from '@/service/SignProcessService.js'
 
-// 当前用户ID，实际应用中应从登录信息中获取，这里从 localStorage 中获取已登录的用户名
-export const currentUserId = localStorage.getItem('username');
-export const currentTaskId = ref(null);// 当前任务ID
-export const taskUpdates = ref([]);// 存储接收到的任务更新
+// 用于存储签名任务状态的响应数据
+export const SignTaskUpdates = ref([]);
 
-// 声明 stompClient 变量，用于存储 STOMP 客户端实例
-let stompClient = null;
+// 用于存储当前签名任务 ID
+export const signTaskId = ref(null);
+
+// WebSocket 对象
+let socket = null;
 
 /**
- * 建立 WebSocket 连接并配置 STOMP 客户端
+ * 建立 WebSocket 连接并处理消息、错误、关闭等事件
  */
-export function connectWebSocket() {
-  // 创建一个新的 WebSocket 连接，连接到指定的 WebSocket 服务器端点
-  const socket = new WebSocket('ws://localhost:8081/ws');
+function connectWebSocket() {
+  // 从 localStorage 中获取用户名，并在 WebSocket URL 中传递
+  const username = encodeURIComponent(localStorage.getItem('username'));
 
-  // 使用 STOMP 客户端包装 WebSocket 连接
-  stompClient = Stomp.over(socket);
+  // 创建新的 WebSocket 连接
+  socket = new WebSocket(`ws://localhost:8081/ws?username=${username}`);
 
-  // 连接 STOMP 服务器，成功时调用 onConnected，出错时调用 onError
-  stompClient.connect({}, onConnected, onError);
+  // 连接成功时的回调函数
+  socket.onopen = () => {
+    console.log('WebSocket connected successfully');
+
+    // 检查本地存储中的任务ID并更新任务状态
+    const storedTaskId = localStorage.getItem('signTaskId'); // 获取字符串类型的任务ID
+    console.log("storedTaskId: " + storedTaskId);
+
+    if (storedTaskId) {
+      signTaskId.value = storedTaskId;
+      updateTaskStatus(storedTaskId).then(() => {
+        console.log('Task status updated successfully');
+      }).catch((error) => {
+        console.error('Error updating task status:', error);
+      });
+    }
+  };
+
+  // 接收到消息时的回调函数
+  socket.onmessage = async (event) => {
+    const messageData = JSON.parse(event.data); // 解析接收到的 JSON 数据
+    console.log(messageData);
+    if (messageData.taskType === '签名') {
+      await SignProcess(messageData);
+    }
+  };
+
+  // 连接错误时的回调函数
+  socket.onerror = (error) => {
+    console.error('WebSocket 连接错误:', error);
+  };
+
+  // 连接关闭时的回调函数
+  socket.onclose = () => {
+    console.log('WebSocket 连接关闭');
+  };
 }
 
-/**
- * STOMP 客户端连接成功后的回调函数
- */
-function onConnected() {
-  // 订阅一个 STOMP 主题，当服务器在该主题上发送消息时调用 onMessageReceived
-  stompClient.subscribe('/topic/tasks', onMessageReceived);
-}
+
+
 
 /**
- * 当收到 STOMP 消息时处理的回调函数
- * @param {Object} payload - STOMP 消息负载，包含消息的主体内容
+ * 查询签名任务状态并更新 SignTaskUpdates
+ * @param {String} signTaskId - 签名任务 ID
  */
-function onMessageReceived(payload) {
-  // 将消息内容从 JSON 字符串解析为 JavaScript 对象
-  const task = JSON.parse(payload.body);
-
-  // 如果任务的 taskId 与当前任务ID匹配，并且当前用户是任务的参与者之一，则处理该任务
-  if (task.taskId === currentTaskId.value && task.participants.includes(currentUserId)) {
-    // 将任务添加到 taskUpdates 数组中
-    taskUpdates.value.push(task);
-    console.log('Received task update:', task);
-    // 在这里可以进一步处理任务，如更新页面状态等
+async function updateTaskStatus(signTaskId) {
+  try {
+    const response = await getTaskStatus(signTaskId);
+    SignTaskUpdates.value = response; // 假设响应数据包含签名者和任务状态
+    console.log('Updated task status:', response);
+  } catch (error) {
+    console.error('Error updating task status:', error);
   }
 }
 
 /**
- * 当 WebSocket 连接发生错误时调用的回调函数
- * @param {Object} error - 错误信息
- */
-function onError(error) {
-  // 打印错误信息到控制台
-  console.error('WebSocket connection error:', error);
-}
-
-/**
- * 自动连接 WebSocket，当组件挂载时调用
- * 使用 onMounted 生命周期钩子确保在组件挂载时调用 connectWebSocket
+ * 在组件挂载时自动连接 WebSocket，卸载时清理资源
  */
 export function useWebSocket() {
   onMounted(() => {
-    connectWebSocket();
+    connectWebSocket(); // 在组件挂载时建立 WebSocket 连接
+  });
+
+  onUnmounted(() => {
+    if (socket) {
+      socket.close(); // 在组件卸载时关闭 WebSocket 连接
+    }
   });
 }

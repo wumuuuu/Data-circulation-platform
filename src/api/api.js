@@ -75,11 +75,91 @@ export const getApplicationStatus = async (username) => {
 // 获取历史签名者的函数
 export const getHistoricalSigners = async (dataId) => {
   try {
-    const response = await request.get(`/process/getSigners?data_id=${dataId}`);
+    const response = await request.get(`/application/getSigners?data_id=${dataId}`);
     console.log('Historical signers response:', response);
     return response;
   } catch (error) {
     console.error('Error fetching historical signers:', error);
+    throw error;
+  }
+};
+
+// 启动签名流程
+export const startSignProcess = async (signProcessData) => {
+  try {
+    const response = await request.post('/process/init', signProcessData);
+    console.log('Sign process start response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error starting sign process:', error);
+    throw error;
+  }
+};
+
+// 提交签名结果
+export const submitSignature = async (signatureData) => {
+  try {
+    const response = await request.post('/process/submit', signatureData);
+    console.log('Submit signature response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error submitting signature:', error);
+    throw error;
+  }
+};
+
+// 查询任务状态
+export const getTaskStatus = async (taskId) => {
+  try {
+    const response = await request.get(`/process/status/${taskId}`);
+    console.log('Get task status response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error getting task status:', error);
+    throw error;
+  }
+};
+
+// 上传文件
+export const uploadFile = async (taskId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await request.post(`/process/upload/${taskId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('File upload response:', response);
+    return response;
+  } catch (error) {
+    console.error('File upload error:', error);
+    throw error;
+  }
+};
+
+// 下载文件
+export const downloadFile = async (taskId) => {
+  try {
+    const response = await request.get(`/process/download/${taskId}`, {
+      responseType: 'blob', // 确保文件以 Blob 格式接收
+    });
+
+    // 创建一个临时链接用于下载
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `file_${taskId}.txt`); // 假设文件是 txt 类型，你可以根据实际情况修改
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('File download response:', response);
+    return response;
+  } catch (error) {
+    console.error('File download error:', error);
     throw error;
   }
 };

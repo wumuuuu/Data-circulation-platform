@@ -10,8 +10,10 @@ import ApprovalProcess from '@/components/ApplicationsProcess.vue'
 import Application from '@/components/Application.vue'
 import {useWebSocket} from './service/wsService.js'
 
+
 // 在 setup 中调用 useWebSocket 函数，确保在应用启动时建立 WebSocket 连接
 useWebSocket();
+
 </script>
 <style>
 * {

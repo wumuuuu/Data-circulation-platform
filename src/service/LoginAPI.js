@@ -7,6 +7,7 @@ export const onLogin = async (loginData) => {
     // 调用接口完成登录
     const result = await userLoginService(loginData.value);
 
+    console.log(result);
     // 根据返回的结果代码进行处理
     switch (result.code) {
       case 0:

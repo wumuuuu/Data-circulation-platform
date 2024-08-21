@@ -25,11 +25,13 @@ const handleSelect = (index) => {
   }
 };
 
-// 删除成员
-const removeMember = (member) => {
-  const index = form.value.members.findIndex(m => m.name === member.name);
-  if (index !== -1) {
-    form.value.members.splice(index, 1);
+// 处理登出
+const handleCommand = (command) => {
+  if (command === 'logout') {
+    // 清除本地存储中的用户信息
+    localStorage.clear();
+    // 跳转到登录页面
+    router.push('/');
   }
 };
 

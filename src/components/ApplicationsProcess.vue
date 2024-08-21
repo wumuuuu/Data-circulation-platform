@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox} from 'element-plus';
-import { addUser, checkUser, handleAgree, handleReject, ListApplications } from '@/service/ApprovalProcessAPI.js'
+import { addUser, checkUser, handleAgree, handleReject, ListApplications } from '@/service/ApplicationProcessAPI.js'
 import { OpenTheSignProcess } from '@/service/SignProcessService.js'
 
 const activeMenu = ref('3');
@@ -22,7 +22,7 @@ const username = localStorage.getItem('username');
 
 const memberSearch = ref(null);
 
-// 准备上传的签名人
+// 准备上传的签名人和权限
 const signer = ref({
   members: []
 });
@@ -177,12 +177,15 @@ const addMember = async (memberSearch) => {
 
 // 提交表单
 const onSubmit = async () => {
+  form.value.signer.push(...signer.value.members);
+  // form.value.signer.push(signer.value);
   // const uploadRef = $refs.uploadRef;
   // if (dataFile.value && privateKeyFile.value) {
   //   let Type = ApplicationType.value;
   //   if (Type === '签名申请') {
-      console.log(form.value);
+  //     form.value.signer.push(...signer.value.members);
       await OpenTheSignProcess(form);
+      console.log(form.value);
   //
   //   } else if (Type === '确权申请') {
   //
@@ -193,7 +196,7 @@ const onSubmit = async () => {
   //   alert('请上传数据文件和私钥文件');
   // }
   // uploadRef.submit(); // 提交上传文件
-  console.log('表单提交:', signer.value);
+  // console.log('表单提交:', signer.value);
 };
 
 // 重置表单

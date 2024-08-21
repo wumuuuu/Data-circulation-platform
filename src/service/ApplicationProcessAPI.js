@@ -51,8 +51,8 @@ export const handleReject = async (id, tableData) => {
 }
 
 // 向后端发送请求，查找是否存在此用户
-export const checkUser = async (form, memberSearch) =>{
-  const userAlreadyExists = form.value.members.some(member => member.username === memberSearch);
+export const checkUser = async (signer, memberSearch) =>{
+  const userAlreadyExists = signer.value.members.some(member => member.username === memberSearch);
   if (userAlreadyExists) {
     ElMessage.error('该用户已在成员列表中，不能重复添加。');
     memberSearch = ''; // 清空输入框
@@ -63,7 +63,7 @@ export const checkUser = async (form, memberSearch) =>{
     const response = await checkUserExists(memberSearch);
     if (response.code === 2) {
       // 如果用户存在，将其添加到成员列表中
-      form.value.members.push({ username: memberSearch});
+      signer.value.members.push({ username: memberSearch, role: '' });
       memberSearch = ''; // 清空输入框
       ElMessage.success('用户添加成功');
     } else if (response.code === 0) {
@@ -133,3 +133,4 @@ const fetchSigners = async (dataId, form) => {
     throw error;
   }
 };
+

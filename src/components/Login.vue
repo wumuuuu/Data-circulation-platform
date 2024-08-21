@@ -1,7 +1,6 @@
 <script setup>
 import { Download, Lock, User } from '@element-plus/icons-vue'
 import { ref } from 'vue';
-import { calculatePublicKey, generatePrivateKey } from '../utils/CountKey.js'; //计算密钥对
 
 // 调用后台接口完成注册和登录函数
 import { onLogin, onRegister } from '@/service/LoginAPI.js'
@@ -17,6 +16,7 @@ const registerData = ref({
   password: '',
   rePassword: '',
   public_key: '',
+  role:'普通用户'
 });
 
 // 定义数据模型
@@ -67,6 +67,7 @@ const savePrivateKey = async () => {
     await writable.write(privateKey);
     await writable.close();
     alert('私钥保存成功');
+    localStorage.removeItem('privateKey');
   } catch (error) {
     console.error('保存失败', error);
   }
@@ -90,6 +91,7 @@ const clearRegisterData = () => {
     password: '',
     rePassword: '',
     public_key: '',
+    role:''
   };
 };
 </script>
