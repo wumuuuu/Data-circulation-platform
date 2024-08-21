@@ -1,8 +1,10 @@
 package com.example.demo2.controller;
 
 import com.example.demo2.Mapper.ApplicationMapper;
+import com.example.demo2.Mapper.ProcessMapper;
 import com.example.demo2.Model.ApiResponse;
 import com.example.demo2.Model.Application;
+import com.example.demo2.Model.Signer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,5 +96,15 @@ public class ApplicationController {
             log.error("Error while retrieving application status", e);
             return new ApiResponse(500, "Failed to retrieve application status", null);
         }
+    }
+
+    @Autowired
+    private ProcessMapper ProcessMapper;
+
+    // 直接调用 ProcessMapper 查询历史签名者并返回给前端
+    @GetMapping("/getSigners")
+    public List<Signer> getSigners(@RequestParam String data_id) {
+        // 直接调用 MyBatis Mapper 查询
+        return ProcessMapper.findByData_id(data_id);
     }
 }

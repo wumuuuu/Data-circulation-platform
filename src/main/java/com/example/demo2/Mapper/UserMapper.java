@@ -17,6 +17,6 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT * FROM test WHERE username = #{username}")
     User findByUsername(String username);
 
-    @Insert("INSERT INTO test (username, password, public_key) VALUES (#{username}, #{password}, #{public_key})")
+    @Insert("INSERT INTO test (username, password, public_key, role) VALUES (#{username}, #{password}, #{public_key}, #{role})")
     int insert(User user);
 }

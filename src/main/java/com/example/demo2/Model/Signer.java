@@ -1,9 +1,11 @@
 package com.example.demo2.Model;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("signer")
 public class Signer {
+    @TableId
     private String username;
     private String data_id;
     private String role;
