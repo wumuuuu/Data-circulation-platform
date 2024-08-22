@@ -1,5 +1,6 @@
 // 导入 request.js 请求工具
 import request from '@/utils/request.js';
+import { QueryPermissions } from '@/service/HomeAPI.js'
 
 // 提供调用注册接口的函数
 export const userRegisterService = async (registerData) => {
@@ -163,3 +164,30 @@ export const downloadFile = async (taskId) => {
     throw error;
   }
 };
+
+// 获取 update 表所有记录的函数
+export const getAllUpdateRecords = async () => {
+  try {
+    const response = await request.get('/data/records');
+    console.log('All update records response:', response);
+    return response;
+  } catch (error) {
+    console.error('Error fetching update records:', error);
+    throw error;
+  }
+};
+
+// 获取指定数据的查看权限
+export const getUserPermissions = async (username, dataId) => {
+  try {
+    const response = await request.get(`/user/permissions?username=${encodeURIComponent(username)}&dataId=${dataId}`);
+    console.log('Get user permissions response:', response);
+    return response;
+  } catch (error) {
+    console.error('Get user permissions error:', error);
+    throw error;
+  }
+};
+
+
+

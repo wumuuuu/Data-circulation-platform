@@ -75,6 +75,8 @@ export const CountKey = async (file) =>{
 
 //处理消息
 export const SignProcess= async (messageData) =>{
+  console.log(messageData);
+
   if (messageData.y && messageData.b) {
     localStorage.setItem('signTaskY', messageData.y);
     localStorage.setItem('signTaskB', messageData.b);
@@ -97,6 +99,7 @@ export const SignProcess= async (messageData) =>{
     localStorage.removeItem('signTaskId');
     localStorage.removeItem('signTaskY');
     localStorage.removeItem('signTaskB');
+    localStorage.removeItem('ApplicationId');
     console.log("签名已完成");
   } else if (messageData.taskId) {
     console.log(messageData);

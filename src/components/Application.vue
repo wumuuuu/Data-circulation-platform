@@ -3,8 +3,8 @@ import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { fApplicationStatus, handleSubmit } from '@/service/ApplicationAPI.js'
 import { SignTaskUpdates } from '../service/wsService.js'
-import { ElMessage } from 'element-plus'
 import { CountKey } from '@/service/SignProcessService.js'
+import { ElMessage } from 'element-plus'
 
 const activeMenu = ref('2');
 const router = useRouter();
@@ -77,6 +77,11 @@ const handleKeySelection = async(file) => {
   return false; // 阻止自动上传
 };
 
+// 检查当前用户是否正在签名
+const isCurrentUserSigning = () => {
+  const currentUser = localStorage.getItem('username');
+  return SignTaskUpdates.value.some(task => task.username === currentUser && task.status === '正在签名');
+}
 </script>
 <template>
   <el-container style="height: 100vh; width: 100%;">
@@ -179,7 +184,7 @@ const handleKeySelection = async(file) => {
                   正在进行的签名
                 </div>
                 <el-divider />
-                <div style="height: 65vh; overflow: auto;">
+                <div style="height: 60vh; overflow: auto;">
                   <el-table :data="SignTaskUpdates" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="username" label="用户名" align="center" />
                     <el-table-column prop="status" label="状态" align="center"/>
@@ -188,11 +193,11 @@ const handleKeySelection = async(file) => {
                 </div>
                 <el-row>
                   <el-col :span="24" class="input-col">
-                    <el-upload
-                      class="upload-demo"
-                      :before-upload="handleKeySelection"
-                    >
-                      <el-button type="primary" plain style="width: 100%;">添加私钥计算</el-button>
+                    <div v-if="!isCurrentUserSigning()" style="margin-bottom: 10px; font-size: 15px; color: dodgerblue">还未轮到您签名</div>
+                    <el-upload class="upload-demo" :before-upload="handleKeySelection">
+                      <el-button type="primary" plain style="width: 100%;" :disabled="!isCurrentUserSigning()">
+                        添加私钥计算
+                      </el-button>
                     </el-upload>
                   </el-col>
                 </el-row>
