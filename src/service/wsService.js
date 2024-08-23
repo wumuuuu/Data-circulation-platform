@@ -32,7 +32,6 @@ function connectWebSocket() {
     if (storedTaskId) {
       signTaskId.value = storedTaskId;
       updateTaskStatus(storedTaskId).then(() => {
-        console.log('Task status updated successfully');
       }).catch((error) => {
         console.error('Error updating task status:', error);
       });
