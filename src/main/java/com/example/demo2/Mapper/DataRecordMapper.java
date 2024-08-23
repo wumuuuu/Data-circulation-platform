@@ -1,6 +1,7 @@
 package com.example.demo2.Mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.demo2.Model.DataRecord;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -9,7 +10,7 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 @Mapper
-public interface UpdateMapper extends BaseMapper<Update> {
+public interface DataRecordMapper extends BaseMapper<Update> {
 
     /**
      * 插入签名参数 y 和 b 到 update 表
@@ -21,7 +22,8 @@ public interface UpdateMapper extends BaseMapper<Update> {
     @Insert("INSERT INTO `update` (dataid, signy, signb, usage_time) VALUES (#{dataId}, #{signy}, #{signb}, NOW())")
     void insertUpdate(String dataId, String signy, String signb);
 
-    @Select("SELECT * FROM update")
-    List<Update> getAllRecords();
+    @Select("SELECT * FROM `update`")
+    List<DataRecord> getAllRecords();
+
 
 }

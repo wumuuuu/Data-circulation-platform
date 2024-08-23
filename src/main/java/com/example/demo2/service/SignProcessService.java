@@ -1,6 +1,9 @@
 package com.example.demo2.service;
 
+import com.example.demo2.Mapper.DataRecordMapper;
+import com.example.demo2.Mapper.SignerMapper;
 import com.example.demo2.Model.Participant;
+import com.example.demo2.Model.Signer;
 import com.example.demo2.config.WSConfig;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -27,7 +30,13 @@ public class SignProcessService {
     private final WSConfig wsConfig;  // 使用 final 修饰，确保在构造函数中注入
 
     @Autowired
+    private DataRecordMapper dataRecordMapper;
+
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private SignerMapper signerMapper;
 
     @Autowired
     public SignProcessService(WSConfig wsConfig) {  // 使用构造函数注入 wsConfig
@@ -48,11 +57,12 @@ public class SignProcessService {
      * @param taskId 任务 ID，用于唯一标识签名任务。
      * @param participants 参与者列表，每个参与者的用户名。
      */
-    public void initializeSignTask(String taskId, List<Participant> participants, String y, String b) {
+    public void initializeSignTask(String taskId, List<Participant> participants, String y, String b, String dataId) {
         try {
             // 将参数 y 和 b 存储到 Redis
             redisTemplate.opsForHash().put("Task:" + taskId, "y", y);
             redisTemplate.opsForHash().put("Task:" + taskId, "b", b);
+            redisTemplate.opsForHash().put("Task:" + taskId, "dataId", dataId);
 
             // 提取参与者列表中的用户名和角色，并存储在 Redis 中
             for (Participant participant : participants) {
@@ -160,14 +170,38 @@ public class SignProcessService {
             logger.info("Next signer: {}", nextSigner);
 
             // 更新下一个签名者的状态为“正在签名”
-            redisTemplate.opsForHash().put("Task:" + taskId + ":status", nextSigner, "正在签名");
+            redisTemplate.opsForHash().put("Task:" + taskId + ":status", nextSigner, "等待签名");
 
             // 通过 WebSocket 通知下一个签名者
             wsConfig.getWebSocketHandler().sendMessageToUser(nextSigner, taskId, "签名","start", y, b);
         } else {
             // 如果没有下一个签名者，更新任务状态为 "complete"
             redisTemplate.opsForHash().put("Task:" + taskId, "status", "complete");
-            // 此处可以根据需要广播任务完成的消息
+            //获取该任务的dataId
+            String dataId = (String) redisTemplate.opsForHash().get("Task:" + taskId, "dataId");
+
+            // 将dataId和y和b存到Update数据表中
+
+            dataRecordMapper.insertUpdate(dataId, y, b);
+
+            //将所有签名者和role和数据dataId存到signer数据表中
+            for (Object participant : participants) {
+                String participantJson = (String) participant;
+                Map<String, String> participantMap = objectMapper.readValue(participantJson, new TypeReference<Map<String, String>>() {});
+
+                // 提取用户名和角色
+                String username = participantMap.get("username");
+                String role = participantMap.get("role");
+
+                // 创建 SignerRecord 对象
+                Signer signer = new Signer();
+                signer.setData_id(dataId);
+                signer.setUsername(username);
+                signer.setRole(role);
+
+                // 将 signerRecord 插入到数据库中
+                signerMapper.insert(signer);
+            }
 
             // 广播任务完成的消息给所有参与者
             for (Object participant : participants) {

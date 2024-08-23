@@ -1,6 +1,7 @@
 package com.example.demo2.controller;
 
 // 导入必要的类和注解
+import com.example.demo2.Mapper.SignerMapper;
 import com.example.demo2.Mapper.UserMapper;
 import com.example.demo2.Model.ApiResponse;
 import com.example.demo2.Model.User;
@@ -21,6 +22,9 @@ public class UserController {
 
     @Resource // 自动注入 UserMapper 实例，负责与数据库进行交互
     private UserMapper userMapper;
+
+    @Resource // 自动注入 UserMapper 实例，负责与数据库进行交互
+    private SignerMapper signerMapper;
 
     @Autowired // 自动注入 PasswordEncoder 实例，负责加密和验证密码
     private PasswordEncoder passwordEncoder;
@@ -116,8 +120,6 @@ public class UserController {
         System.out.println("SecurityContextHolder updated for user: " + username);
     }
 
-
-
     /**
      * 检查用户名是否存在
      * 处理 HTTP GET 请求，URL 为 /application/exists
@@ -147,4 +149,23 @@ public class UserController {
     public User getUser(@RequestParam Integer id) {
         return userMapper.selectById(id); // 调用 UserMapper 的 selectById 方法查询用户
     }
+
+
+    /**
+     * 处理用户查询数据权限请求
+     * 处理 HTTP GET 请求，URL 为 /user/Permissions
+     * @param username 从请求参数中获取 username 和 dataId
+     * @return 返回根据 ID 查询到的用户权限
+     */
+    @GetMapping("/permissions")
+    public ApiResponse getPermissions(@RequestParam("username") String username, @RequestParam("dataId") String dataId) {
+        String role = signerMapper.getPermissions(username, dataId);
+        if (role == null) {
+            return new ApiResponse(400, "没有权限", null);
+        }else {
+            return new ApiResponse(200, "用户权限查询成功", role);
+        }
+
+    }
+
 }

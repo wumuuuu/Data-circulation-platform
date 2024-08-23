@@ -2,25 +2,20 @@ package com.example.demo2.controller;
 
 import com.example.demo2.Mapper.DataMapper;
 import com.example.demo2.Mapper.SignerMapper;
-import com.example.demo2.Mapper.UpdateMapper;
+import com.example.demo2.Mapper.DataRecordMapper;
 import com.example.demo2.Model.Participant;
-import com.example.demo2.Model.data;
 import com.example.demo2.service.SignProcessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,7 +28,7 @@ public class SignProcessController {
     private SignerMapper signerMapper;
 
     @Autowired
-    private UpdateMapper updateMapper;
+    private DataRecordMapper dataRecordMapper;
 
     @Autowired
     private SignProcessService signProcessService;
@@ -62,16 +57,22 @@ public class SignProcessController {
         // 将 "participants" 转换为 List<Participant>
         List<Participant> participants = objectMapper.convertValue(
                 requestData.get("participants"),
-                new TypeReference<>() {
-                }
+                new TypeReference<>() {}
         );
 
         // 从 requestData 中提取参数 y 和 b
         String y = (String) requestData.get("y");
         String b = (String) requestData.get("b");
+        String dataId = (String) requestData.get("dataId");
+        String content = (String) requestData.get("content");
+
+        // 将dataId和原数据存入data表中
+        if(!dataMapper.existsDataId(dataId)){
+            dataMapper.insertContent(dataId, content);
+        }
 
         // 初始化签名任务，将任务状态和参与者列表存储到 Redis
-        signProcessService.initializeSignTask(taskId, participants, y, b);
+        signProcessService.initializeSignTask(taskId, participants, y, b, dataId);
 
         // 向所有签名者发送 taskId
         participants.forEach(participant -> {
@@ -82,16 +83,6 @@ public class SignProcessController {
             }
         });
 
-        //从 requestData 中提取参数 dataId
-        String dataId = (String) requestData.get("dataId");
-
-        //将dataId和所有签名者还有y和b都存到对应数据表中
-        dataMapper.insertData(dataId);
-        participants.forEach(participant -> {
-            signerMapper.insertSigner(participant.getUsername(), dataId, participant.getRole());
-        });
-        updateMapper.insertUpdate(dataId, y, b);
-
         // 返回生成的 taskId
         return Map.of("taskId", taskId);
     }
@@ -99,11 +90,12 @@ public class SignProcessController {
 
     /**
      * 处理签名者提交的签名结果，并通知下一个签名者。
+     *
      * @param formData 包含任务 ID、签名者用户名、签名结果和任务参数 y, b 的表单数据。
      * @return 返回处理结果信息。
      */
     @PostMapping("/submit")
-    public String submitSignature(@RequestBody Map<String, String> formData) {
+    public ResponseEntity<Map<String, String>> submitSignature(@RequestBody Map<String, String> formData) {
         String taskId = formData.get("taskId");
         String y = formData.get("y");
         String b = formData.get("b");
@@ -111,12 +103,20 @@ public class SignProcessController {
         try {
             // 存储签名结果并通知下一个签名者
             signProcessService.storeSignatureAndNotifyNext(taskId, y, b);
-            return "签名提交成功！";
+
+            // 成功返回的响应
+            return ResponseEntity.ok(Map.of("message", "签名提交成功！"));
         } catch (IOException e) {
-            e.printStackTrace();
-            return "处理签名时出错：" + e.getMessage();
+            // 处理签名存储或通知过程中的 IO 异常
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "签名提交失败，服务器内部错误！"));
+        } catch (Exception e) {
+            // 捕获所有其他异常
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "签名提交失败，请检查提交的数据！"));
         }
     }
+
 
     /**
      * 查询特定任务的所有签名者的签名状态。
@@ -144,21 +144,5 @@ public class SignProcessController {
             e.printStackTrace();
             return "文件上传失败：" + e.getMessage();
         }
-    }
-
-    /**
-     * 签名完成后，允许签名者下载文件。
-     * @param taskId 任务 ID。
-     * @return 返回文件资源。
-     */
-    @GetMapping("/download/{taskId}")
-    public ResponseEntity<FileSystemResource> downloadFile(@PathVariable String taskId) {
-        FileSystemResource file = signProcessService.loadFileAsResource(taskId);
-        String fileName = taskId + "_" + file.getFilename(); // 获取文件名
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .body(file);
     }
 }

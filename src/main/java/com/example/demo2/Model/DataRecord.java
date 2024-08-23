@@ -1,12 +1,16 @@
 package com.example.demo2.Model;
 
-import java.sql.Date;
+import com.baomidou.mybatisplus.annotation.TableName;
 
-public class Updata {
+import java.time.LocalDateTime;
+
+@TableName("Update")
+public class DataRecord {
     private String dataid;
     private String signy;
     private String signb;
-    private Date usageTime;
+    private LocalDateTime usageTime;
+
 
     public String getDataid() {
         return dataid;
@@ -16,11 +20,11 @@ public class Updata {
         this.dataid = dataid;
     }
 
-    public Date getUsageTime() {
+    public LocalDateTime getUsageTime() {
         return usageTime;
     }
 
-    public void setUsageTime(Date usageTime) {
+    public void setUsageTime(LocalDateTime usageTime) {
         this.usageTime = usageTime;
     }
 
