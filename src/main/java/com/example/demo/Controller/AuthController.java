@@ -1,5 +1,6 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Mapper.UserMapper;
 import com.example.demo.Model.User;
 import com.example.demo.Service.CustomUserDetailsService;
 import com.example.demo.Service.ECDHService;
@@ -33,9 +34,27 @@ public class AuthController {
     @Autowired
     private HttpSession session;
 
+    @Autowired
+    private UserMapper userMapper;
+
+
+    @PostMapping("/find-username")
+    public APIResponse<String> findUsername(@RequestBody Map<String, Object> requestBody) {
+        try{
+            String username = (String) requestBody.get("username");
+            if(userMapper.findByUsername(username) == null){
+                return APIResponse.success(null);
+            }else{
+                return APIResponse.error(400, "用户名重复");
+            }
+        }catch (Exception e){
+            return APIResponse.error(500, "查找用户名失败: " + e.getMessage());
+        }
+    }
+
     @RequestMapping(value = "/exchange-keys", method = RequestMethod.OPTIONS)
     public APIResponse<String> handleOptions() {
-        return APIResponse.success("1");// 直接返回 200，处理预检请求
+        return APIResponse.success(null);// 直接返回 200，处理预检请求
     }
     /**
      * 处理密钥交换的 POST 请求。客户端将其公钥发送给服务器，
@@ -85,9 +104,10 @@ public class AuthController {
     @PostMapping("/register")
     public APIResponse<String> registerUser(@RequestBody Map<String, Object> requestBody) {
         try {
-            // 从 requestBody 提取 username 和加密后的 password
+            // 从 requestBody 提取 username 和加密后的 password 和加密后的 public_key
             String username = (String) requestBody.get("username");
             String encryptedPassword = (String) requestBody.get("password");
+            String encryptedPublicKey = (String) requestBody.get("public_key");
 
             // 1. 从会话中获取先前存储的共享密钥
             byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
@@ -97,13 +117,15 @@ public class AuthController {
                 return APIResponse.error(400, "共享密钥未找到，请重新进行密钥交换");
             }
 
-            // 2. 使用共享密钥解密客户端发送的密码
+            // 2. 使用共享密钥解密客户端发送的密码和公钥
             String decryptedPassword = dhService.decrypt(encryptedPassword, sharedSecret);
+            String decryptedPublicKey = dhService.decrypt(encryptedPublicKey, sharedSecret);
 
             // 3. 创建用户对象并保存到数据库
             User user = new User();
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(decryptedPassword)); // 对解密后的密码进行加密
+            user.setPublic_key(passwordEncoder.encode(decryptedPublicKey)); // 对解密后的公钥进行加密
             user.setRole((String) requestBody.get("role")); // 获取其他字段如角色
             customUserDetailsService.saveUser(user); // 保存用户到数据库
 
@@ -155,7 +177,10 @@ public class AuthController {
                 // 存储共享密钥以备将来使用
                 customUserDetailsService.storeSharedSecret(userDetails.getUsername(), encodedSecret);
 
-                return APIResponse.success("登录成功");
+                // 获取用户的角色信息
+                String role = customUserDetailsService.findUserRoleByUsername(username);
+
+                return APIResponse.success(role);
             } else {
                 // 用户名或密码错误，返回未授权响应
                 return APIResponse.error(401, "用户名或密码错误");

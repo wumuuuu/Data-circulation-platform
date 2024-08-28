@@ -35,7 +35,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)  // 使用新的方式禁用 CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**", "/login", "/register", "/exchange-keys").permitAll()
+                        .requestMatchers("/**", "/login", "/register", "/exchange-keys", "/find-username").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

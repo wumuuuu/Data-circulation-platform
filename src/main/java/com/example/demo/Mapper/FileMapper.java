@@ -1,13 +1,16 @@
 package com.example.demo.Mapper;
 
-import com.example.demo.Model.FileEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.demo.Model.File;
+import com.example.demo.Model.User;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
-import java.util.Optional;
+import java.util.List;
 
-@Repository
-public interface FileMapper extends JpaRepository<FileEntity, Long> {
-    // 这里你可以添加自定义的查询方法，比如根据文件名查找文件
-    Optional<FileEntity> findByFileName(String fileName);
+@Mapper
+public interface FileMapper extends BaseMapper<File> {
+
+
+
 }

@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -67,5 +69,45 @@ public class CustomUserDetailsService implements UserDetailsService {
         } else {
             throw new UsernameNotFoundException("User not found");
         }
+    }
+
+    // 修改用户角色
+    public void modifyUserRole(String username, String newRole) {
+        User user = userMapper.findByUsername(username);
+        if (user != null) {
+            user.setRole(newRole);
+            userMapper.update(user); // 更新用户角色信息
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
+    // 删除用户
+    public void deleteUser(String username) {
+        User user = userMapper.findByUsername(username);
+        if (user != null) {
+            userMapper.deleteById(user.getId()); // 根据用户ID删除用户
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
+    // 通过用户名查找用户权限（角色）
+    public String findUserRoleByUsername(String username) {
+        User user = userMapper.findByUsername(username);
+        if (user != null) {
+            return user.getRole();
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
+    /**
+     * 获取所有用户
+     *
+     * @return List<User> 所有用户的列表
+     */
+    public List<User> getAllUsers() {
+        return userMapper.findAllUsers();
     }
 }

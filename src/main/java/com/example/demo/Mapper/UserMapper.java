@@ -2,10 +2,9 @@ package com.example.demo.Mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.demo.Model.User;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
 
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
@@ -26,5 +25,11 @@ public interface UserMapper extends BaseMapper<User> {
 
     // 更新用户信息
     @Update("UPDATE user SET username = #{username}, password = #{password}, role = #{role}, shared_secret = #{shared_secret} WHERE id = #{id}")
-    int update(User user);
+    void update(User user);
+
+    @Delete("DELETE FROM user WHERE id = #{id}")
+    void deleteById(String id);
+
+    @Select("SELECT id, username, role FROM user")
+    List<User> findAllUsers();
 }
