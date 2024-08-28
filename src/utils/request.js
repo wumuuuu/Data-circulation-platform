@@ -6,7 +6,7 @@ let sharedKey = await getSharedKey();
 
 // 判断是否需要加密或解密的辅助函数
 const isEncryptionRequired = (url) => {
-  return !url.includes('/exchange-keys');
+  return !url.includes('/exchange-keys') && !url.includes('/find-username');
 };
 
 // 包装 Fetch API 的请求函数

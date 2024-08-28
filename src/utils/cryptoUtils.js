@@ -1,3 +1,8 @@
+/**
+ * 生成数据传输的密钥对
+ * 不要和签名密钥对搞混
+ */
+
 // 用于存储共享密钥的变量
 let sharedKey = null;
 
@@ -43,12 +48,6 @@ export async function generateECDHKeyPair() {
     name: "ECDH",
     namedCurve: "P-256" // 使用 P-256 椭圆曲线
   }, true, ["deriveKey", "deriveBits"]);
-}
-
-function toHex(arrayBuffer) {
-  return Array.from(new Uint8Array(arrayBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
 }
 
 // 生成共享密钥并存储

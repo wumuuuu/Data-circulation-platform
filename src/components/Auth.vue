@@ -1,7 +1,7 @@
 <script setup>
 import { Download, Lock, User } from '@element-plus/icons-vue'
 import { ref } from 'vue';
-import { onLogin, onRegister } from '@/service/authservice.js'
+import { onLogin, onRegister, toSavePrivateKey } from '@/service/AuthService.js'
 
 // 控制注册与登录表单的显示， 默认显示注册
 const isRegister = ref(false);
@@ -46,28 +46,7 @@ const rules = ref({
 
 // 使用文件系统访问 API 保存私钥到指定位置
 const savePrivateKey = async () => {
-  // const privateKey = localStorage.getItem('privateKey');
-  // const options = {
-  //   types: [
-  //     {
-  //       description: 'Text Files',
-  //       accept: {
-  //         'text/plain': ['.pem'],
-  //       },
-  //     },
-  //   ],
-  // };
-  //
-  // try {
-  //   const handle = await window.showSaveFilePicker(options);
-  //   const writable = await handle.createWritable();
-  //   await writable.write(privateKey);
-  //   await writable.close();
-  //   alert('私钥保存成功');
-  //   localStorage.removeItem('privateKey');
-  // } catch (error) {
-  //   console.error('保存失败', error);
-  // }
+  await toSavePrivateKey();
 };
 
 const register = async () => {
