@@ -1,31 +1,98 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import router from '@/router.js'
-import { deleteUser, listUsers, updateUser } from '@/service/UserMgrService.js'
+// import { listUsers } from '@/service/UserMgrService.js'
 
-const activeMenu = ref('4');
+const activeMenu = ref('2');
 const username = localStorage.getItem('username');
 
 // 分页相关数据
-let tableData = ref([]);
+// let tableData = ref([]);
 const currentPage = ref(1); // 当前页
 const pageSize = ref(12); // 每页显示条数
 
-// 存储当前正在编辑的用户信息
-const editingUser = ref({
-  id: null,
-  username: '',
-  role: ''
-});
-const isEditing = ref(false);
+// 表格数据
+const tableData = ref([
+  { time: 1, status: '等待管理员审核' },
+  { time: 2, status: '管理员审核未通过' },
+  { time: 3, status: '数据所有方审核未通过' },
+  { time: 4, status: '流程已开启' }
+]);
+
+// 定义步骤描述
+const stepDescriptions = [
+  { title: '已提交' },
+  { title: '管理员审核' },
+  { title: '数据所有方审核' },
+  { title: '流程' }
+];
+
+/// 根据当前状态获取步骤索引
+function getStepIndex(status) {
+  const statusToStep = {
+    '已提交': 0,
+    '等待管理员审核': 1,
+    '管理员审核通过': 2,
+    '管理员审核未通过': 1,  // 审核未通过仍处于审核步骤
+    '等待数据所有方审核': 2,
+    '数据所有方审核通过': 3,
+    '数据所有方审核未通过': 2,  // 审核未通过仍处于审核步骤
+    '流程已开启': 3
+  };
+  return statusToStep[status] || 0;
+}
+
+// 获取步骤状态
+function getStepStatus(status, stepIndex) {
+  const stepOrder = [
+    '已提交',
+    '等待管理员审核',
+    '管理员审核通过',
+    '管理员审核未通过',
+    '等待数据所有方审核',
+    '数据所有方审核通过',
+    '数据所有方审核未通过',
+    '流程已开启'
+  ];
+
+  const currentIndex = stepOrder.indexOf(status);
+
+  // 如果管理员审核未通过，则返回第二步error，后续步骤wait
+  if (status === '管理员审核未通过') {
+    if (stepIndex === 1) {
+      return 'error';
+    } else if (stepIndex > 1) {
+      return 'wait';
+    }
+  }
+
+  // 如果数据所有方审核未通过，则返回第三步error，后续步骤wait
+  if (status === '数据所有方审核未通过') {
+    if (stepIndex === 2) {
+      return 'error';
+    } else if (stepIndex > 2) {
+      return 'wait';
+    }
+  }
+
+  if (stepIndex < currentIndex) {
+    return 'success';
+  } else if (stepIndex === currentIndex) {
+    return 'process';
+  } else {
+    return 'wait';
+  }
+}
+
 
 onMounted(() => {
   fetchApplications();
+  // updateTaskSteps();
 });
 
-// 获取用户列表
+// 获取申请记录列表
 const fetchApplications = async () => {
-  tableData.value = await listUsers();
+  // tableData.value = await listUsers();
   console.log(tableData);
 };
 
@@ -64,39 +131,6 @@ const handleSelect = (index) => {
       router.push('/UserMgr');
       break;
   }
-};
-
-// 删除用户
-const onDelete = async (username) => {
-  if(await deleteUser(username) === 'success'){
-    await fetchApplications(); // 删除成功后重新加载用户列表
-  }
-};
-
-// 修改用户信息
-const onModify = (id) => {
-  const user = tableData.value.find(u => u.id === id);
-  if (user) {
-    editingUser.value = { ...user }; // 深拷贝用户信息到编辑状态
-    isEditing.value = true; // 设置编辑状态为 true
-  }
-};
-
-// 保存修改后的用户信息
-const saveChanges = async () => {
-  try {
-    await updateUser(editingUser.value);
-    alert('用户信息更新成功');
-    await fetchApplications(); // 更新成功后重新加载用户列表
-    isEditing.value = false; // 退出编辑模式
-  } catch (error) {
-    console.error('更新用户信息时出错:', error);
-  }
-};
-
-// 取消编辑
-const cancelEdit = () => {
-  isEditing.value = false; // 退出编辑模式
 };
 
 
@@ -141,28 +175,23 @@ const cancelEdit = () => {
       <el-container>
         <el-aside width="100%" style="padding: 20px;">
           <el-row :gutter="20">
-            <el-col :span="24">
+            <el-col :span="16">
               <el-card style="height: 87vh;">
-                <div class="sign">用户管理</div>
+                <div class="sign">历史申请</div>
                 <el-divider />
                 <div style="height: 66vh;">
                   <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="id" label="用户ID" align="center" />
-                    <el-table-column prop="username" label="用户名" align="center" >
+                    <el-table-column prop="time" label="申请时间" align="center" width = "100%"/>
+                    <el-table-column prop="status" label="进展" align="center" width = "600">
                       <template #default="scope">
-                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.username" />
-                        <span v-else>{{ scope.row.username }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="role" label="用户权限" align="center" >
-                      <template #default="scope">
-                        <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">
-                          <el-option label="Admin" value="Admin"></el-option>
-                          <el-option label="普通用户" value="普通用户"></el-option>
-                          <el-option label="数据所有方" value="数据所有方"></el-option>
-                          <el-option label="审核人员" value="审核人员"></el-option>
-                        </el-select>
-                        <span v-else>{{ scope.row.role }}</span>
+                        <el-steps style="width: 100%" :active="getStepIndex(scope.row.status)" align-center finish-status="success">
+                          <el-step
+                            v-for="(step, index) in stepDescriptions"
+                            :key="index"
+                            :title="step.title"
+                            :status="getStepStatus(scope.row.status, index)"
+                          />
+                        </el-steps>
                       </template>
                     </el-table-column>
                     <el-table-column fixed="right" label="操作" align="center">
@@ -170,19 +199,11 @@ const cancelEdit = () => {
                         <el-button link type="primary" size="small" @click="onDelete(scope.row.username)">
                           删除
                         </el-button>
-                        <el-button link type="primary" size="small" @click="onModify(scope.row.id)" v-if="!isEditing || editingUser.id !== scope.row.id">
-                          修改
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="saveChanges" v-if="isEditing && editingUser.id === scope.row.id">
-                          完成
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="cancelEdit" v-if="isEditing && editingUser.id === scope.row.id">
-                          取消
-                        </el-button>
                       </template>
                     </el-table-column>
                   </el-table>
                 </div>
+
                 <!-- 分页控件 -->
                 <el-pagination
                   background
@@ -192,6 +213,12 @@ const cancelEdit = () => {
                   v-model:currentPage="currentPage"
                   style="margin-top: 20px; text-align: center; display: flex; justify-content: center;"
                 />
+              </el-card>
+            </el-col>
+            <el-col :span="8">
+              <el-card style="height: 87vh;">
+                <div class="sign">用户管理</div>
+                <el-divider />
               </el-card>
             </el-col>
           </el-row>

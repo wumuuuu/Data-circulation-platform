@@ -1,4 +1,5 @@
 import { get, post } from '@/utils/request.js'; // 导入 POST 请求函数
+import { ElMessage } from 'element-plus'
 
 export const listUsers = async (tableData) => {
   try {
@@ -21,13 +22,14 @@ export const deleteUser = async (username) => {
     if (confirmed) {
       const response = await post('/delete-user', { username });
       if (response.success) {
-        alert('用户删除成功');
+        ElMessage.success('用户删除成功');
         return "success"; // 删除成功
       } else {
         throw new Error(response.message); // 如果请求失败，抛出错误
       }
     }
   } catch (error) {
+    ElMessage.error('删除用户失败');
     console.error('删除用户失败:', error);
     throw error;
   }
@@ -38,11 +40,13 @@ export const updateUser = async (user) => {
   try {
     const response = await post('/update-user', user); // 更新用户信息的 API
     if (response.success) {
+      ElMessage.success('更新用户信息成功');
       return response.data; // 返回更新后的数据
     } else {
       throw new Error(response.message); // 抛出错误信息
     }
   } catch (error) {
+    ElMessage.error('更新用户信息失败:');
     console.error('更新用户信息失败:', error);
     throw error;
   }

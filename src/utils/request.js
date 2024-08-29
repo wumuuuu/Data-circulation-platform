@@ -1,8 +1,6 @@
-import { encryptData, decryptData, getSharedKey } from '@/utils/cryptoUtils.js'
+import { sharedKey } from '@/utils/cryptoUtils.js'
 
 const baseURL = '/api';
-
-let sharedKey = await getSharedKey();
 
 // 判断是否需要加密或解密的辅助函数
 const isEncryptionRequired = (url) => {
@@ -15,14 +13,11 @@ const request = async (url, options = {}) => {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-
   // 检查并确保 options.body 是对象
   if (options.body && typeof options.body === 'object') {
     // 直接字符串化加密后的请求体或普通对象
     options.body = JSON.stringify(options.body);
     console.log("Request body:", options.body);
-  } else {
-    console.error("Request body is not an object or is undefined:", options.body);
   }
 
   // 打印最终的请求选项
@@ -55,6 +50,11 @@ const request = async (url, options = {}) => {
       };
     } else {
       console.error(`Error ${apiResponse.code}: ${apiResponse.message}`);
+      return {
+        success: apiResponse.code === 200,
+        data: data,
+        message: apiResponse.message,
+      };
       throw new Error(apiResponse.message);
     }
   } catch (error) {

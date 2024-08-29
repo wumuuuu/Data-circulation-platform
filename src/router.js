@@ -2,7 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './components/Home.vue'
 // import ApprovalProcess from './components/ApplicationsProcess.vue'
-// import Application from '@/components/Application.vue'
+import Application from '@/components/Application.vue'
 import Auth from '@/components/Auth.vue'
 import UserMgr from '@/components/UserMgr.vue'
 
@@ -21,12 +21,12 @@ const routes = [
   //   component: Home,
   //   meta: { requiresAuth: true }  // 需要登录权限
   // },
-  // {
-  //   path: '/application',
-  //   name: 'Application',
-  //   component: Application,
-  //   meta: { requiresAuth: true }  // 需要登录权限
-  // },
+  {
+    path: '/application',
+    name: 'Application',
+    component: Application,
+    meta: { requiresAuth: true }  // 需要登录权限
+  },
   // {
   //   path: '/approvalProcess',
   //   name: 'ApprovalProcess',

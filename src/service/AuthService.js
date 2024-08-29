@@ -1,195 +1,180 @@
 // 导入所需的加密和请求处理工具函数
 import {
-  arrayBufferToBase64, // 将 ArrayBuffer 转换为 Base64 字符串
-  generateECDHKeyPair, // 生成 ECDH 密钥对（用于非对称加密）
-  encryptData, // 使用对称加密共享密钥加密数据
-  decryptData, // 使用对称加密共享密钥解密数据
-  getSharedKey, // 获取已生成的共享密钥
-  generateSharedECDHSecret, // 生成 ECDH 的共享密钥
-  clearSharedKey // 清除共享密钥
-} from '@/utils/cryptoUtils.js';
-import { post } from '@/utils/request.js'; // 导入 POST 请求函数
-import { calculatePublicKey, generatePrivateKey } from '@/utils/CountKey.js';
-import router from '@/router.js'
+  clearSharedKey, // 用于清除存储的共享密钥
+  initKeyExchange, // 用于初始化密钥交换过程
+  clientKeyPair, // 存储客户端的密钥对
+  sharedKey // 存储生成的共享密钥
+} from '@/utils/cryptoUtils.js'
 
-// 初始化全局变量，用于存储密钥对和共享密钥
-let clientKeyPair = null;
-let sharedSecret = null;
-let serverPublicKey = null;
+import {
+  generatePrivateKey, // 使用 Web Worker 生成私钥的函数
+  calculatePublicKey, // 使用 Web Worker 计算公钥的函数
+  encryptData, // 使用 Web Worker 加密数据的函数
+  decryptData // 使用 Web Worker 解密数据的函数
+} from '@/service/cryptoWorkerService.js';
 
-// 初始化 ECDH 密钥对, 获取服务器公钥, 生成共享密钥
-export async function initKeyExchange() {
-  // 生成客户端的 ECDH 密钥对
-  clientKeyPair = await generateECDHKeyPair();
+import { post } from '@/utils/request.js'; // 导入用于发送 POST 请求的函数
+import router from '@/router.js'; // 导入 Vue 路由器，用于页面跳转
+import { ElMessage } from 'element-plus'
 
-  // 将客户端的公钥发送到服务器，接收服务器返回的公钥
-  serverPublicKey = await exchangeKeys(clientKeyPair.publicKey);
-
-  // 使用客户端私钥和服务器公钥生成共享密钥
-  await generateSharedECDHSecret(clientKeyPair.privateKey, serverPublicKey);
-
-  // 获取生成的共享密钥
-  sharedSecret = await getSharedKey();
-}
-
-// 清除密钥交换信息
-export async function clearKeyExchange() {
-  clientKeyPair = null; // 清空客户端密钥对
-  serverPublicKey = null; // 清空服务器公钥
-  sharedSecret = null; // 清空共享密钥
-}
-
-// 处理注册请求
+// 处理用户注册请求的函数
 export async function onRegister(registerData) {
-  // 验证两次输入的密码是否一致
-  if (registerData.value.password !== registerData.value.rePassword) {
+  // 验证用户输入的两次密码是否一致
+  if (registerData.password !== registerData.rePassword) {
     alert('两次输入的密码不一致');
-    return; // 阻止继续执行注册流程
+    return; // 如果密码不一致，则停止注册流程
   }
 
-  // 如果密钥对未生成，先初始化密钥交换
+  // 如果客户端密钥对未生成，则先初始化密钥交换
   if (!clientKeyPair) {
     await initKeyExchange();
   }
 
-  // 查找用户名是否重复
-  const Response = await post('/find-username', {
-    username: registerData.username
-  });
+  // 发送请求到服务器，检查用户名是否已存在
+  const response = await post('/find-username', { username: registerData.username });
 
-  if (Response.success) {
-    console.log('用户名没有重复');
-  } else {
-    console.error('用户名已存在', Response.message);
-    return; // 阻止注册，因为用户名已存在
+  // 如果用户名已存在，则停止注册流程
+  if (!response.success) {
+    ElMessage.error('用户名已存在');
+    return;
   }
 
-  // 生成签名私钥（一般用于数字签名）
-  const privateKey = generatePrivateKey();
+  try {
+    // 使用 Web Worker 生成私钥
+    const privateKey = await generatePrivateKey();
 
-  // 计算签名公钥
-  const publicKey = calculatePublicKey(privateKey);
+    // 使用生成的私钥计算相应的公钥
+    const publicKey = await calculatePublicKey(privateKey);
 
-  // 使用生成的共享密钥加密用户的密码和公钥
-  const encryptedPassword = await encryptData(sharedSecret, registerData.password);
-  const encryptedPublicKey = await encryptData(sharedSecret, publicKey);
+    // 使用生成的共享密钥加密用户的密码和公钥
+    const encryptedPassword = await encryptData(sharedKey, registerData.password);
+    const encryptedPublicKey = await encryptData(sharedKey, publicKey);
 
-  // 解密数据以进行验证，确保加密过程正确
-  const decryptedPassword = await decryptData(sharedSecret, encryptedPassword);
-  console.log("Decrypted Password:", decryptedPassword);
+    // 解密加密后的密码以验证加密过程是否正确
+    const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
+    console.log("Decrypted Password:", decryptedPassword);
 
-  // 复制原始的注册数据，并将密码替换为加密后的密码
-  const payload = {
-    ...registerData,
-    password: encryptedPassword,
-    public_key: encryptedPublicKey, // 包含加密后的公钥
-    rePassword: '' // 清空重复密码字段
-  };
+    // 复制注册数据对象，并用加密后的密码替换原始密码
+    const payload = {
+      ...registerData,
+      password: encryptedPassword, // 加密后的密码
+      public_key: encryptedPublicKey, // 加密后的公钥
+      rePassword: '' // 清空重复密码字段
+    };
 
-  // 验证解密后的密码是否与原密码一致
-  if (decryptedPassword === registerData.password) {
-    console.log("解密验证成功，数据一致。");
-  } else {
-    console.error("解密验证失败，数据不一致！");
-  }
-
-  // 发送注册请求到服务器
-  const response = await post('/register', payload);
-
-  if (response.success) {
-    console.log('注册成功');
-    clearSharedKey(); // 清除共享密钥
-    await clearKeyExchange(); // 清除密钥交换信息
-    localStorage.setItem('privateKey', privateKey.toString()); // 将私钥保存到本地存储
-    document.getElementById('savePrivateKeyButton').style.display = 'block'; // 显示保存私钥的按钮
-  } else {
-    console.error('注册失败', response.message);
-  }
-}
-
-// 处理登录请求
-export async function onLogin(loginData) {
-  // 如果密钥对未生成，先初始化密钥交换
-  if (!clientKeyPair) {
-    await initKeyExchange();
-  }
-
-  // 使用共享密钥加密用户输入的密码
-  const encryptedPassword = await encryptData(sharedSecret, loginData.password);
-  console.log("Decrypted Password:", encryptedPassword);
-
-  // 解密数据以进行验证，确保加密过程正确
-  const decryptedPassword = await decryptData(sharedSecret, encryptedPassword);
-  console.log("Decrypted Password:", decryptedPassword);
-
-  // 发送登录请求到服务器
-  const response = await post('/login', {
-    username: loginData.username,
-    password: encryptedPassword
-  });
-
-  if (response.success) {
-    console.log('登录成功');
-
-    // 将服务器返回的身份标识（如 Token）保存到本地存储
-    const role = response.data;
-    localStorage.setItem('role', role);
-    localStorage.setItem('authToken', response.token);
-    localStorage.setItem('username', loginData.username);
-
-    // 根据角色跳转到相应的页面
-    if (role === 'Admin') {
-      await router.push({ name: 'UserMgr' });
+    // 验证解密后的密码是否与用户输入的密码一致
+    if (decryptedPassword === registerData.password) {
+      console.log("解密验证成功，数据一致。");
     } else {
-      await router.push({ name: 'Home' });
+      console.error("解密验证失败，数据不一致！");
+      return;
     }
-  } else {
-    console.error('登录失败', response.message);
+
+    // 发送注册请求到服务器
+    const registerResponse = await post('/register', payload);
+
+    // 如果注册成功，执行以下操作
+    if (registerResponse.success) {
+      ElMessage.success('注册成功');
+      clearSharedKey(); // 清除存储的共享密钥
+      localStorage.setItem('privateKey', privateKey.toString()); // 将私钥保存到本地存储
+      document.getElementById('savePrivateKeyButton').style.display = 'block'; // 显示保存私钥的按钮
+    } else {
+      // 如果注册失败，输出错误信息
+      ElMessage.error('注册失败');
+      console.error('注册失败', registerResponse.message);
+    }
+  } catch (error) {
+    // 捕获并处理注册过程中的任何错误
+    console.error('注册过程中发生错误:', error);
   }
 }
 
-// 交换密钥：发送客户端公钥到服务器，接收服务器的公钥
-async function exchangeKeys(publicKey) {
-  // 将客户端的公钥导出为 SPKI 格式的 ArrayBuffer
-  const exportedPublicKey = await window.crypto.subtle.exportKey('spki', publicKey);
+// 处理用户登录请求的函数
+export async function onLogin(loginData) {
+  // 如果客户端密钥对未生成，则先初始化密钥交换
+  if (!clientKeyPair) {
+    await initKeyExchange();
+  }
 
-  // 将 ArrayBuffer 转换为 Base64 字符串
-  const publicKeyBase64 = await arrayBufferToBase64(exportedPublicKey);
+  try {
+    // 使用共享密钥加密用户输入的密码
+    const encryptedPassword = await encryptData(sharedKey, loginData.password);
+    console.log("Encrypted Password:", encryptedPassword);
 
-  // 发送客户端公钥到服务器，等待接收服务器返回的公钥
-  const response = await post('/exchange-keys', { clientPublicKey: publicKeyBase64 });
+    // 解密加密后的密码以验证加密过程是否正确
+    const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
+    console.log("Decrypted Password:", decryptedPassword);
 
-  if (response.success) {
-    return response.data; // 返回服务器的公钥
-  } else {
-    throw new Error('密钥交换失败');
+    // 发送登录请求到服务器，传递加密后的用户名和密码
+    const response = await post('/login', {
+      username: loginData.username,
+      password: encryptedPassword
+    });
+
+    // 如果登录成功，执行以下操作
+    if (response.success) {
+      ElMessage.success('登录成功');
+
+      // 保存服务器返回的身份标识（如角色和 Token）到本地存储
+      const role = response.data;
+      localStorage.setItem('role', role);
+      localStorage.setItem('authToken', response.token);
+      localStorage.setItem('username', loginData.username);
+
+      // 根据用户角色跳转到相应的页面
+      if (role === 'Admin') {
+        await router.push({ name: 'UserMgr' });
+      } else {
+        await router.push({ name: 'UserMgr' });
+      }
+    } else {
+      // 如果登录失败，输出错误信息
+      ElMessage.error('登录失败');
+      console.error('登录失败', response.message);
+    }
+  } catch (error) {
+    // 捕获并处理登录过程中的任何错误
+    console.error('登录过程中发生错误:', error);
   }
 }
 
-// 发送加密数据到服务器
+
+
+// 发送加密数据到服务器的函数
 export async function sendEncryptedData(data) {
-  if (!sharedSecret) {
+  // 检查共享密钥是否已初始化
+  if (!sharedKey) {
     throw new Error('共享密钥未初始化');
   }
 
-  // 使用共享密钥加密数据
-  const encryptedData = await encryptData(sharedSecret, data);
+  try {
+    // 使用共享密钥加密数据
+    const encryptedData = await encryptData(sharedKey, data);
 
-  // 发送加密数据到服务器的安全端点
-  const response = await post('/api/secure-endpoint', { encryptedData });
+    // 发送加密数据到服务器的安全端点
+    const response = await post('/api/secure-endpoint', { encryptedData });
 
-  if (response.success) {
-    // 解密服务器响应的数据
-    const decryptedResponse = await decryptData(sharedSecret, response.encryptedData);
-    console.log('服务器响应:', decryptedResponse);
-  } else {
-    console.error('发送加密数据失败', response.message);
+    // 如果服务器成功响应，解密服务器返回的数据
+    if (response.success) {
+      const decryptedResponse = await decryptData(sharedKey, response.encryptedData);
+      console.log('服务器响应:', decryptedResponse);
+    } else {
+      // 如果发送数据失败，输出错误信息
+      console.error('发送加密数据失败', response.message);
+    }
+  } catch (error) {
+    // 捕获并处理加密数据传输过程中的任何错误
+    console.error('加密数据传输失败:', error);
   }
 }
 
-// 保存私钥到指定位置
+// 将私钥保存到指定位置的函数
 export async function toSavePrivateKey() {
+  // 从本地存储中获取私钥
   const privateKey = localStorage.getItem('privateKey');
+
+  // 设置文件保存对话框的选项
   const options = {
     types: [
       {
@@ -206,15 +191,17 @@ export async function toSavePrivateKey() {
     const handle = await window.showSaveFilePicker(options);
     const writable = await handle.createWritable();
 
-    // 写入私钥到指定位置
+    // 将私钥写入指定位置的文件中
     await writable.write(privateKey);
     await writable.close();
     alert('私钥保存成功');
 
-    // 移除本地存储中的私钥
+    // 保存后，移除本地存储中的私钥
     localStorage.removeItem('privateKey');
     document.getElementById('savePrivateKeyButton').style.display = 'none'; // 隐藏保存私钥的按钮
   } catch (error) {
+    // 捕获并处理保存私钥过程中的任何错误
+    alert('私钥保存失败');
     console.error('保存失败', error);
   }
 }
