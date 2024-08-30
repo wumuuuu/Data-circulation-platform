@@ -1,14 +1,22 @@
 package com.example.demo.Model;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 import java.util.Date;
 
+
+@TableName("application") // 指定数据库表名为 "project"
 public class Application {
 
+    @TableId(type = IdType.AUTO) // 标记这个字段为表的主键，并且主键类型为自动增长
     private int id;
     private String username;
     private String applicationType;
-    private String auditStatus;
-    private String processStatus;
+    private String status;
+    private String dataUser;
+    private String text;
     private Date startDate;
     private Date endDate;
     private Date applicationTime;
@@ -17,19 +25,32 @@ public class Application {
     public Application() {
     }
 
-    public Application(int id, String username, String applicationType, String auditStatus, String processStatus, Date startDate, Date endDate, Date applicationTime) {
+    public Application(int id, String username, String applicationType, String text, String dataUser, String status, Date startDate, Date endDate, Date applicationTime) {
         this.id = id;
         this.username = username;
         this.applicationType = applicationType;
-        this.auditStatus = auditStatus;
-        this.processStatus = processStatus;
+        this.status = status;
         this.startDate = startDate;
         this.endDate = endDate;
         this.applicationTime = applicationTime;
     }
 
-    // Getter 和 Setter 方法
 
+    public String getDataUser() {
+        return dataUser;
+    }
+
+    public void setDataUser(String dataUser) {
+        this.dataUser = dataUser;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
     public int getId() {
         return id;
     }
@@ -54,20 +75,12 @@ public class Application {
         this.applicationType = applicationType;
     }
 
-    public String getProcessStatus() {
-        return processStatus;
+    public String getStatus() {
+        return status;
     }
 
-    public void setProcessStatus(String processStatus) {
-        this.processStatus = processStatus;
-    }
-
-    public String getAuditStatus() {
-        return auditStatus;
-    }
-
-    public void setAuditStatus(String auditStatus) {
-        this.auditStatus = auditStatus;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Date getStartDate() {
@@ -100,8 +113,9 @@ public class Application {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", applicationType='" + applicationType + '\'' +
-                ", auditStatus='" + auditStatus + '\'' +
-                ", processStatus='" + processStatus + '\'' +
+                ", status='" + status + '\'' +
+                ", dataUser='" + dataUser + '\'' +
+                ", text='" + text + '\'' +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", applicationTime=" + applicationTime +

@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 public class AuthController {
@@ -56,6 +58,32 @@ public class AuthController {
     public APIResponse<String> handleOptions() {
         return APIResponse.success(null);// 直接返回 200，处理预检请求
     }
+
+    /**
+     * 处理前端的 GET 请求，返回所有权限为数据所有方的用户名列表
+     *
+     * @return 包含所有数据所有方用户名的 APIResponse 对象
+     */
+    @GetMapping("/data-owners")
+    public APIResponse<List<String>> getDataOwners() {
+        try {
+            // 调用 UserMapper 的方法获取所有权限为数据所有方的用户名
+            List<User> dataOwners = userMapper.findAllDataOwners();
+
+            // 提取用户名列表
+            List<String> usernames = dataOwners.stream()
+                    .map(User::getUsername)
+                    .collect(Collectors.toList());
+
+            return APIResponse.success(usernames);
+        } catch (Exception e) {
+            // 如果发生异常，返回错误响应
+            return APIResponse.error(500, "获取数据所有方用户名失败: " + e.getMessage());
+        }
+    }
+
+
+
     /**
      * 处理密钥交换的 POST 请求。客户端将其公钥发送给服务器，
      * 服务器使用自己的私钥和客户端公钥生成共享密钥，并将共享密钥存储在会话中。
