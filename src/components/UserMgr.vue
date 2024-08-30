@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import router from '@/router.js'
-import { deleteUser, listUsers, updateUser } from '@/service/UserMgrService.js'
+import { fetchUser, onDelete, updateUser } from '@/service/UserMgrService.js'
 
 const activeMenu = ref('4');
 const username = localStorage.getItem('username');
@@ -19,15 +19,9 @@ const editingUser = ref({
 });
 const isEditing = ref(false);
 
-onMounted(() => {
-  fetchApplications();
+onMounted(async () => {
+  tableData.value = await fetchUser();
 });
-
-// 获取用户列表
-const fetchApplications = async () => {
-  tableData.value = await listUsers();
-  console.log(tableData);
-};
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -66,13 +60,6 @@ const handleSelect = (index) => {
   }
 };
 
-// 删除用户
-const onDelete = async (username) => {
-  if(await deleteUser(username) === 'success'){
-    await fetchApplications(); // 删除成功后重新加载用户列表
-  }
-};
-
 // 修改用户信息
 const onModify = (id) => {
   const user = tableData.value.find(u => u.id === id);
@@ -86,8 +73,6 @@ const onModify = (id) => {
 const saveChanges = async () => {
   try {
     await updateUser(editingUser.value);
-    alert('用户信息更新成功');
-    await fetchApplications(); // 更新成功后重新加载用户列表
     isEditing.value = false; // 退出编辑模式
   } catch (error) {
     console.error('更新用户信息时出错:', error);

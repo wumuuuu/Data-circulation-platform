@@ -153,7 +153,7 @@ export async function sendEncryptedData(data) {
     const encryptedData = await encryptData(sharedKey, data);
 
     // 发送加密数据到服务器的安全端点
-    const response = await post('/api/secure-endpoint', { encryptedData });
+    const response = await post('/secure-endpoint', { encryptedData });
 
     // 如果服务器成功响应，解密服务器返回的数据
     if (response.success) {

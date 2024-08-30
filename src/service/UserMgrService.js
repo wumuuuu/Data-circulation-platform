@@ -1,7 +1,7 @@
 import { get, post } from '@/utils/request.js'; // 导入 POST 请求函数
 import { ElMessage } from 'element-plus'
 
-export const listUsers = async (tableData) => {
+export const fetchUser = async (tableData) => {
   try {
     const response = await get('/allUsers'); // 这里假设后端的接口路径为 /users
     if (response.success) {
@@ -16,14 +16,14 @@ export const listUsers = async (tableData) => {
 };
 
 // 删除用户的方法
-export const deleteUser = async (username) => {
+export const onDelete = async (username) => {
   try {
     const confirmed = confirm(`确定要删除用户 ${username} 吗？`);
     if (confirmed) {
       const response = await post('/delete-user', { username });
       if (response.success) {
         ElMessage.success('用户删除成功');
-        return "success"; // 删除成功
+        await fetchUser(); // 删除成功后重新加载用户列表
       } else {
         throw new Error(response.message); // 如果请求失败，抛出错误
       }
@@ -41,7 +41,7 @@ export const updateUser = async (user) => {
     const response = await post('/update-user', user); // 更新用户信息的 API
     if (response.success) {
       ElMessage.success('更新用户信息成功');
-      return response.data; // 返回更新后的数据
+      await fetchUser(); // 更新成功后重新加载用户列表
     } else {
       throw new Error(response.message); // 抛出错误信息
     }
@@ -53,7 +53,7 @@ export const updateUser = async (user) => {
 };
 
 export default {
-  listUsers,
-  deleteUser,
+  fetchUser,
+  onDelete,
   updateUser,
 };

@@ -59,7 +59,6 @@ const login = async () => {
 
 };
 
-
 // 定义函数，清空数据模型
 const clearRegisterData = () => {
   registerData.value = {
