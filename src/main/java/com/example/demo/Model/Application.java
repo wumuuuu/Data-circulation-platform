@@ -17,24 +17,36 @@ public class Application {
     private String status;
     private String dataUser;
     private String text;
+    private String explanation;
     private Date startDate;
     private Date endDate;
     private Date applicationTime;
+
 
     // 构造函数
     public Application() {
     }
 
-    public Application(int id, String username, String applicationType, String text, String dataUser, String status, Date startDate, Date endDate, Date applicationTime) {
+    public Application(int id, String username, String applicationType, String explanation, String text, String dataUser, String status, Date startDate, Date endDate, Date applicationTime) {
         this.id = id;
         this.username = username;
         this.applicationType = applicationType;
+        this.explanation = explanation;
+        this.text = text;
+        this.dataUser = dataUser;
         this.status = status;
         this.startDate = startDate;
         this.endDate = endDate;
         this.applicationTime = applicationTime;
     }
 
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
 
     public String getDataUser() {
         return dataUser;
@@ -116,6 +128,7 @@ public class Application {
                 ", status='" + status + '\'' +
                 ", dataUser='" + dataUser + '\'' +
                 ", text='" + text + '\'' +
+                ", explanation='" + explanation + '\'' +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", applicationTime=" + applicationTime +

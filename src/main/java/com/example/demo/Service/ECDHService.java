@@ -157,6 +157,47 @@ public class ECDHService {
     }
 
     /**
+     * 使用共享密钥解密数据块。
+     * 采用 AES/GCM/NoPadding 算法，GCM 模式提供了解密和认证功能。
+     *
+     * @param encryptedDataWithIv 加密后的二进制数据，包含加密的数据和 IV
+     * @param sharedSecret  用于解密的共享密钥
+     * @return 解密后的原始数据
+     * @throws Exception 如果解密过程出现问题时抛出
+     */
+    public byte[] decryptFile(byte[] encryptedDataWithIv, byte[] sharedSecret) throws Exception {
+        try {
+            // 跳过前 4 字节的长度前缀
+            int offset = 4;
+
+            // 提取 IV（接下来的 12 字节）
+            byte[] iv = new byte[12];
+            System.arraycopy(encryptedDataWithIv, offset, iv, 0, iv.length);
+            offset += iv.length;
+
+            // 提取加密数据（剩下的数据）
+            byte[] encryptedBytes = new byte[encryptedDataWithIv.length - offset];
+            System.arraycopy(encryptedDataWithIv, offset, encryptedBytes, 0, encryptedBytes.length);
+
+            // 使用共享密钥创建 AES 密钥
+            SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
+
+            // 初始化 Cipher，使用 AES/GCM/NoPadding 模式
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
+
+            // 解密数据并返回
+            return cipher.doFinal(encryptedBytes);
+        } catch (Exception e) {
+            System.err.println("解密失败: " + e.getMessage());
+            throw new Exception("解密失败", e);
+        }
+    }
+
+
+
+    /**
      * 将 Base64 编码的公钥字符串解码为 PublicKey 对象。
      *
      * @param publicKeyStr Base64 编码的公钥字符串

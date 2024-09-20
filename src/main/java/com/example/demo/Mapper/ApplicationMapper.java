@@ -6,11 +6,25 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
-public interface ApplicationMapper extends BaseMapper<Application>{
+public interface ApplicationMapper extends BaseMapper<Application> {
 
-    @Insert("INSERT INTO application (username, applicationType, status, dataUser, text, startDate, endDate, applicationTime) VALUES (#{username}, #{applicationType}, #{status}, #{dataUser}, #{text}, #{startDate}, #{endDate}, #{applicationTime})")
-    int insert(Application Application);
+    // 插入新的申请记录
+    @Insert("INSERT INTO application (username, applicationType, status, dataUser, text, explanation, startDate, endDate, applicationTime) VALUES (#{username}, #{applicationType}, #{status}, #{dataUser}, #{text}, #{explanation}, #{startDate}, #{endDate}, #{applicationTime})")
+    int insert(Application application);
 
+    // 根据用户名查找申请记录
     @Select("SELECT * FROM application WHERE username = #{username}")
     List<Application> findApplicationsByUsername(@Param("username") String username);
+
+    // 更新申请状态
+    @Update("UPDATE application SET status = #{status}, explanation = #{explanation} WHERE username = #{username}")
+    void updateApplicationStatus(@Param("username") String username, @Param("status") String status, @Param("explanation") String explanation);
+
+    // 查找所有状态为 "等待管理员审核" 的申请记录
+    @Select("SELECT * FROM application WHERE status = '等待管理员审核'")
+    List<Application> findApplicationsWaiting2();
+
+    // 查找所有状态为 "等待管理员审核" 的申请记录
+    @Select("SELECT * FROM application WHERE status = '等待数据所有方审核'")
+    List<Application> findApplicationsWaiting1();
 }

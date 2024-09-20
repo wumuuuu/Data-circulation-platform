@@ -58,4 +58,63 @@ public class ApplicationController {
             return APIResponse.error(500, "获取申请记录时发生错误: " + e.getMessage());
         }
     }
+
+    /**
+     * 同意或拒绝申请
+     * @param requestData 包含用户名、状态和解释的 Map 对象
+     * @return 操作结果
+     */
+    @PostMapping("/update")
+    public APIResponse<String> rejectApplication(@RequestBody Map<String, String> requestData) {
+        try {
+            String username = requestData.get("username");
+            String status = requestData.get("status");
+            String explanation = requestData.get("explanation");
+
+            // 更新申请状态
+            applicationMapper.updateApplicationStatus(username, status, explanation);
+
+            return APIResponse.success("申请已更新");
+        } catch (Exception e) {
+            return APIResponse.error(500, "更新申请时发生错误: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有状态为 "等待管理员审核" 的申请记录。
+     * @return 返回包含所有 "等待管理员审核" 状态申请记录的 APIResponse 列表。
+     */
+    @GetMapping("/pending2")
+    public APIResponse<List<Application>> getPending2Applications() {
+        try {
+            List<Application> pendingApplications = applicationMapper.findApplicationsWaiting2();
+            if (pendingApplications != null && !pendingApplications.isEmpty()) {
+                return APIResponse.success(pendingApplications);
+            } else {
+                return APIResponse.error(404, "未找到等待管理员审核的申请记录");
+            }
+        } catch (Exception e) {
+            return APIResponse.error(500, "获取等待管理员审核的申请记录时发生错误: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取所有状态为 "等待数据所有方审核" 的申请记录。
+     * @return 返回包含所有 "等待数据所有方审核" 状态申请记录的 APIResponse 列表。
+     */
+    @GetMapping("/pending1")
+    public APIResponse<List<Application>> getPending1Applications() {
+        try {
+            List<Application> pendingApplications = applicationMapper.findApplicationsWaiting1();
+            if (pendingApplications != null && !pendingApplications.isEmpty()) {
+                return APIResponse.success(pendingApplications);
+            } else {
+                return APIResponse.error(404, "未找到等待数据所有方审核的申请记录");
+            }
+        } catch (Exception e) {
+            return APIResponse.error(500, "获取等待数据所有方审核的申请记录时发生错误: " + e.getMessage());
+        }
+    }
+
+
 }

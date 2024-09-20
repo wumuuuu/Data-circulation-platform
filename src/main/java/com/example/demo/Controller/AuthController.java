@@ -32,9 +32,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // 注入 HttpSession，用于在会话中存储和获取数据
-    @Autowired
-    private HttpSession session;
+//    // 注入 HttpSession，用于在会话中存储和获取数据
+//    @Autowired
+//    private HttpSession session;
 
     @Autowired
     private UserMapper userMapper;
@@ -82,8 +82,6 @@ public class AuthController {
         }
     }
 
-
-
     /**
      * 处理密钥交换的 POST 请求。客户端将其公钥发送给服务器，
      * 服务器使用自己的私钥和客户端公钥生成共享密钥，并将共享密钥存储在会话中。
@@ -92,7 +90,7 @@ public class AuthController {
      * @return 包含服务器公钥的 APIResponse 对象
      */
     @PostMapping("/exchange-keys")
-    public APIResponse<String> exchangeKeys(@RequestBody Map<String, Object> requestBody) {
+    public APIResponse<String> exchangeKeys(@RequestBody Map<String, Object> requestBody, HttpSession session) {
         try {
             // 从对象中获取 clientPublicKey 字段
             String clientPublicKey = (String) requestBody.get("clientPublicKey");
@@ -122,6 +120,7 @@ public class AuthController {
         }
     }
 
+
     /**
      * 处理用户注册的 POST 请求。客户端将用户名和加密的密码发送给服务器，
      * 服务器使用共享密钥解密密码，并将用户信息保存到数据库中。
@@ -130,7 +129,7 @@ public class AuthController {
      * @return 注册结果的 APIResponse 对象
      */
     @PostMapping("/register")
-    public APIResponse<String> registerUser(@RequestBody Map<String, Object> requestBody) {
+    public APIResponse<String> registerUser(@RequestBody Map<String, Object> requestBody, HttpSession session) {
         try {
             // 从 requestBody 提取 username 和加密后的 password 和加密后的 public_key
             String username = (String) requestBody.get("username");
@@ -163,10 +162,10 @@ public class AuthController {
             return APIResponse.success("注册成功");
 
         } catch (Exception e) {
-
             return APIResponse.error(500, "注册失败: " + e.getMessage());
         }
     }
+
 
     /**
      * 处理用户登录的 POST 请求。客户端将用户名和加密的密码发送给服务器，
@@ -176,7 +175,7 @@ public class AuthController {
      * @return 登录结果的 APIResponse 对象
      */
     @PostMapping("/login")
-    public APIResponse<String> loginUser(@RequestBody Map<String, Object> requestBody) {
+    public APIResponse<String> loginUser(@RequestBody Map<String, Object> requestBody, HttpSession session) {
         try {
             // 从 requestBody 提取 username 和加密后的 password
             String username = (String) requestBody.get("username");
