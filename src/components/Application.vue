@@ -1,14 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import router from '@/router.js'
+import {handleCommand, handleSelect} from '@/router.js'
 import {
   fetchApplications,
   fetchDataOwners,
-  getDynamicSteps,
-  getStepIndex,
-  getStepStatus,
   onSubmit
 } from '@/service/ApplicationService.js'
+import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons-vue'
 
 const activeMenu = ref('2');
 const username = localStorage.getItem('username');
@@ -30,7 +28,6 @@ const formData = ref({
   dateTimeRange: [] // 用户选择的日期和时间范围
 });
 
-
 // 分页相关数据
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页
@@ -49,35 +46,18 @@ const paginatedData = computed(() => {
   return tableData.value.slice(start, end);
 });
 
-//点击登出并跳转到登录界面
-const handleCommand = (command) => {
-  if (command === 'logout') {
-    // 清理登录状态，例如移除 token 或用户信息
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log('localStorage');
-    // 然后跳转到登录页面
-    router.push('/');
-  }
+// 对话框显示控制
+const dialogVisible = ref(false);
+// 对话框内容
+const dialogContent = ref('');
+
+// 打开对话框并显示 explanation 内容
+const openDialog = (explanation) => {
+  dialogContent.value = explanation || '无详细说明';
+  dialogVisible.value = true;
+  console.log(dialogVisible.value);
 };
 
-// 处理不同的菜单选择
-const handleSelect = (index) => {
-  switch (index) {
-    case '1':
-      router.push('/home');
-      break;
-    case '2':
-      router.push('/application');
-      break;
-    case '3':
-      router.push('/approvalProcess');
-      break;
-    case '4':
-      router.push('/UserMgr');
-      break;
-  }
-};
 
 // 重置表单
 const onReset = () => {
@@ -101,9 +81,15 @@ const onReset = () => {
           <span>申请</span>
         </el-menu-item>
         <el-menu-item index="3">
-          <span>审批</span>
+          <span>处理</span>
         </el-menu-item>
         <el-menu-item index="4">
+          <span>数据所有方审批</span>
+        </el-menu-item>
+        <el-menu-item index="5">
+          <span>审核员审批</span>
+        </el-menu-item>
+        <el-menu-item index="6">
           <span>管理</span>
         </el-menu-item>
       </el-menu>
@@ -129,45 +115,51 @@ const onReset = () => {
           <el-row :gutter="20">
             <el-col :span="16">
               <el-card style="height: 87vh;">
-                <div class="sign">历史申请</div>
+                <div class="sign">申请记录</div>
                 <el-divider />
                 <div style="height: 66vh;">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="time" label="数据ID" align="center" width = "100"/>
-                    <el-table-column prop="applicationTime" label="申请时间" align="center" width = "105"/>
-                    <el-table-column prop="status" label="进展" align="center" width = "395">
+                    <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165"/>
+                    <el-table-column prop="applicationType" label="申请类型" align="center" width = "100"/>
+                    <el-table-column label="状态" align="center">
                       <template #default="scope">
-                        <el-steps
-                          style="width: 100%"
-                          :active="getStepIndex(scope.row.status)"
-                          finish-status="success"
-                          align-center
-                        >
-                          <el-step
-                            v-for="(step, index) in getDynamicSteps(scope.row.status)"
-                            :key="index"
-                            :title="step.title"
-                            :status="getStepStatus(scope.row.status, index)"
-                          />
-                        </el-steps>
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                          <span>{{ scope.row.status }}</span>
+                          <el-icon v-if="scope.row.status.includes('未通过')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
+                          <el-icon v-else-if="scope.row.status.includes('通过')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
+                          <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
+                        </div>
                       </template>
                     </el-table-column>
-                    <el-table-column fixed="right" label="操作" align="center">
+                    <el-table-column prop="text" label="申请内容" width = "250" >
                       <template #default="scope">
-                        <el-button type="primary" size="small" @click="onDelete(scope.row.username)">
-                          详情
-                        </el-button>
+                        <div>
+                          <div>需求：{{ scope.row.text }}</div>
+                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="其他" align="center" width = "70" >
+                      <template #default="scope">
                         <el-button
+                          link
                           type="primary"
                           size="small"
-                          @click="onDelete(scope.row.username)"
-                          :disabled="scope.row.status !== '添加私钥进行签名'"
+                          :disabled="!scope.row.explanation"
+                          @click="openDialog(scope.row.explanation)"
                         >
-                          添加私钥
+                            详情
                         </el-button>
                       </template>
                     </el-table-column>
                   </el-table>
+                  <!-- 对话框 -->
+                  <el-dialog title="详细信息"  v-model="dialogVisible" width="30%">
+                    <p>{{ dialogContent }}</p>
+                    <template #footer>
+                      <el-button @click="dialogVisible = false">关闭</el-button>
+                    </template>
+                  </el-dialog>
                 </div>
 
                 <!-- 分页控件 -->
@@ -181,31 +173,37 @@ const onReset = () => {
                 />
               </el-card>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="8" >
               <!-- 按钮卡片，点击按钮后隐藏 -->
               <el-card v-if="!formSelected" style="height: 87vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <!-- 按钮排列 -->
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('sign')" class="custom-button">签名申请</el-button>
+                    <el-button type="primary" @click="showForm('sign')" class="custom-button custom-button-text">签名申请</el-button>
                   </el-col>
                 </el-row>
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('confirm')" class="custom-button">确权申请</el-button>
+                    <el-button type="primary" @click="showForm('confirm')" class="custom-button custom-button-text">确权申请</el-button>
                   </el-col>
                 </el-row>
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('arbitrate')" class="custom-button">仲裁申请</el-button>
+                    <el-button type="primary" @click="showForm('arbitrate')" class="custom-button custom-button-text">仲裁申请</el-button>
                   </el-col>
                 </el-row>
               </el-card>
 
+
               <!-- 根据选择显示对应的表单卡片 -->
-              <el-card v-if="formSelected" style="height: 87vh; display: flex; flex-direction: column; justify-content: center; align-items: center;" >
+              <el-card v-if="formSelected" style="height: 87vh; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;" >
+                <el-button
+                  type="text"
+                  style="position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer;"
+                  @click="formSelected = false"
+                >×</el-button>
                 <!-- 根据选择的表单类型显示不同的内容 -->
-                <div v-if="selectedForm === 'sign'" style="height: 65vh; overflow: auto;">
+                <div v-if="selectedForm === 'sign'" style="height: 70vh; overflow: auto;">
                   <div class = "sign">
                     提交签名申请
                   </div>
@@ -241,6 +239,7 @@ const onReset = () => {
                     </el-form-item>
                     <el-divider />
                   </el-form>
+
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
                       <el-button type="primary" @click="onSubmit(formData); onReset();">提交</el-button>
@@ -248,6 +247,7 @@ const onReset = () => {
                     </el-col>
                   </el-row>
                 </div>
+
                 <div v-else-if="selectedForm === 'confirm'">
                   <!-- 确权申请表单内容 -->
                 </div>
@@ -364,5 +364,8 @@ const onReset = () => {
 }
 .el-dropdown-link {
   color: #fff !important;
+}
+.custom-button-text {
+  font-size: 17px; /* 自定义字体大小 */
 }
 </style>

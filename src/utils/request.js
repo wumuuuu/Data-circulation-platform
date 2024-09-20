@@ -1,3 +1,5 @@
+//request.js
+
 import { sharedKey } from '@/utils/cryptoUtils.js'
 
 const baseURL = '/api';

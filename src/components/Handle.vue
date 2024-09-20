@@ -1,26 +1,24 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
-import { fetchUser, onDelete, updateUser } from '@/service/UserMgrService.js'
-
-const activeMenu = ref('6');
+const activeMenu = ref('3');
 const username = localStorage.getItem('username');
+
+const formData = ref({
+  dataUser:'',
+  text: '', // 用户提交的申请文本
+  type:'',
+  dateTimeRange: [] // 用户选择的日期和时间范围
+});
+
 
 // 分页相关数据
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页
-const pageSize = ref(12); // 每页显示条数
-
-// 存储当前正在编辑的用户信息
-const editingUser = ref({
-  id: null,
-  username: '',
-  role: ''
-});
-const isEditing = ref(false);
+const pageSize = ref(6); // 每页显示条数
 
 onMounted(async () => {
-  tableData.value = await fetchUser();
+  // tableData.value = await fetchApplications();
 });
 
 // 计算分页后的数据
@@ -30,30 +28,12 @@ const paginatedData = computed(() => {
   return tableData.value.slice(start, end);
 });
 
-// 修改用户信息
-const onModify = (id) => {
-  const user = tableData.value.find(u => u.id === id);
-  if (user) {
-    editingUser.value = { ...user }; // 深拷贝用户信息到编辑状态
-    isEditing.value = true; // 设置编辑状态为 true
-  }
+// 重置表单
+const onReset = () => {
+  formData.value.text = '';
+  formData.value.dataUser = null;
+  formData.value.dateTimeRange = null;
 };
-
-// 保存修改后的用户信息
-const saveChanges = async () => {
-  try {
-    await updateUser(editingUser.value);
-    isEditing.value = false; // 退出编辑模式
-  } catch (error) {
-    console.error('更新用户信息时出错:', error);
-  }
-};
-
-// 取消编辑
-const cancelEdit = () => {
-  isEditing.value = false; // 退出编辑模式
-};
-
 
 </script>
 
@@ -104,46 +84,19 @@ const cancelEdit = () => {
           <el-row :gutter="20">
             <el-col :span="24">
               <el-card style="height: 87vh;">
-                <div class="sign">用户管理</div>
+                <div class="sign">待处理流程</div>
                 <el-divider />
                 <div style="height: 66vh;">
-                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="id" label="用户ID" align="center" />
-                    <el-table-column prop="username" label="用户名" align="center" >
-                      <template #default="scope">
-                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.username" />
-                        <span v-else>{{ scope.row.username }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="role" label="用户权限" align="center" >
-                      <template #default="scope">
-                        <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">
-                          <el-option label="Admin" value="Admin"></el-option>
-                          <el-option label="普通用户" value="普通用户"></el-option>
-                          <el-option label="数据所有方" value="数据所有方"></el-option>
-                          <el-option label="审核人员" value="审核人员"></el-option>
-                        </el-select>
-                        <span v-else>{{ scope.row.role }}</span>
-                      </template>
-                    </el-table-column>
-                    <el-table-column fixed="right" label="操作" align="center">
-                      <template #default="scope">
-                        <el-button link type="primary" size="small" @click="onDelete(scope.row.username)">
-                          删除
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="onModify(scope.row.id)" v-if="!isEditing || editingUser.id !== scope.row.id">
-                          修改
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="saveChanges" v-if="isEditing && editingUser.id === scope.row.id">
-                          完成
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="cancelEdit" v-if="isEditing && editingUser.id === scope.row.id">
-                          取消
-                        </el-button>
-                      </template>
-                    </el-table-column>
+                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                    <el-table-column prop="applicationTime" label="时间" align="center"/>
+                    <el-table-column prop="applicationType" label="数据ID" align="center"/>
+                    <el-table-column prop="applicationType" label="类型" align="center"/>
+                    <el-table-column prop="applicationType" label="数据概要" align="center"/>
+                    <el-table-column prop="status" label="状态" align="center"/>
+                    <el-table-column prop="applicationType" label="操作" align="center"/>
                   </el-table>
                 </div>
+
                 <!-- 分页控件 -->
                 <el-pagination
                   background
@@ -163,6 +116,22 @@ const cancelEdit = () => {
 </template>
 
 <style scoped>
+:deep(.el-step__icon-inner) {
+  font-size: 15px !important;
+}
+
+:deep(.el-steps__line) {
+  height: 3px !important;
+}
+
+:deep(.el-step__title) {
+  font-size: 13px !important;
+}
+.custom-button {
+  width: 200px;  /* 固定宽度 */
+  height: 60px;  /* 按钮高度 */
+  margin-bottom: 10px;
+}
 .el-header{
   background-color: #365380;
   display: flex;
@@ -248,4 +217,8 @@ const cancelEdit = () => {
 .el-dropdown-link {
   color: #fff !important;
 }
+.custom-button-text {
+  font-size: 17px; /* 自定义字体大小 */
+}
+
 </style>

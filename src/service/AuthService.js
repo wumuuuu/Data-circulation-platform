@@ -98,8 +98,12 @@ export async function onLogin(loginData) {
   }
 
   try {
+
+    const encodedData = new TextEncoder().encode(loginData.password); // data 是字符串
+
     // 使用共享密钥加密用户输入的密码
-    const encryptedPassword = await encryptData(sharedKey, loginData.password);
+    const encryptedPassword = await encryptData(sharedKey, encodedData);
+
     console.log("Encrypted Password:", encryptedPassword);
 
     // 解密加密后的密码以验证加密过程是否正确

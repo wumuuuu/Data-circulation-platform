@@ -1,27 +1,33 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
-import { fetchUser, onDelete, updateUser } from '@/service/UserMgrService.js'
-
-const activeMenu = ref('6');
+import { update, fetchApplications } from '@/service/Examine2Service.js'
+const activeMenu = ref('5');
 const username = localStorage.getItem('username');
 
 // 分页相关数据
-let tableData = ref([]);
+const tableData = ref([]);
 const currentPage = ref(1); // 当前页
-const pageSize = ref(12); // 每页显示条数
-
-// 存储当前正在编辑的用户信息
-const editingUser = ref({
-  id: null,
-  username: '',
-  role: ''
-});
-const isEditing = ref(false);
+const pageSize = ref(6); // 每页显示条数
+const rowStatus = ref({});
 
 onMounted(async () => {
-  tableData.value = await fetchUser();
+  tableData.value = await fetchApplications();
+  console.log(tableData.value);
+
+  // 初始化每一行的状态
+  tableData.value.forEach(item => {
+    rowStatus.value[item.id] = {
+      isEditing: false, // 是否在编辑状态
+      rejectReason: ''   // 拒绝理由
+    };
+  });
 });
+
+const toggleReject = (id) => {
+  rowStatus.value[id].isEditing = true; // 设置为编辑状态
+};
+
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -30,31 +36,26 @@ const paginatedData = computed(() => {
   return tableData.value.slice(start, end);
 });
 
-// 修改用户信息
-const onModify = (id) => {
-  const user = tableData.value.find(u => u.id === id);
-  if (user) {
-    editingUser.value = { ...user }; // 深拷贝用户信息到编辑状态
-    isEditing.value = true; // 设置编辑状态为 true
-  }
+// 点击“取消”时的操作
+const onCancel = (id) => {
+  rowStatus.value[id].isEditing = false; // 退出编辑模式，恢复“同意”和“拒绝”按钮
+  rowStatus.value[id].rejectReason = ''; // 清空拒绝理由
 };
 
-// 保存修改后的用户信息
-const saveChanges = async () => {
-  try {
-    await updateUser(editingUser.value);
-    isEditing.value = false; // 退出编辑模式
-  } catch (error) {
-    console.error('更新用户信息时出错:', error);
-  }
+// 同意申请
+const onAgree = async (id) => {
+  await update(id, tableData, '等待数据所有方审核');
 };
 
-// 取消编辑
-const cancelEdit = () => {
-  isEditing.value = false; // 退出编辑模式
+// 拒绝申请
+const onReject = async (id) => {
+  const reason = rowStatus.value[id].rejectReason || '';
+  await update(id, tableData, '平台审核未通过', reason);
+
+  // 移除该行并退出编辑模式
+  tableData.value = tableData.value.filter(item => item.id !== id);
+  onCancel(id); // 操作完成后退出编辑模式
 };
-
-
 </script>
 
 <template>
@@ -104,46 +105,47 @@ const cancelEdit = () => {
           <el-row :gutter="20">
             <el-col :span="24">
               <el-card style="height: 87vh;">
-                <div class="sign">用户管理</div>
+                <div class="sign">待处理的申请</div>
                 <el-divider />
                 <div style="height: 66vh;">
-                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="id" label="用户ID" align="center" />
-                    <el-table-column prop="username" label="用户名" align="center" >
+                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                    <el-table-column prop="applicationTime" label="申请时间" align="center"/>、
+                    <el-table-column prop="username" label="用户名" align="center"/>
+                    <el-table-column prop="applicationType" label="申请类型" align="center"/>
+                    <el-table-column label="申请内容" width="380">
                       <template #default="scope">
-                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.username" />
-                        <span v-else>{{ scope.row.username }}</span>
+                        <div>
+                          <div>需求：{{ scope.row.text }}</div>
+                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        </div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="role" label="用户权限" align="center" >
+                    <el-table-column label="操作" align="center">
                       <template #default="scope">
-                        <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">
-                          <el-option label="Admin" value="Admin"></el-option>
-                          <el-option label="普通用户" value="普通用户"></el-option>
-                          <el-option label="数据所有方" value="数据所有方"></el-option>
-                          <el-option label="审核人员" value="审核人员"></el-option>
-                        </el-select>
-                        <span v-else>{{ scope.row.role }}</span>
+                        <!-- 如果当前行处于编辑模式，显示输入框和确定/取消按钮，否则显示同意/拒绝按钮 -->
+                        <div v-if="rowStatus[scope.row.id].isEditing">
+                          <el-input v-model="rowStatus[scope.row.id].rejectReason" placeholder="请输入拒绝理由" />
+                          <el-button type="primary" size="small" @click="onReject(scope.row.id)">
+                            确定
+                          </el-button>
+                          <el-button type="text" size="small" @click="onCancel(scope.row.id)">
+                            取消
+                          </el-button>
+                        </div>
+                        <div v-else>
+                          <el-button type="primary" size="small" @click="onAgree(scope.row.id)">
+                            同意
+                          </el-button>
+                          <el-button type="primary" size="small" @click="toggleReject(scope.row.id)">
+                            拒绝
+                          </el-button>
+                        </div>
                       </template>
                     </el-table-column>
-                    <el-table-column fixed="right" label="操作" align="center">
-                      <template #default="scope">
-                        <el-button link type="primary" size="small" @click="onDelete(scope.row.username)">
-                          删除
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="onModify(scope.row.id)" v-if="!isEditing || editingUser.id !== scope.row.id">
-                          修改
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="saveChanges" v-if="isEditing && editingUser.id === scope.row.id">
-                          完成
-                        </el-button>
-                        <el-button link type="primary" size="small" @click="cancelEdit" v-if="isEditing && editingUser.id === scope.row.id">
-                          取消
-                        </el-button>
-                      </template>
-                    </el-table-column>
+
                   </el-table>
                 </div>
+
                 <!-- 分页控件 -->
                 <el-pagination
                   background
@@ -163,6 +165,22 @@ const cancelEdit = () => {
 </template>
 
 <style scoped>
+:deep(.el-step__icon-inner) {
+  font-size: 15px !important;
+}
+
+:deep(.el-steps__line) {
+  height: 3px !important;
+}
+
+:deep(.el-step__title) {
+  font-size: 13px !important;
+}
+.custom-button {
+  width: 200px;  /* 固定宽度 */
+  height: 60px;  /* 按钮高度 */
+  margin-bottom: 10px;
+}
 .el-header{
   background-color: #365380;
   display: flex;
@@ -248,4 +266,5 @@ const cancelEdit = () => {
 .el-dropdown-link {
   color: #fff !important;
 }
+
 </style>

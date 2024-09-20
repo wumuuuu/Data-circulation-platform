@@ -1,18 +1,39 @@
-// 创建一个新的 Web Worker 实例，指向包含加密逻辑的文件 'cryptoWorker.js'
-const cryptoWorker = new Worker(new URL('@/utils/cryptoWorker.js', import.meta.url));
+// cryptoWorkerService.js
 
 // 发送消息到 Web Worker 并返回 Promise
-function sendMessageToWorker(message) {
+function sendMessageToWorker(message, onProgress = null) {
+  const worker = new Worker(new URL('@/utils/cryptoWorker.js', import.meta.url)); // 创建新的 Worker 实例
+
   return new Promise((resolve, reject) => {
-    cryptoWorker.onmessage = function (e) {
-      const { type, result } = e.data;
-      if (type === 'error') {
-        reject(result);
+    worker.onmessage = function (e) {
+      const { type, data, progress } = e.data;
+
+      if (type === 'progress' && onProgress) {
+        onProgress(progress); // 调用进度回调函数，更新进度
+      } else if (type === 'error') {
+        reject(new Error(data)); // 处理错误
+        worker.terminate(); // 发生错误后终止 Worker
       } else {
-        resolve(result);
+        resolve(data); // 任务完成，返回结果（ArrayBuffer）
+        worker.terminate(); // 任务完成后终止 Worker
       }
     };
-    cryptoWorker.postMessage(message);
+
+    worker.onerror = (error) => {
+      reject(error); // 捕获 Worker 错误
+      worker.terminate(); // 发生错误后终止 Worker
+    };
+
+    // 发送消息到 Worker
+    if (message.payload && message.payload.file) {
+      // File 对象无法通过 Transferable 传输，直接发送
+      worker.postMessage(message);
+    } else if (message.payload && message.payload.encryptedDataWithChecksum) {
+      // 传输 ArrayBuffer，避免内存复制
+      worker.postMessage(message, [message.payload.encryptedDataWithChecksum]);
+    } else {
+      worker.postMessage(message);
+    }
   });
 }
 
@@ -34,4 +55,23 @@ export function encryptData(sharedSecret, data) {
 // 函数：向 Web Worker 发送解密数据的请求，并返回解密后的数据
 export function decryptData(sharedSecret, encryptedData) {
   return sendMessageToWorker({ type: 'decryptData', payload: { sharedSecret, encryptedData } });
+}
+
+// 函数：使用 Web Worker 对文件进行分块加密，并在每个分块加密完成时返回进度和加密数据
+export function encryptFile(file, sharedSecret, chunkSize, onProgress) {
+  return sendMessageToWorker({ type: 'encryptFile', payload: { file, sharedSecret, chunkSize } }, onProgress);
+}
+
+// 函数：使用 Web Worker 对文件进行分块解密
+export function decryptFile(encryptedDataWithChecksumBuffer, sharedSecret, onProgress) {
+  return sendMessageToWorker(
+    {
+      type: 'decryptFile',
+      payload: {
+        file: encryptedDataWithChecksumBuffer, // 传递加密数据（ArrayBuffer）
+        sharedSecret,
+      },
+    },
+    onProgress
+  );
 }
