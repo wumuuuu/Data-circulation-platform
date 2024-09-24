@@ -9,10 +9,10 @@ import com.baomidou.mybatisplus.annotation.TableName;
  * User 类表示数据库中的 user 表。
  * 使用 MyBatis-Plus 注解进行 ORM 映射。
  */
-@TableName("user")
+@TableName("USERS")
 public class User {
 
-    @TableId(type = IdType.AUTO) // 标记这个字段为表的主键，并且主键类型为自动增长
+    @TableId(type = IdType.INPUT) // 改为手动控制主键
     private String id;
     private String username;
     private String password;

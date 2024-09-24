@@ -3,14 +3,14 @@ package com.example.demo.Model;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.util.Date;
 
-
-@TableName("application") // 指定数据库表名为 "project"
+@TableName("APPLICATION")
 public class Application {
 
-    @TableId(type = IdType.AUTO) // 标记这个字段为表的主键，并且主键类型为自动增长
+    @TableId(type = IdType.INPUT)  // 手动管理主键，使用 Oracle 序列
     private int id;
     private String username;
     private String applicationType;
@@ -18,10 +18,15 @@ public class Application {
     private String dataUser;
     private String text;
     private String explanation;
-    private Date startDate;
-    private Date endDate;
-    private Date applicationTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date startDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date endDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date applicationTime;
 
     // 构造函数
     public Application() {
@@ -40,29 +45,7 @@ public class Application {
         this.applicationTime = applicationTime;
     }
 
-    public String getExplanation() {
-        return explanation;
-    }
-
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public String getDataUser() {
-        return dataUser;
-    }
-
-    public void setDataUser(String dataUser) {
-        this.dataUser = dataUser;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
+    // Getters and Setters
     public int getId() {
         return id;
     }
@@ -93,6 +76,30 @@ public class Application {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getDataUser() {
+        return dataUser;
+    }
+
+    public void setDataUser(String dataUser) {
+        this.dataUser = dataUser;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
     }
 
     public Date getStartDate() {

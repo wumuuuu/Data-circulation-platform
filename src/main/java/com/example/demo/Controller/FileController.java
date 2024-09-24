@@ -1,6 +1,8 @@
 package com.example.demo.Controller;
 
+import com.example.demo.Mapper.FileMapper;
 import com.example.demo.Model.APIResponse;
+import com.example.demo.Model.File;
 import com.example.demo.Service.ECDHService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -9,10 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+
 import java.nio.file.*;
-import java.util.Arrays;
-import java.util.Base64;
+
+
+import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,6 +30,20 @@ public class FileController {
 
     @Autowired
     private ECDHService ecdhService;
+
+    @Autowired
+    private FileMapper fileMapper;
+
+    @GetMapping("/files")
+    public APIResponse<List<String>> getFileNamesByCreatorName(@RequestParam("creatorName") String creatorName) {
+        try {
+            List<String> fileNames = fileMapper.findFileByCreatorName(creatorName);
+            return APIResponse.success(fileNames);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return APIResponse.error(500, "Error retrieving file names: " + e.getMessage());
+        }
+    }
 
     @GetMapping("/start-upload")
     public APIResponse<String> startUpload(HttpSession session) {
@@ -41,16 +59,13 @@ public class FileController {
             @RequestParam("chunkIndex") int chunkIndex,
             @RequestParam("totalChunks") int totalChunks,
             @RequestParam("fileId") String fileId,
+            @RequestParam("fileName") String fileName,
+            @RequestParam("creatorName") String creatorName,
             HttpSession session) {
         try {
-            System.out.println("File ID: " + fileId);
 
             // **从会话中获取共享密钥**
             byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
-
-            // **将共享密钥转换为十六进制字符串输出**
-            String sharedSecretHex = bytesToHex(sharedSecret);
-            System.out.println("Shared Secret (Hex): " + sharedSecretHex);
 
             if (sharedSecret == null) {
                 return APIResponse.error(500, "共享密钥不存在于会话中");
@@ -58,16 +73,6 @@ public class FileController {
 
             // **获取上传的二进制数据**
             byte[] encryptedChunkBytes = chunk.getBytes();
-
-            // 打印二进制数据长度，检查是否为二进制数据
-            System.out.println("Received chunk size (bytes): " + encryptedChunkBytes.length);
-
-            // 打印前几个字节，看看是不是符合预期的二进制数据
-            System.out.println("First 10 bytes of the chunk: ");
-            for (int i = 0; i < Math.min(encryptedChunkBytes.length, 10); i++) {
-                System.out.print(String.format("0x%02X ", encryptedChunkBytes[i]));
-            }
-            System.out.println(); // 换行
 
             // **解密数据**
             byte[] decryptedDataBytes = ecdhService.decryptFile(encryptedChunkBytes, sharedSecret);
@@ -83,7 +88,14 @@ public class FileController {
                 // 所有块都上传完毕，执行合并
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId);
-                    return APIResponse.success("所有块都上传并合并成功");
+
+                    if(insertFile(fileId, fileName, creatorName)) {
+                        return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
+                    }
+                    else {
+                        return APIResponse.error(500, "插入数据库失败");
+                    }
+
                 } else {
                     return APIResponse.error(500, "数据块缺失");
                 }
@@ -170,4 +182,18 @@ public class FileController {
             Files.deleteIfExists(chunkPath);  // 删除块文件
         }
     }
+
+    // 在数据库插入记录
+    private boolean insertFile(String fileId, String fileName, String creatorName) {
+        Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
+        File file = new File();
+        file.setFile_id(fileId);
+        file.setFile_name(fileName);
+        file.setFile_path(chunkDir.toString()); // 将 Path 转为 String
+        file.setUsage_time(new Date());
+        file.setCreator_name(creatorName);
+        int result = fileMapper.insert(file);
+        return result > 0;
+    }
+
 }

@@ -14,26 +14,26 @@ public interface UserMapper extends BaseMapper<User> {
      * @param username 用户名
      * @return 返回 User 对象，如果没有找到则返回 null
      */
-    @Select("SELECT * FROM user WHERE username = #{username}")
+    @Select("SELECT * FROM users WHERE username = #{username}")
     User findByUsername(String username);
 
-    @Select("SELECT * FROM user WHERE id = #{userId}")
+    @Select("SELECT * FROM users WHERE id = #{userId}")
     User findById(String userId);
 
-    @Insert("INSERT INTO user (username, password, public_key, role) VALUES (#{username}, #{password}, #{public_key}, #{role})")
+    @Insert("INSERT INTO users (username, password, public_key, role) VALUES (#{username}, #{password}, #{public_key}, #{role})")
     int insert(User user);
 
     // 更新用户信息
-    @Update("UPDATE user SET username = #{username}, password = #{password}, role = #{role}, shared_secret = #{shared_secret} WHERE id = #{id}")
+    @Update("UPDATE users SET username = #{username}, password = #{password}, role = #{role}, shared_secret = #{shared_secret} WHERE id = #{id}")
     void update(User user);
 
-    @Delete("DELETE FROM user WHERE id = #{id}")
+    @Delete("DELETE FROM users WHERE id = #{id}")
     void deleteById(String id);
 
-    @Select("SELECT id, username, role FROM user")
+    @Select("SELECT id, username, role FROM users")
     List<User> findAllUsers();
 
-    @Select("SELECT username FROM user WHERE role = '数据所有方'")
+    @Select("SELECT username FROM users WHERE role = '数据所有方'")
     List<User> findAllDataOwners();
 
 }

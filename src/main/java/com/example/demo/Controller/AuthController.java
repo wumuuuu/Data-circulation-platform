@@ -32,10 +32,6 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-//    // 注入 HttpSession，用于在会话中存储和获取数据
-//    @Autowired
-//    private HttpSession session;
-
     @Autowired
     private UserMapper userMapper;
 
