@@ -2,17 +2,33 @@
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
-import { addMember, fetchApplications, encryptCsvFileWithProgress,decryptCsvFileWithProgress } from '@/service/Examine1Service.js'
+import {
+  onSubmit,
+  addMember,
+  fetchApplications,
+  encryptCsvFileWithProgress,
+  decryptCsvFileWithProgress,
+  fetchFiles
+} from '@/service/Examine1Service.js'
 import { ElMessage, ElNotification } from 'element-plus'
 const activeMenu = ref('4');
 const username = localStorage.getItem('username');
 
-const formData = ref({});
+const formData = ref({
+  signer: {
+    members: []
+  },
+  selectFile: '',
+  taskType: 'sign',
+});
+
+const files = ref([]);
 
 // 分页相关数据
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页
 const pageSize = ref(6); // 每页显示条数
+const fileName = ref();
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -23,7 +39,7 @@ const paginatedData = computed(() => {
 
 onMounted(async () => {
   tableData.value = await fetchApplications();
-  console.log(tableData.value);
+  files.value = await fetchFiles(username);
 });
 
 // 控制详情卡片显示
@@ -36,7 +52,7 @@ const showDetails = (row) => {
   isCardVisible.value = true; // 设置为 true 显示详情卡片
 };
 
-// 准备上传的签名人和权限
+// 准备上传的签名人
 const signer = ref({
   members: []
 });
@@ -73,10 +89,16 @@ const estimatedTime = ref(''); // 用于存储预计剩余时间
 
 // 加密和上传文件
 const encryptAndUpload = async () => {
+
+  if(!fileName.value){
+    ElMessage.error("还未给数据命名")
+    return;
+  }
+
   isProcessing.value = true; // 显示进度条
 
   const startTime = Date.now(); // 记录开始时间
-  await encryptCsvFileWithProgress(selectedFile.value, startTime, estimatedTime, progress);
+  await encryptCsvFileWithProgress(selectedFile.value, startTime, estimatedTime, progress, fileName.value, username);
   console.log("Progress value:", progress.value);
 
   isProcessing.value = false; // 显示进度条
@@ -112,15 +134,13 @@ const open = () => {
 
 // 重置表单
 const onReset = () => {
-  formData.value.text = '';
-  formData.value.dataUser = null;
-  formData.value.dateTimeRange = null;
+  formData.value = {
+    signer: {
+      members: []
+    },
+    selectFile: null
+  };
 };
-
-onMounted(async () => {
-  // tableData.value = await fetchApplications();
-  // updateTaskSteps();
-});
 
 </script>
 
@@ -208,6 +228,14 @@ onMounted(async () => {
             </el-col>
             <el-col :span="8" v-if="!isCardVisible">
               <el-card style="height: 87vh; position: relative;">
+                <div class="sign">上传新数据</div>
+                <el-divider />
+                <el-row class="form-row">
+                  <el-col :span="6" class="label-col">命名数据：</el-col>
+                  <el-col :span="18" class="input-col">
+                    <el-input v-model="fileName"/>
+                  </el-col>
+                </el-row>
                 <!-- 文件选择和加密上传按钮部分 -->
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
                   <!-- 文件选择 -->
@@ -230,20 +258,11 @@ onMounted(async () => {
                     :percentage="progress"
                     :style="{ width: '100%' }"
                   />
+
+
                 </div>
                 <p v-if="isProcessing">预计剩余时间：{{ estimatedTime }}</p>
 
-                <!-- 解密并保存在本地 -->
-                <div style="display: flex; justify-content: center; margin-top: 20px;">
-                  <el-upload
-                    :before-upload="handleBeforeUpload"
-                    :show-file-list="true"
-                  >
-                    <el-button type="primary">选择加密文件</el-button>
-                  </el-upload>
-
-                  <el-button v-if="showUpload" type="success" @click="decryptAndSave" style="margin-left: 20px;">解密</el-button>
-                </div>
               </el-card>
             </el-col>
             <el-col :span="8" v-if="isCardVisible">
@@ -256,6 +275,21 @@ onMounted(async () => {
                 <div class="sign">{{ selectedRow?.username }}的申请</div>
                 <el-divider />
                 <el-form :model="signer" label-width="100px">
+                  <el-row class="form-row">
+                    <el-col :span="6" class="label-col">选择数据：</el-col>
+                    <el-select
+                      v-model="formData.selectFile"
+                      style="width: 73%"
+                    >
+                      <el-option
+                        v-for="(file, index) in files"
+                        :key="index"
+                        :label="file"
+                        :value="file"
+                      ></el-option>
+                    </el-select>
+
+                  </el-row>
                   <!-- 参与成员部分 -->
                   <el-row class="form-row">
                     <el-col :span="6" class="label-col">参与成员：</el-col>
@@ -263,12 +297,12 @@ onMounted(async () => {
                       <el-input v-model="memberSearch" placeholder="输入用户名"></el-input>
                     </el-col>
                     <el-col :span="5" class="button-col">
-                      <el-button type="primary" @click="addMember(memberSearch, signer); memberSearch = null">添加</el-button>
+                      <el-button type="primary" @click="addMember(memberSearch, formData.signer); memberSearch = null">添加</el-button>
                     </el-col>
                   </el-row>
 
-                  <div style="height: 55vh; margin-bottom: 20px">
-                    <el-table height="40vh" :data="signer.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                  <div style="height: 40vh; margin-bottom: 20px">
+                    <el-table height="40vh" :data="formData.signer.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                       <el-table-column prop="username" label="成员名称" align="center" />
                       <el-table-column fixed="right" label="操作" align="center">
                         <template #default="scope">
@@ -277,17 +311,10 @@ onMounted(async () => {
                       </el-table-column>
                     </el-table>
                   </div>
-<!--                  <div style="height: 17vh;margin-bottom: 20px">-->
-<!--                    <el-row style="margin-bottom: 20px">-->
-<!--                      <el-col style="display: flex; justify-content: center;">-->
-<!--                        <el-segmented v-model="ApplicationType" :options="options" block style="width: 86%"/>-->
-<!--                      </el-col>-->
-<!--                    </el-row>-->
-<!--                  </div>-->
                   <el-divider />
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit">提交</el-button>
+                      <el-button type="primary" @click="onSubmit(formData); onReset()">提交</el-button>
                       <el-button @click="onReset">重置</el-button>
                     </el-col>
                   </el-row>

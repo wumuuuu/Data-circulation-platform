@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
+import { calculate, fetchTask } from '@/service/HandleService.js'
 const activeMenu = ref('3');
 const username = localStorage.getItem('username');
 
@@ -17,8 +18,10 @@ let tableData = ref([]);
 const currentPage = ref(1); // 当前页
 const pageSize = ref(6); // 每页显示条数
 
+
 onMounted(async () => {
-  // tableData.value = await fetchApplications();
+  tableData.value = await fetchTask(username);
+  console.log(tableData.value);
 });
 
 // 计算分页后的数据
@@ -27,6 +30,17 @@ const paginatedData = computed(() => {
   const end = start + pageSize.value;
   return tableData.value.slice(start, end);
 });
+
+const privateKey = ref(null);
+
+// 文件选择
+const handleBeforeUpload = async (file, rowData) => {
+  privateKey.value = file;
+  await calculate(privateKey.value, rowData);
+
+  // 阻止自动上传，等待其他操作完成后再上传
+  return false;
+};
 
 // 重置表单
 const onReset = () => {
@@ -88,12 +102,24 @@ const onReset = () => {
                 <el-divider />
                 <div style="height: 66vh;">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="applicationTime" label="时间" align="center"/>
-                    <el-table-column prop="applicationType" label="数据ID" align="center"/>
-                    <el-table-column prop="applicationType" label="类型" align="center"/>
+                    <el-table-column prop="completedAt" label="时间" align="center" width="170"/>
+                    <el-table-column prop="fileId" label="数据名" align="center" width="100"/>
+                    <el-table-column prop="taskType" label="类型" align="center" width="100"/>
                     <el-table-column prop="applicationType" label="数据概要" align="center"/>
-                    <el-table-column prop="status" label="状态" align="center"/>
-                    <el-table-column prop="applicationType" label="操作" align="center"/>
+                    <el-table-column prop="status" label="状态" align="center" width="130"/>
+                    <el-table-column label="操作" align="center" width="100">
+                        <template #default="scope">
+                          <!-- 文件选择 -->
+                          <el-upload
+                            :before-upload="(file) => handleBeforeUpload(file, scope.row)"
+                            :show-file-list="true"
+                          >
+                            <el-button v-if="scope.row.status === 'in_progress'" type="primary" size="small" >
+                              添加私钥
+                            </el-button>
+                          </el-upload>
+                        </template>
+                    </el-table-column>
                   </el-table>
                 </div>
 
@@ -106,6 +132,7 @@ const onReset = () => {
                   v-model:currentPage="currentPage"
                   style="margin-top: 20px; text-align: center; display: flex; justify-content: center;"
                 />
+                
               </el-card>
             </el-col>
           </el-row>

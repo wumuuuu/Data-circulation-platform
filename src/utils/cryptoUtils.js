@@ -132,7 +132,7 @@ export async function generateSharedECDHSecret(clientPrivateKey, serverPublicKey
 
   // 导出共享密钥为原始字节形式并输出其十六进制表示
   const exportedSharedKey = await window.crypto.subtle.exportKey('raw', secretKey);
-  console.log("Shared Secret (Hex):", Array.from(new Uint8Array(exportedSharedKey)).map(b => b.toString(16).padStart(2, '0')).join(''));
+  // console.log("Shared Secret (Hex):", Array.from(new Uint8Array(exportedSharedKey)).map(b => b.toString(16).padStart(2, '0')).join(''));
 
   // 设置并存储共享密钥
   await setSharedKey(secretKey);
