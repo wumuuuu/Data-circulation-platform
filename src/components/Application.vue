@@ -4,7 +4,7 @@ import {handleCommand, handleSelect} from '@/router.js'
 import {
   fetchApplications,
   fetchDataOwners,
-  onSubmit
+  onSubmit, onSubmit1
 } from '@/service/ApplicationService.js'
 import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons-vue'
 
@@ -13,6 +13,8 @@ const username = localStorage.getItem('username');
 const selectedForm = ref('');  // 用于跟踪用户选择的表单
 const formSelected = ref(false); // 标记是否选择了表单
 const options = ref([]); // 用于存储从后端获取的用户数据
+const taskId = ref('');
+
 
 // 用于根据选择显示对应的卡片
 function showForm(type) {
@@ -59,11 +61,16 @@ const openDialog = (explanation) => {
 };
 
 
-// 重置表单
+// 重置签名表单
 const onReset = () => {
   formData.value.text = '';
   formData.value.dataUser = null;
   formData.value.dateTimeRange = null;
+};
+
+// 重置确权表单
+const onReset1 = () => {
+  taskId.value = null;
 };
 
 </script>
@@ -120,7 +127,7 @@ const onReset = () => {
                 <div style="height: 66vh;">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165"/>
-                    <el-table-column prop="applicationType" label="申请类型" align="center" width = "100"/>
+                    <el-table-column prop="applicationType" label="申请类型" align="center" width = "90"/>
                     <el-table-column label="状态" align="center">
                       <template #default="scope">
                         <div style="display: flex; align-items: center; justify-content: center;">
@@ -203,12 +210,12 @@ const onReset = () => {
                   @click="formSelected = false"
                 >×</el-button>
                 <!-- 根据选择的表单类型显示不同的内容 -->
-                <div v-if="selectedForm === 'sign'" style="height: 70vh; overflow: auto;">
+                <div v-if="selectedForm === 'sign'" style="height: 70vh; overflow: auto;  width: 350px">
                   <div class = "sign">
                     提交签名申请
                   </div>
                   <el-divider />
-                  <el-form style="width: 100%" >
+                  <el-form>
                     <el-form-item label="选择数据所有方：" :rules="{required: true}">
                       <el-select placeholder="请选择" v-model="formData.dataUser">
                         <!-- 动态生成选项 -->
@@ -234,7 +241,6 @@ const onReset = () => {
                         end-placeholder="结束日期"
                         format="YYYY-MM-DD HH:mm:ss"
                         value-format="YYYY-MM-DD HH:mm:ss"
-                        style="width: 100%"
                       ></el-date-picker>
                     </el-form-item>
                     <el-divider />
@@ -248,8 +254,25 @@ const onReset = () => {
                   </el-row>
                 </div>
 
-                <div v-else-if="selectedForm === 'confirm'">
+                <div v-else-if="selectedForm === 'confirm'" style="height: 70vh; overflow: auto; width: 350px">
                   <!-- 确权申请表单内容 -->
+                  <div class = "sign">
+                    提交确权申请
+                  </div>
+                  <el-divider />
+                  <el-form>
+                    <el-form-item label="输入要确权的任务ID：" :rules="{required: true}">
+                      <el-input v-model="taskId"/>
+                    </el-form-item>
+                    <el-divider />
+                  </el-form>
+
+                  <el-row class="form-row">
+                    <el-col :span="24" class="input-col">
+                      <el-button type="primary" @click="onSubmit1(taskId); onReset1();">提交</el-button>
+                      <el-button @click="onReset1()">重置</el-button>
+                    </el-col>
+                  </el-row>
                 </div>
                 <div v-else-if="selectedForm === 'arbitrate'">
                   <!-- 仲裁申请表单内容 -->

@@ -17,6 +17,29 @@ export const onSubmit = async (formData) => {
   }
 }
 
+export const onReject = async (explanation, id) => {
+  try {
+    const Data = {
+      id: id,
+      status: '数据所有方审核未通过',
+      explanation: explanation,
+    };
+    // 将 explanation 和 id 作为请求体发送给后端
+    const response = await post('/application/update', Data);
+
+    // 根据后端返回的结果执行后续操作
+    if (response && response.success) {
+      console.log('拒绝操作成功:', response.data);
+      // 可以在这里处理成功的逻辑，比如显示提示消息或刷新页面
+    } else {
+      console.error('拒绝操作失败:', response.message);
+    }
+  } catch (error) {
+    console.error('请求发生错误:', error);
+  }
+};
+
+
 export const addMember = async (memberSearch, signer) => {
   if (memberSearch && signer.members.find(m => m.name === memberSearch)) {
     ElMessage.error('用户名已在列表');
@@ -34,9 +57,9 @@ export const addMember = async (memberSearch, signer) => {
   }
 };
 
-export async function fetchFiles(creatorName) {
+export async function fetchFiles() {
   try {
-
+    const creatorName = localStorage.getItem('username');
     // 在请求中传递 creatorName 作为查询参数
     const response = await get(`/files?creatorName=${encodeURIComponent(creatorName)}`);
 
@@ -59,7 +82,8 @@ export async function fetchFiles(creatorName) {
  */
 export async function fetchApplications() {
   try {
-    const response = await get('/application/pending1');
+    const username = localStorage.getItem('username');
+    const response = await get(`/application/pending1?username=${encodeURIComponent(username)}`);
     if (response.success) {
       return response.data;
     } else {

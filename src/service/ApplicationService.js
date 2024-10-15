@@ -34,7 +34,7 @@ export async function fetchApplications() {
     if (response.success) {
       return response.data;
     } else {
-      throw new Error(response.message || 'Failed to fetch applications');
+      ElMessage.success('暂无记录');
     }
   } catch (error) {
     console.error('Error fetching applications:', error);
@@ -66,6 +66,7 @@ export const onSubmit = async (formData) => {
     username: username,
     text: formData.text,
     dataUser:formData.dataUser,
+    explanation:'',
     startDate: formData.dateTimeRange ? formData.dateTimeRange[0] : null,
     endDate: formData.dateTimeRange ? formData.dateTimeRange[1] : null,
     applicationType: formData.type,
@@ -75,10 +76,43 @@ export const onSubmit = async (formData) => {
   try {
     // 调用接口提交数据
     const response = await post('/application/add', applicationData);
-    console.log(applicationData);
     ElMessage.success('申请提交成功');
   } catch (error) {
     console.error('Error:', error);
+    ElMessage.error('申请提交失败');
+  }
+}
+
+export const onSubmit1 = async (taskId) => {
+  try {
+    // 调用接口提交数据
+    const response = await get(`/task/find_task?taskId=${taskId}`);
+    if(response.success) {
+
+      // 准备要上传的数据
+      const applicationData = {
+        username: username,
+        text: '',
+        dataUser:'',
+        explanation:'',
+        startDate: '',
+        endDate: '',
+        applicationType: 'confirm',
+        status: '等待管理员审核'
+      };
+      try {
+        // 调用接口提交数据
+        const response = await post('/application/add', applicationData);
+        ElMessage.success('申请提交成功');
+      } catch (error) {
+        console.error('Error:', error);
+        ElMessage.error('申请提交失败');
+      }
+
+    }else{
+      ElMessage.error('没有找到对应的任务ID,请重新输入ID');
+    }
+  } catch (error) {
     ElMessage.error('申请提交失败');
   }
 }

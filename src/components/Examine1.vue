@@ -8,9 +8,9 @@ import {
   fetchApplications,
   encryptCsvFileWithProgress,
   decryptCsvFileWithProgress,
-  fetchFiles
+  fetchFiles, onReject
 } from '@/service/Examine1Service.js'
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 const activeMenu = ref('4');
 const username = localStorage.getItem('username');
 
@@ -20,6 +20,7 @@ const formData = ref({
   },
   selectFile: '',
   taskType: 'sign',
+  status:'',
 });
 
 const files = ref([]);
@@ -39,7 +40,7 @@ const paginatedData = computed(() => {
 
 onMounted(async () => {
   tableData.value = await fetchApplications();
-  files.value = await fetchFiles(username);
+  files.value = await fetchFiles();
 });
 
 // 控制详情卡片显示
@@ -140,6 +141,32 @@ const onReset = () => {
     },
     selectFile: null
   };
+};
+
+// 解释拒绝原因的表单
+const onExplain = (id) => {
+  // 使用 ElMessageBox.prompt 来提示用户输入拒绝原因
+  ElMessageBox.prompt('请输入拒绝原因', '拒绝原因', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    inputPattern: /.+/, // 确保输入不为空
+    inputErrorMessage: '拒绝原因不能为空'
+  }).then(async ({ value }) => {
+    // 用户输入了拒绝原因并点击了确定
+    ElMessage({
+      type: 'success',
+      message: `已提交拒绝原因: ${value}`
+    });
+
+    // 调用 onReject 函数，传入拒绝原因
+    await onReject(value, id);
+  }).catch(() => {
+    // 用户取消了输入框
+    ElMessage({
+      type: 'info',
+      message: '已取消操作'
+    });
+  });
 };
 
 </script>
@@ -315,6 +342,7 @@ const onReset = () => {
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
                       <el-button type="primary" @click="onSubmit(formData); onReset()">提交</el-button>
+                      <el-button type="danger" @click="onExplain(selectedRow.id)">拒绝</el-button>
                       <el-button @click="onReset">重置</el-button>
                     </el-col>
                   </el-row>

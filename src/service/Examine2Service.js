@@ -16,8 +16,8 @@ export const update = async (id, tableData, status, explanation = '') => {
   if (!row) return;
 
   const applicationData = {
+    id: id,
     status: status, // 动态设置状态
-    username: row.username, // 获取申请用户名
     explanation: explanation, // 动态设置解释（可为空）
   };
 
@@ -27,7 +27,7 @@ export const update = async (id, tableData, status, explanation = '') => {
 
     if (response.success) {
       // 显示成功消息，并从列表中移除该申请
-      ElMessage.success(`${status === '平台审核通过' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}`);
+      ElMessage.success(`${status === '等待数据所有方审核' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}`);
       tableData.value = tableData.value.filter(item => item.id !== id);
     } else {
       // 如果后端返回错误，显示错误信息
@@ -59,7 +59,6 @@ export async function fetchApplications() {
       ElMessage.error('获取等待管理员审核的申请记录失败');
     }
 
-    console.error('Error fetching pending applications:', error);
     throw error;
   }
 }

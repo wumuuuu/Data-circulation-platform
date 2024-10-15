@@ -36,7 +36,7 @@ const privateKey = ref(null);
 // 文件选择
 const handleBeforeUpload = async (file, rowData) => {
   privateKey.value = file;
-  await calculate(privateKey.value, rowData);
+  await calculate(privateKey.value, rowData, username);
 
   // 阻止自动上传，等待其他操作完成后再上传
   return false;
