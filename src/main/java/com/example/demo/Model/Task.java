@@ -12,21 +12,51 @@ public class Task {
     private String fileId;
     private java.sql.Timestamp createdAt;
     private String status;
+    private String y;
+    private String b;
+    private String x;
 
     public Task() {
     }
 
+
+
     // 带参构造函数
-    public Task(Integer taskId, String taskType, String fileId, java.sql.Timestamp createdAt, String status) {
+    public Task(Integer taskId, String taskType, String fileId, java.sql.Timestamp createdAt, String status, String y, String b, String x) {
         this.taskId = taskId;
         this.taskType = taskType;
         this.fileId = fileId;
         this.createdAt = createdAt;
         this.status = status;
+        this.y = y;
+        this.b = b;
+        this.x = x;
     }
 
     // Getter 和 Setter 方法
 
+    public String getX() {
+        return x;
+    }
+
+    public void setX(String x) {
+        this.x = x;
+    }
+    public String getY() {
+        return y;
+    }
+
+    public void setY(String y) {
+        this.y = y;
+    }
+
+    public String getB() {
+        return b;
+    }
+
+    public void setB(String b) {
+        this.b = b;
+    }
 
     public String getFileId() {
         return fileId;

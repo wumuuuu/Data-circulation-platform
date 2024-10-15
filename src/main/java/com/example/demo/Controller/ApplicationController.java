@@ -29,7 +29,6 @@ public class ApplicationController {
             application.setApplicationTime(new Date());
             // 将数据插入数据库
             int result = applicationMapper.insert(application);
-
             if (result > 0) {
                 return APIResponse.success("申请记录添加成功");
             } else {
@@ -60,19 +59,21 @@ public class ApplicationController {
     }
 
     /**
-     * 同意或拒绝申请
+     * 管理员同意或拒绝申请
      * @param requestData 包含用户名、状态和解释的 Map 对象
      * @return 操作结果
      */
     @PostMapping("/update")
-    public APIResponse<String> rejectApplication(@RequestBody Map<String, String> requestData) {
+    public APIResponse<String> updateApplication(@RequestBody Map<String, String> requestData) {
         try {
-            String username = requestData.get("username");
+            System.out.println(requestData);
+
+            String id = requestData.get("id");
             String status = requestData.get("status");
             String explanation = requestData.get("explanation");
 
-            // 更新申请状态
-            applicationMapper.updateApplicationStatus(username, status, explanation);
+             //更新申请状态
+            applicationMapper.updateApplicationStatus(id, status, explanation);
 
             return APIResponse.success("申请已更新");
         } catch (Exception e) {
@@ -103,9 +104,9 @@ public class ApplicationController {
      * @return 返回包含所有 "等待数据所有方审核" 状态申请记录的 APIResponse 列表。
      */
     @GetMapping("/pending1")
-    public APIResponse<List<Application>> getPending1Applications() {
+    public APIResponse<List<Application>> getPending1Applications(@RequestParam("username") String username) {
         try {
-            List<Application> pendingApplications = applicationMapper.findApplicationsWaiting1();
+            List<Application> pendingApplications = applicationMapper.findApplicationsWaiting1(username);
             if (pendingApplications != null && !pendingApplications.isEmpty()) {
                 return APIResponse.success(pendingApplications);
             } else {

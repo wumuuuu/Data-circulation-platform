@@ -2,9 +2,7 @@ package com.example.demo.Model;
 
 import java.util.List;
 
-import java.util.List;
-
-public class CreateTaskRequestDTO {
+public class CreateTaskRequest {
     private Signer signer;
     private String selectFile;
     private String taskType;

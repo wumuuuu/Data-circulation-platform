@@ -8,12 +8,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
-public class AuthenticationProviderConfig {
+public class AuthProviderConfig {
 
     private final CustomUserDetailsService customUserDetailsService;
 
     // 通过构造函数注入 CustomUserDetailsService
-    public AuthenticationProviderConfig(CustomUserDetailsService customUserDetailsService) {
+    public AuthProviderConfig(CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
     }
 

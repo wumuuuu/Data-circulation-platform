@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 @MapperScan("com.example.demo.Mapper")  // 指定 Mapper 接口所在的包
 public class DemoApplication {
-
+	// JavaDoc 风格的注释
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
 	}

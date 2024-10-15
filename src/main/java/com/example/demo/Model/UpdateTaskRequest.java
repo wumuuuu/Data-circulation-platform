@@ -1,17 +1,17 @@
 package com.example.demo.Model;
 
 public class UpdateTaskRequest {
-    private Long taskId;
+    private Integer taskId;
     private String username;
     private String y;
     private String b;
 
     // Getters 和 Setters
-    public Long getTaskId() {
+    public Integer getTaskId() {
         return taskId;
     }
 
-    public void setTaskId(Long taskId) {
+    public void setTaskId(Integer taskId) {
         this.taskId = taskId;
     }
 
