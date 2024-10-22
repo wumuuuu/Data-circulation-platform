@@ -79,4 +79,16 @@ public class User {
     public void setPublic_key(String public_key) {
         this.public_key = public_key;
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' + // 如果密码不需要打印，可以将其移除
+                ", public_key='" + public_key + '\'' +
+                ", role='" + role + '\'' +
+                ", shared_secret='" + shared_secret + '\'' +
+                '}';
+    }
 }

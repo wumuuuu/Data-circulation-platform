@@ -16,8 +16,8 @@ spring:
     show-sql: true
   servlet:
     multipart:
-      max-file-size: 12MB  # 设置最大文件大小
-      max-request-size: 12MB  # 设置请求总大小
+      max-file-size: 128MB  # 设置最大文件大小
+      max-request-size: 128MB  # 设置请求总大小
 
 server:
   port: 8082

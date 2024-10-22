@@ -8,10 +8,10 @@ public class SignTaskUser {
 
     private Integer Id; // 每个记录的唯一 ID
     private Integer taskId; // 任务 ID（关联 task 表）
+    private Integer signerNumber;
     private String fileId;
     private String taskType;
     private String userName; // 用户 ID（参与者）
-    private String nextSigner;
     private String status; // 用户在此任务中的状态（pending, in_progress, completed）
     private String b;
     private String y;
@@ -22,13 +22,13 @@ public class SignTaskUser {
     }
 
     // 带参构造函数
-    public SignTaskUser(Integer Id, Integer taskId, String fileId, String taskType, String userName, String nextSigner, String status, String b, String y, java.sql.Timestamp completedAt) {
+    public SignTaskUser(Integer Id, Integer taskId, Integer signerNumber, String fileId, String taskType, String userName, String status, String b, String y, java.sql.Timestamp completedAt) {
         this.Id = Id;
         this.taskId = taskId;
+        this.signerNumber = signerNumber;
         this.fileId = fileId;
         this.taskType = taskType;
         this.userName = userName;
-        this.nextSigner = nextSigner;
         this.status = status;
         this.b = b;
         this.y = y;
@@ -36,14 +36,12 @@ public class SignTaskUser {
     }
 
     // Getter 和 Setter 方法
-
-
-    public String getNextSigner() {
-        return nextSigner;
+    public Integer getSignerNumber() {
+        return signerNumber;
     }
 
-    public void setNextSigner(String nextSigner) {
-        this.nextSigner = nextSigner;
+    public void setSignerNumber(Integer signerNumber) {
+        this.signerNumber = signerNumber;
     }
 
     public String getTaskType() {
@@ -117,13 +115,14 @@ public class SignTaskUser {
         this.completedAt = completedAt;
     }
 
-    // toString 方法 (可选)
     @Override
     public String toString() {
-        return "TaskUser{" +
-                "taskUserId=" + Id +
+        return "SignTaskUser{" +
+                "Id=" + Id +
                 ", taskId=" + taskId +
-                ", fileId=" + fileId +
+                ", signerNumber=" + signerNumber +
+                ", fileId='" + fileId + '\'' +
+                ", taskType='" + taskType + '\'' +
                 ", userName='" + userName + '\'' +
                 ", status='" + status + '\'' +
                 ", b='" + b + '\'' +
@@ -131,4 +130,5 @@ public class SignTaskUser {
                 ", completedAt=" + completedAt +
                 '}';
     }
+
 }

@@ -39,6 +39,7 @@ public class AdminController {
         // 从请求体中提取新角色
         String newRole = (String) requestBody.get("role");
 
+
         try {
             // 调用 CustomUserDetailsService 的 modifyUserRole 方法，根据用户名修改用户的角色信息
             customUserDetailsService.modifyUserRole(username, newRole);

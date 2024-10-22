@@ -6,9 +6,28 @@ public class CreateTaskRequest {
     private Signer signer;
     private String selectFile;
     private String taskType;
+    private String confirmId;
+    private String username;
 
-    // Getter 和 Setter
 
+// Getter 和 Setter
+
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getConfirmId() {
+        return confirmId;
+    }
+
+    public void setConfirmId(String confirmId) {
+        this.confirmId = confirmId;
+    }
     public Signer getSigner() {
         return signer;
     }

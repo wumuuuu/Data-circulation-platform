@@ -54,6 +54,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public String getSharedSecret(String userId) {
         User user = userMapper.findById(userId);
         if (user != null) {
+
             return user.getShared_secret();
         } else {
             throw new UsernameNotFoundException("User not found");
@@ -64,7 +65,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public void deleteSharedSecret(String userId) {
         User user = userMapper.findById(userId);
         if (user != null) {
-            user.setShared_secret(null);  // 清除共享密钥
+            user.setShared_secret("");  // 清除共享密钥
             userMapper.update(user); // 更新用户数据
         } else {
             throw new UsernameNotFoundException("User not found");
@@ -76,6 +77,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userMapper.findByUsername(username);
         if (user != null) {
             user.setRole(newRole);
+            if(user.getShared_secret() == null){
+                user.setShared_secret("");
+            }
+            System.out.println(user);
             userMapper.update(user); // 更新用户角色信息
         } else {
             throw new UsernameNotFoundException("User not found");

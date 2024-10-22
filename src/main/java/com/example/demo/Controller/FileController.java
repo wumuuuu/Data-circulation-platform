@@ -61,6 +61,7 @@ public class FileController {
             @RequestParam("fileId") String fileId,
             @RequestParam("fileName") String fileName,
             @RequestParam("creatorName") String creatorName,
+            @RequestParam("fileOutline") String fileOutline,
             HttpSession session) {
         try {
 
@@ -89,7 +90,7 @@ public class FileController {
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId);
 
-                    if(insertFile(fileId, fileName, creatorName)) {
+                    if(insertFile(fileId, fileName, creatorName, fileOutline)) {
                         return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
                     }
                     else {
@@ -184,7 +185,7 @@ public class FileController {
     }
 
     // 在数据库插入记录
-    private boolean insertFile(String fileId, String fileName, String creatorName) {
+    private boolean insertFile(String fileId, String fileName, String creatorName, String fileOutline) {
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
         File file = new File();
         file.setFile_id(fileId);
@@ -192,6 +193,7 @@ public class FileController {
         file.setFile_path(chunkDir.toString()); // 将 Path 转为 String
         file.setUsage_time(new Date());
         file.setCreator_name(creatorName);
+        file.setFile_outline(fileOutline);
         int result = fileMapper.insert(file);
         return result > 0;
     }

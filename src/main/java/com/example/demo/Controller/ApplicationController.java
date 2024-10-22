@@ -27,6 +27,15 @@ public class ApplicationController {
         try {
             // 设置 applicationTime 为当前系统时间
             application.setApplicationTime(new Date());
+
+            // 设置 startDate 和 endDate 的默认值（假设默认值为当前日期）
+            if (application.getStartDate() == null) {
+                application.setStartDate(new Date()); // 可以根据需要设为其他日期
+            }
+            if (application.getEndDate() == null) {
+                application.setEndDate(new Date()); // 可以根据需要设为其他日期
+            }
+
             // 将数据插入数据库
             int result = applicationMapper.insert(application);
             if (result > 0) {
@@ -59,21 +68,20 @@ public class ApplicationController {
     }
 
     /**
-     * 管理员同意或拒绝申请
+     * 审核员同意或拒绝申请
      * @param requestData 包含用户名、状态和解释的 Map 对象
      * @return 操作结果
      */
     @PostMapping("/update")
     public APIResponse<String> updateApplication(@RequestBody Map<String, String> requestData) {
         try {
-            System.out.println(requestData);
 
             String id = requestData.get("id");
             String status = requestData.get("status");
             String explanation = requestData.get("explanation");
 
-             //更新申请状态
-            applicationMapper.updateApplicationStatus(id, status, explanation);
+             //更新申请
+            applicationMapper.updateApplication(id, status, explanation);
 
             return APIResponse.success("申请已更新");
         } catch (Exception e) {
@@ -82,8 +90,8 @@ public class ApplicationController {
     }
 
     /**
-     * 获取所有状态为 "等待管理员审核" 的申请记录。
-     * @return 返回包含所有 "等待管理员审核" 状态申请记录的 APIResponse 列表。
+     * 获取所有状态为 "等待平台审核" 的申请记录。
+     * @return 返回包含所有 "等待平台审核" 状态申请记录的 APIResponse 列表。
      */
     @GetMapping("/pending2")
     public APIResponse<List<Application>> getPending2Applications() {
@@ -92,10 +100,10 @@ public class ApplicationController {
             if (pendingApplications != null && !pendingApplications.isEmpty()) {
                 return APIResponse.success(pendingApplications);
             } else {
-                return APIResponse.error(404, "未找到等待管理员审核的申请记录");
+                return APIResponse.error(404, "未找到等待平台审核的申请记录");
             }
         } catch (Exception e) {
-            return APIResponse.error(500, "获取等待管理员审核的申请记录时发生错误: " + e.getMessage());
+            return APIResponse.error(500, "获取等待平台审核的申请记录时发生错误: " + e.getMessage());
         }
     }
 

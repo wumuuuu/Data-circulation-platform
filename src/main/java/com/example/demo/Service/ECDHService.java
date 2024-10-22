@@ -9,6 +9,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -55,9 +56,10 @@ public class ECDHService {
 
     /**
      * 使用共享密钥加密数据。
-     * 采用 AES/GCM/NoPadding 算法，GCM 模式提供了加密和认证功能。
+     * 采用 AES/CTR/NoPadding 算法，CTR 模式提供了加密功能。
      *
-     * @param data         要加密的原始数据
+     * @param data 要加密的原始数据
+     * @param username 用户名，用于获取共享密钥
      * @return 加密后的数据，Base64 编码，包含加密后的数据和 IV
      * @throws Exception 如果加密过程出现问题时抛出
      */
@@ -69,22 +71,17 @@ public class ECDHService {
         }
 
         String sharedSecretString = userSecretOptional.getShared_secret();
-
-        // 将共享密钥从 Base64 编码的字符串转换为 byte[]
         byte[] sharedSecret = Base64.getDecoder().decode(sharedSecretString);
-
-        // 创建用于加密的 AES 密钥
         SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
 
-        // 初始化 Cipher，使用 AES/GCM/NoPadding 模式
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        byte[] iv = new byte[12];  // GCM 推荐使用 12 字节的 IV（初始化向量）
+        // 使用 AES/CTR/NoPadding 模式
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        byte[] iv = new byte[16];  // CTR 通常使用 16 字节的 IV
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(iv);  // 生成随机的 IV
 
-        // 设置 GCM 参数，包含 IV 和认证标签长度（128 位）
-        GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);  // 使用密钥和 GCM 参数初始化 Cipher
+        // 初始化 Cipher
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));  // 使用 IV 初始化
 
         // 加密数据
         byte[] encryptedData = cipher.doFinal(data);
@@ -94,9 +91,10 @@ public class ECDHService {
         System.arraycopy(iv, 0, encryptedDataWithIv, 0, iv.length);
         System.arraycopy(encryptedData, 0, encryptedDataWithIv, iv.length, encryptedData.length);
 
-        // 将组合后的数据编码为 Base64 字符串返回
+        // 返回 Base64 编码字符串
         return Base64.getEncoder().encodeToString(encryptedDataWithIv);
     }
+
 
 
     // 将字节数组转换为十六进制字符串
@@ -114,88 +112,68 @@ public class ECDHService {
 
     /**
      * 使用共享密钥解密数据。
-     * 采用 AES/GCM/NoPadding 算法，GCM 模式提供了解密和认证功能。
+     * 采用 AES/CTR/NoPadding 算法，CTR 模式提供了解密功能。
      *
      * @param encryptedData 加密后的数据，Base64 编码，包含加密的数据和 IV
-     * @param sharedSecret  用于解密的共享密钥
+     * @param sharedSecret 用于解密的共享密钥
      * @return 解密后的原始数据
      * @throws Exception 如果解密过程出现问题时抛出
      */
     public String decrypt(String encryptedData, byte[] sharedSecret) throws Exception {
         try {
-
-            // 解码 Base64 编码的数据
             byte[] encryptedDataWithIv = Base64.getDecoder().decode(encryptedData);
-
-            // 从解码的数据中提取 IV（前 12 个字节）
-            byte[] iv = new byte[12];
+            byte[] iv = new byte[16];
             System.arraycopy(encryptedDataWithIv, 0, iv, 0, iv.length);
 
-            // 提取剩余的加密数据
             byte[] encryptedBytes = new byte[encryptedDataWithIv.length - iv.length];
             System.arraycopy(encryptedDataWithIv, iv.length, encryptedBytes, 0, encryptedBytes.length);
 
-            // 创建用于解密的 AES 密钥，使用整个共享密钥
             SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
 
-            // 初始化 Cipher，使用 AES/GCM/NoPadding 模式
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
+            // 使用 AES/CTR/NoPadding 模式
+            Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
 
             // 解密数据
             byte[] decryptedData = cipher.doFinal(encryptedBytes);
-
             return new String(decryptedData, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException e) {
-            System.err.println("Failed to decode base64 encrypted data: " + e.getMessage());
-            throw new Exception("Failed to decode base64 encrypted data", e);
         } catch (Exception e) {
             System.err.println("Decryption failed: " + e.getMessage());
             throw new Exception("Decryption failed", e);
         }
     }
 
+
     /**
-     * 使用共享密钥解密数据块。
-     * 采用 AES/GCM/NoPadding 算法，GCM 模式提供了解密和认证功能。
+     * 使用共享密钥解密文件的二进制数据。
+     * 采用 AES/CTR/NoPadding 算法，CTR 模式提供了解密功能。
      *
      * @param encryptedDataWithIv 加密后的二进制数据，包含加密的数据和 IV
-     * @param sharedSecret  用于解密的共享密钥
-     * @return 解密后的原始数据
+     * @param sharedSecret 用于解密的共享密钥
+     * @return 解密后的原始数据（字节数组）
      * @throws Exception 如果解密过程出现问题时抛出
      */
     public byte[] decryptFile(byte[] encryptedDataWithIv, byte[] sharedSecret) throws Exception {
         try {
-            // 跳过前 4 字节的长度前缀
-            int offset = 4;
+            int offset = 4;  // 假设有长度前缀
 
-            // 提取 IV（接下来的 12 字节）
-            byte[] iv = new byte[12];
+            byte[] iv = new byte[16];  // IV 长度为 16 字节
             System.arraycopy(encryptedDataWithIv, offset, iv, 0, iv.length);
             offset += iv.length;
 
-            // 提取加密数据（剩下的数据）
             byte[] encryptedBytes = new byte[encryptedDataWithIv.length - offset];
             System.arraycopy(encryptedDataWithIv, offset, encryptedBytes, 0, encryptedBytes.length);
 
-            // 使用共享密钥创建 AES 密钥
             SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
+            Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
 
-            // 初始化 Cipher，使用 AES/GCM/NoPadding 模式
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
-
-            // 解密数据并返回
             return cipher.doFinal(encryptedBytes);
         } catch (Exception e) {
-            System.err.println("解密失败: " + e.getMessage());
-            throw new Exception("解密失败", e);
+            System.err.println("Decryption failed: " + e.getMessage());
+            throw new Exception("Decryption failed", e);
         }
     }
-
-
 
     /**
      * 将 Base64 编码的公钥字符串解码为 PublicKey 对象。

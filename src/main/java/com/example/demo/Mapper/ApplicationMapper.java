@@ -16,12 +16,16 @@ public interface ApplicationMapper extends BaseMapper<Application> {
     @Select("SELECT * FROM application WHERE username = #{username}")
     List<Application> findApplicationsByUsername(@Param("username") String username);
 
-    // 更新申请状态
+    // 更新申请记录
     @Update("UPDATE application SET status = #{status}, explanation = #{explanation} WHERE id = #{id}")
-    void updateApplicationStatus(@Param("id") String id, @Param("status") String status, @Param("explanation") String explanation);
+    void updateApplication(@Param("id") String id, @Param("status") String status, @Param("explanation") String explanation);
+
+    // 更新申请状态
+    @Update("UPDATE application SET status = #{status} WHERE username = #{username} AND text = #{text}")
+    void updateApplicationStatus(String username, String text, String status);
 
     // 查找所有状态为 "等待管理员审核" 的申请记录
-    @Select("SELECT * FROM application WHERE status = '等待管理员审核'")
+    @Select("SELECT * FROM application WHERE status = '等待平台审核'")
     List<Application> findApplicationsWaiting2();
 
     // 查找所有状态为数据管理员是username的"等待数据所有方审核" 的申请记录
