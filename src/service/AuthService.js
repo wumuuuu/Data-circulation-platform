@@ -43,16 +43,22 @@ export async function onRegister(registerData) {
     // 使用 Web Worker 生成私钥
     const privateKey = await generatePrivateKey();
 
+
+
     // 使用生成的私钥计算相应的公钥
     const publicKey = await calculatePublicKey(privateKey);
 
+
+
     // 使用生成的共享密钥加密用户的密码和公钥
-    const encryptedPassword = await encryptData(sharedKey, registerData.password);
-    const encryptedPublicKey = await encryptData(sharedKey, publicKey);
+    const encryptedPassword = await encryptData(sharedKey, stringToArrayBuffer(registerData.password));
+    const encryptedPublicKey = await encryptData(sharedKey, stringToArrayBuffer(publicKey));
+
 
     // 解密加密后的密码以验证加密过程是否正确
     const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
     console.log("Decrypted Password:", decryptedPassword);
+
 
     // 复制注册数据对象，并用加密后的密码替换原始密码
     const payload = {
@@ -141,6 +147,11 @@ export async function onLogin(loginData) {
     // 捕获并处理登录过程中的任何错误
     console.error('登录过程中发生错误:', error);
   }
+}
+
+function stringToArrayBuffer(str) {
+  const encoder = new TextEncoder();
+  return encoder.encode(str);  // 返回 Uint8Array (ArrayBufferView)
 }
 
 

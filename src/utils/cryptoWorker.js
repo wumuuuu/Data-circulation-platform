@@ -1,4 +1,5 @@
 // cryptoWorker.js
+importScripts('https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js');
 
 console.log('Web Worker is running');
 
@@ -86,42 +87,46 @@ function modularExponentiation(base, exponent, modulus) {
   return result;
 }
 
-// 使用共享密钥加密数据（不可修改）
+// 使用共享密钥加密数据
 async function encryptData(sharedSecret, data) {
-  const iv = crypto.getRandomValues(new Uint8Array(12)); // 生成随机 IV
+  const iv = crypto.getRandomValues(new Uint8Array(16)); // 生成随机 IV，AES-CTR 通常使用 16 字节的 IV
 
   const encryptedData = await crypto.subtle.encrypt({
-    name: 'AES-GCM',
-    iv: iv
+    name: 'AES-CTR',
+    counter: iv, // 使用生成的 IV 作为计数器
+    length: 64 // 计数器长度为 64 位
   }, sharedSecret, data);
 
   // 将 IV 和加密数据合并为一个 Uint8Array
   const encryptedDataWithIv = new Uint8Array(iv.length + encryptedData.byteLength);
-  encryptedDataWithIv.set(iv); // 将 IV 放在前 12 字节
+  encryptedDataWithIv.set(iv); // 将 IV 放在前 16 字节
   encryptedDataWithIv.set(new Uint8Array(encryptedData), iv.length); // 将加密数据跟在 IV 之后
 
   // 返回 Base64 编码的字符串
   return arrayBufferToBase64(encryptedDataWithIv.buffer);
 }
 
-// 使用共享密钥解密数据（不可修改）
+
+// 使用共享密钥解密数据
 async function decryptData(sharedSecret, encryptedDataWithIvBase64) {
   const encryptedDataWithIv = base64ToArrayBuffer(encryptedDataWithIvBase64);
 
   // 将 ArrayBuffer 转换为 Uint8Array 以便使用 slice 方法分割 IV 和加密数据
   const encryptedDataArray = new Uint8Array(encryptedDataWithIv);
-  const iv = encryptedDataArray.slice(0, 12); // 提取前 12 字节为 IV
-  const encryptedData = encryptedDataArray.slice(12); // 剩余部分为加密数据
+  const iv = encryptedDataArray.slice(0, 16); // 提取前 16 字节为 IV
+  const encryptedData = encryptedDataArray.slice(16); // 剩余部分为加密数据
 
   // 解密数据
   const decryptedData = await crypto.subtle.decrypt({
-    name: 'AES-GCM',
-    iv: iv
+    name: 'AES-CTR',
+    counter: iv, // 使用相同的 IV
+    length: 64 // 计数器长度为 64 位
   }, sharedSecret, encryptedData);
 
   // 返回解密后的字符串
   return new TextDecoder().decode(decryptedData);
 }
+
 
 // 加密文件
 async function encryptFile(file, sharedSecret, chunkSize) {

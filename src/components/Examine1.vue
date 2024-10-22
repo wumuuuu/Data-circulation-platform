@@ -21,6 +21,7 @@ const formData = ref({
   selectFile: '',
   taskType: 'sign',
   status:'',
+  username:'',
 });
 
 const files = ref([]);
@@ -30,6 +31,7 @@ let tableData = ref([]);
 const currentPage = ref(1); // 当前页
 const pageSize = ref(6); // 每页显示条数
 const fileName = ref();
+const fileOutline = ref();
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -76,6 +78,7 @@ const showUpload = ref(false);
 // 存储选择的文件
 const selectedFile = ref(null);
 
+
 // 文件选择
 const handleBeforeUpload = (file) => {
   selectedFile.value = file; // 选择的文件存储
@@ -91,39 +94,44 @@ const estimatedTime = ref(''); // 用于存储预计剩余时间
 // 加密和上传文件
 const encryptAndUpload = async () => {
 
-  if(!fileName.value){
-    ElMessage.error("还未给数据命名")
+  if (!fileName.value) {
+    ElMessage.error("还未给数据命名");
     return;
   }
-
   isProcessing.value = true; // 显示进度条
-
   const startTime = Date.now(); // 记录开始时间
-  await encryptCsvFileWithProgress(selectedFile.value, startTime, estimatedTime, progress, fileName.value, username);
-  console.log("Progress value:", progress.value);
-
-  isProcessing.value = false; // 显示进度条
-  showUpload.value = false;
+  await encryptCsvFileWithProgress(
+    selectedFile.value,
+    startTime,
+    isProcessing.value,
+    showUpload.value,
+    estimatedTime,
+    progress,
+    fileName.value,
+    username,
+    fileOutline.value
+  );
 };
+
 
 // 解密文件并保存在本地
-const decryptAndSave = async () => {
-  isProcessing.value = true; // 显示进度条
-
-  const startTime = Date.now(); // 记录开始时间
-  const progressCallback = (progressValue) => {
-    progress.value = progressValue; // 更新进度
-  };
-
-  try {
-    await decryptCsvFileWithProgress(selectedFile.value, progressCallback); // 调用解密函数
-    ElMessage.success('文件解密成功并已保存到本地');
-  } catch (error) {
-    ElMessage.error('文件解密失败');
-  } finally {
-    isProcessing.value = false; // 停止进度条
-  }
-};
+// const decryptAndSave = async () => {
+//   isProcessing.value = true; // 显示进度条
+//
+//   const startTime = Date.now(); // 记录开始时间
+//   const progressCallback = (progressValue) => {
+//     progress.value = progressValue; // 更新进度
+//   };
+//
+//   try {
+//     await decryptCsvFileWithProgress(selectedFile.value, progressCallback); // 调用解密函数
+//     ElMessage.success('文件解密成功并已保存到本地');
+//   } catch (error) {
+//     ElMessage.error('文件解密失败');
+//   } finally {
+//     isProcessing.value = false; // 停止进度条
+//   }
+// };
 
 // 提示
 const open = () => {
@@ -262,6 +270,7 @@ const onExplain = (id) => {
                   <el-col :span="18" class="input-col">
                     <el-input v-model="fileName"/>
                   </el-col>
+                  <el-input style="height: 30vh; margin-top: 20px" type="textarea" :rows="10" placeholder="上传数据的概要"  v-model="fileOutline"/>
                 </el-row>
                 <!-- 文件选择和加密上传按钮部分 -->
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
@@ -278,17 +287,15 @@ const onExplain = (id) => {
                 </div>
 
                 <!-- 加密和上传进度条 -->
-                <div v-if="isProcessing" style="justify-content: center; margin-top: 20px;">
+                <div v-if="isProcessing && progress !== 100" style="justify-content: center; margin-top: 20px;">
                   <el-progress
                     :text-inside="true"
                     :stroke-width="18"
                     :percentage="progress"
                     :style="{ width: '100%' }"
                   />
-
-
                 </div>
-                <p v-if="isProcessing">预计剩余时间：{{ estimatedTime }}</p>
+                <p v-if="isProcessing && progress !== 100">预计剩余时间：{{ estimatedTime }}</p>
 
               </el-card>
             </el-col>
@@ -341,7 +348,7 @@ const onExplain = (id) => {
                   <el-divider />
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit(formData); onReset()">提交</el-button>
+                      <el-button type="primary" @click="onSubmit(formData,selectedRow.id, selectedRow.username); onReset()">提交</el-button>
                       <el-button type="danger" @click="onExplain(selectedRow.id)">拒绝</el-button>
                       <el-button @click="onReset">重置</el-button>
                     </el-col>

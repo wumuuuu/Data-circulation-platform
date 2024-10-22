@@ -39,6 +39,7 @@ export const onDelete = async (username) => {
 export const updateUser = async (user) => {
   try {
     const response = await post('/update-user', user); // 更新用户信息的 API
+
     if (response.success) {
       ElMessage.success('更新用户信息成功');
       await fetchUser(); // 更新成功后重新加载用户列表

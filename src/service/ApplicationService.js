@@ -70,7 +70,7 @@ export const onSubmit = async (formData) => {
     startDate: formData.dateTimeRange ? formData.dateTimeRange[0] : null,
     endDate: formData.dateTimeRange ? formData.dateTimeRange[1] : null,
     applicationType: formData.type,
-    status: '等待管理员审核'
+    status: '等待平台审核'
   };
 
   try {
@@ -92,13 +92,13 @@ export const onSubmit1 = async (taskId) => {
       // 准备要上传的数据
       const applicationData = {
         username: username,
-        text: '',
+        text: taskId,
         dataUser:'',
         explanation:'',
         startDate: '',
         endDate: '',
         applicationType: 'confirm',
-        status: '等待管理员审核'
+        status: '等待平台审核'
       };
       try {
         // 调用接口提交数据

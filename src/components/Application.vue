@@ -127,13 +127,13 @@ const onReset1 = () => {
                 <div style="height: 66vh;">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165"/>
-                    <el-table-column prop="applicationType" label="申请类型" align="center" width = "90"/>
+                    <el-table-column prop="applicationType" label="申请类型" align="center" width = "85"/>
                     <el-table-column label="状态" align="center">
                       <template #default="scope">
                         <div style="display: flex; align-items: center; justify-content: center;">
                           <span>{{ scope.row.status }}</span>
                           <el-icon v-if="scope.row.status.includes('未通过')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
-                          <el-icon v-else-if="scope.row.status.includes('通过')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
+                          <el-icon v-else-if="scope.row.status.includes('通过') || scope.row.status.includes('成功')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
                           <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
                         </div>
                       </template>
@@ -229,8 +229,7 @@ const onReset1 = () => {
 
                     </el-form-item>
                     <el-form-item :rules="{required: true}">
-                      <el-input style="height: 30vh" type="textarea" :rows="10" placeholder="说明此次申请具体要求"  v-model="formData.text">
-                      </el-input>
+                      <el-input style="height: 30vh" type="textarea" :rows="10" placeholder="说明此次申请具体要求"  v-model="formData.text"/>
                     </el-form-item>
                     <el-form-item :rules="{required: true}">
                       <el-date-picker

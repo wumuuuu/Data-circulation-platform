@@ -43,8 +43,12 @@ const onCancel = (id) => {
 };
 
 // 同意申请
-const onAgree = async (id) => {
-  await update(id, tableData, '等待数据所有方审核');
+const onAgree = async (id, Type, username) => {
+  if(Type === 'sign') {
+    await update(username, id, tableData, '等待数据所有方审核');
+  }else if(Type === 'confirm') {
+    await update(username, id, tableData, '申请已通过');
+  }
 };
 
 // 拒绝申请
@@ -114,9 +118,12 @@ const onReject = async (id) => {
                     <el-table-column prop="applicationType" label="申请类型" align="center"/>
                     <el-table-column label="申请内容" width="380">
                       <template #default="scope">
-                        <div>
+                        <div v-if="scope.row.applicationType === 'sign'">
                           <div>需求：{{ scope.row.text }}</div>
-                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                          <div >时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        </div>
+                        <div v-if="scope.row.applicationType === 'confirm'">
+                          <div>需求：对ID为 {{ scope.row.text }} 的流转数据进行确权</div>
                         </div>
                       </template>
                     </el-table-column>
@@ -133,7 +140,7 @@ const onReject = async (id) => {
                           </el-button>
                         </div>
                         <div v-else>
-                          <el-button type="primary" size="small" @click="onAgree(scope.row.id)">
+                          <el-button type="primary" size="small" @click="onAgree(scope.row.id, scope.row.applicationType, scope.row.username)">
                             同意
                           </el-button>
                           <el-button type="primary" size="small" @click="toggleReject(scope.row.id)">

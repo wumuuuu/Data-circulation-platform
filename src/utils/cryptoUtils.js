@@ -1,5 +1,6 @@
 // 导入所需的加密和请求处理工具函数
 import { post } from '@/utils/request.js'; // 导入用于发送 POST 请求的函数
+
 // 用于存储共享密钥和密钥对的全局变量
 export let sharedKey = null;
 export let clientKeyPair = null;
@@ -66,7 +67,7 @@ export async function getSharedKey() {
     sharedKey = await window.crypto.subtle.importKey(
       'jwk',
       JSON.parse(jwk),
-      { name: 'AES-GCM', length: 256 },
+      { name: 'AES-CTR', length: 256 }, // 使用 AES-CTR
       true,
       ['encrypt', 'decrypt']
     );
@@ -115,7 +116,7 @@ export async function generateSharedECDHSecret(clientPrivateKey, serverPublicKey
     []
   );
 
-  // 生成共享密钥
+  // 使用 AES-CTR 模式生成共享密钥
   const secretKey = await window.crypto.subtle.deriveKey(
     {
       name: "ECDH",
@@ -123,12 +124,13 @@ export async function generateSharedECDHSecret(clientPrivateKey, serverPublicKey
     },
     clientPrivateKey,
     {
-      name: "AES-GCM",
+      name: "AES-CTR", // 改为 AES-CTR 模式
       length: 256
     },
     true,
     ["encrypt", "decrypt"]
   );
+
 
   // 导出共享密钥为原始字节形式并输出其十六进制表示
   const exportedSharedKey = await window.crypto.subtle.exportKey('raw', secretKey);

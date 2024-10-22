@@ -1,10 +1,11 @@
 import { ElMessage } from 'element-plus'
 import { get, post } from '@/utils/request.js'
+import { ref } from 'vue'
 
 const username = localStorage.getItem('username');
 
 // 更新申请状态的通用函数
-export const update = async (id, tableData, status, explanation = '') => {
+export const update = async (Username, id, tableData, status, explanation = '') => {
   // 确保 tableData 是一个数组
   if (!tableData || !Array.isArray(tableData.value)) {
     console.error('tableData is not defined or not an array');
@@ -14,6 +15,32 @@ export const update = async (id, tableData, status, explanation = '') => {
   // 查找对应的申请记录
   const row = tableData.value.find(item => item.id === id);
   if (!row) return;
+
+  if(row.applicationType === 'confirm') {
+    status = '申请已通过';
+    explanation = '等待验证';
+    const applicationData = {
+      signer: {
+        members: []
+      },
+      selectFile: '',
+      taskType: 'confirm',
+      status:'',
+      confirmId: row.text,
+      username: Username,
+    };
+
+    console.log(Username);
+    // 调用后端API，更新申请状态
+    const response = await post('/task/create', applicationData);
+
+    if (response.success) {
+      ElMessage.success('确权任务已创建');
+    } else {
+      ElMessage.error('确权任务创建失败');
+    }
+
+  }
 
   const applicationData = {
     id: id,
@@ -27,15 +54,14 @@ export const update = async (id, tableData, status, explanation = '') => {
 
     if (response.success) {
       // 显示成功消息，并从列表中移除该申请
-      ElMessage.success(`${status === '等待数据所有方审核' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}`);
+      ElMessage.success(`${status === '等待数据所有方审核'|| status === '申请已通过' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}申请`);
       tableData.value = tableData.value.filter(item => item.id !== id);
     } else {
       // 如果后端返回错误，显示错误信息
-      ElMessage.error(`${status === '平台审核通过' ? '同意' : '拒绝'}申请失败: ${response.message}`);
+      ElMessage.error(`${status === '申请已通过' ? '同意' : '拒绝'}申请失败: ${response.message}`);
     }
   } catch (error) {
-    console.error(`${status === '平台审核通过' ? '同意' : '拒绝'}申请时发生错误:`, error);
-    ElMessage.error(`${status === '平台审核通过' ? '同意' : '拒绝'}申请时发生错误，请稍后重试。`);
+    ElMessage.error(`${status === '申请已通过' ? '同意' : '拒绝'}申请时发生错误，请稍后重试。`);
   }
 };
 
@@ -53,10 +79,10 @@ export async function fetchApplications() {
     }
   } catch (error) {
     // 判断错误类型
-    if (error.message === '未找到等待管理员审核的申请记录') {
+    if (error.message === '未找到等待平台审核的申请记录') {
       ElMessage.success('暂无数据');
     } else {
-      ElMessage.error('获取等待管理员审核的申请记录失败');
+      ElMessage.error('获取等待平台审核的申请记录失败');
     }
 
     throw error;

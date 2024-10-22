@@ -6,14 +6,22 @@ import { getSharedKey } from '@/utils/cryptoUtils.js';
 import { decryptFile, encryptFile } from '@/service/cryptoWorkerService.js';
 import { saveAs } from 'file-saver';
 
-export const onSubmit = async (formData) => {
+export const onSubmit = async (formData, id, username) => {
+
+  const Data = {
+    id: id,
+    status: '申请已通过',
+    explanation: '请在处理界面完成私钥计算',
+  };
+  formData.username = username;
 
   const response = await post('/task/create', formData);
+  const response1 = await post('/application/update', Data);
 
-  if (response.success) {
-    ElMessage.success('签名任务已创建');
+  if (response.success && response1.success) {
+    console.log('签名任务已创建');
   } else {
-    ElMessage.error('签名任务创建失败');
+    console.error('签名任务创建失败');
   }
 }
 
@@ -119,8 +127,8 @@ const getFileId = async () => {
 };
 
 // 加密文件，并更新进度
-export const encryptCsvFileWithProgress = async (file, startTime, estimatedTime, progress, fileName, creator_name) => {
-  const chunkSize = 1024 * 1024 * 10; // 每次处理 10MB
+export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, showUpload, estimatedTime, progress, fileName, creator_name, fileOutline) => {
+  const chunkSize = 1024 * 1024 * 50; // 每次处理 50MB
 
   const FileId = await getFileId();
 
@@ -148,10 +156,11 @@ export const encryptCsvFileWithProgress = async (file, startTime, estimatedTime,
         try {
           // console.log(`Main thread: Received chunk ${localCurrentChunk} of ${localTotalChunks}`);
 
-          await uploadEncryptedChunk(localChunkWithLength, localCurrentChunk, localTotalChunks, FileId, fileName, creator_name);
+          await uploadEncryptedChunk(localChunkWithLength, localCurrentChunk, localTotalChunks, FileId, fileName, creator_name, fileOutline);
 
           // 更新进度
           progress.value = Number(localProgressValue);
+          console.log(`Current Progress: ${progress.value}`);
 
           // // 使用局部变量
           // console.log(`Uploaded chunk ${localCurrentChunk} of ${localTotalChunks}`);
@@ -171,6 +180,9 @@ export const encryptCsvFileWithProgress = async (file, startTime, estimatedTime,
 
           // 更新 estimatedTime.value
           estimatedTime.value = formatTime(Math.max(remainingTime, 0)); // 确保剩余时间不为负数
+
+          console.log(progress.value);
+
         } catch (uploadError) {
           console.error(`Error uploading chunk ${localCurrentChunk}:`, uploadError);
         }
@@ -209,7 +221,7 @@ function arrayBufferToBase641(buffer) {
 }
 
 // 上传加密块到服务器的方法
-async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fileName, creatorName) {
+async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fileName, creatorName, fileOutline) {
 
   // 创建 FormData 实例，用于存放要上传的块和其他元数据
   const formData = new FormData();
@@ -223,8 +235,7 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
   formData.append("fileId", fileId);
   formData.append("fileName", fileName);
   formData.append("creatorName", creatorName);
-  // formData.append("fileOutline", fileOutline);
-
+  formData.append("fileOutline", fileOutline);
   try {
 
     const response = await fetch('/api/upload-chunk', {
