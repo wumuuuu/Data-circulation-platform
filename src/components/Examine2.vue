@@ -44,17 +44,17 @@ const onCancel = (id) => {
 
 // 同意申请
 const onAgree = async (id, Type, username) => {
-  if(Type === 'sign') {
-    await update(username, id, tableData, '等待数据所有方审核');
-  }else if(Type === 'confirm') {
-    await update(username, id, tableData, '申请已通过');
+  if(Type === '签名') {
+    await update(username, id, tableData, '等待数据所有方审核', '');
+  }else{
+    await update(username, id, tableData, '申请已通过', '等待验证');
   }
 };
 
 // 拒绝申请
-const onReject = async (id) => {
+const onReject = async (id, username) => {
   const reason = rowStatus.value[id].rejectReason || '';
-  await update(id, tableData, '平台审核未通过', reason);
+  await update(username, id, tableData, '平台审核未通过', reason);
 
   // 移除该行并退出编辑模式
   tableData.value = tableData.value.filter(item => item.id !== id);
@@ -118,12 +118,15 @@ const onReject = async (id) => {
                     <el-table-column prop="applicationType" label="申请类型" align="center"/>
                     <el-table-column label="申请内容" width="380">
                       <template #default="scope">
-                        <div v-if="scope.row.applicationType === 'sign'">
+                        <div v-if="scope.row.applicationType === '签名'">
                           <div>需求：{{ scope.row.text }}</div>
                           <div >时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
-                        <div v-if="scope.row.applicationType === 'confirm'">
+                        <div v-if="scope.row.applicationType === '确权'">
                           <div>需求：对ID为 {{ scope.row.text }} 的流转数据进行确权</div>
+                        </div>
+                        <div v-if="scope.row.applicationType === '仲裁'">
+                          <div>需求：对ID为 {{ scope.row.text }} 的流转数据签名Y进行仲裁</div>
                         </div>
                       </template>
                     </el-table-column>
@@ -132,7 +135,7 @@ const onReject = async (id) => {
                         <!-- 如果当前行处于编辑模式，显示输入框和确定/取消按钮，否则显示同意/拒绝按钮 -->
                         <div v-if="rowStatus[scope.row.id].isEditing">
                           <el-input v-model="rowStatus[scope.row.id].rejectReason" placeholder="请输入拒绝理由" />
-                          <el-button type="primary" size="small" @click="onReject(scope.row.id)">
+                          <el-button type="primary" size="small" @click="onReject(scope.row.id, scope.row.username)">
                             确定
                           </el-button>
                           <el-button type="text" size="small" @click="onCancel(scope.row.id)">

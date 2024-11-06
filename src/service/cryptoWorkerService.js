@@ -62,16 +62,7 @@ export function encryptFile(file, sharedSecret, chunkSize, onProgress) {
   return sendMessageToWorker({ type: 'encryptFile', payload: { file, sharedSecret, chunkSize } }, onProgress);
 }
 
-// 函数：使用 Web Worker 对文件进行分块解密
-export function decryptFile(encryptedDataWithChecksumBuffer, sharedSecret, onProgress) {
-  return sendMessageToWorker(
-    {
-      type: 'decryptFile',
-      payload: {
-        file: encryptedDataWithChecksumBuffer, // 传递加密数据（ArrayBuffer）
-        sharedSecret,
-      },
-    },
-    onProgress
-  );
+// 函数：向 Web Worker 发送解密数据的请求，并返回解密后的数据
+export function decryptFile(sharedSecret, encryptedData) {
+  return sendMessageToWorker({ type: 'decryptFile', payload: { sharedSecret, encryptedData } });
 }

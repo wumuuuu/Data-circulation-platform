@@ -13,7 +13,7 @@ const registerData = ref({
   password: '',
   rePassword: '',
   public_key: '',
-  role:'普通用户'
+  role:''
 });
 
 // 定义数据模型

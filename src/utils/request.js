@@ -1,6 +1,4 @@
-//request.js
-
-import { sharedKey } from '@/utils/cryptoUtils.js'
+import { sharedKey } from '@/cryptoUtils.js';
 
 const baseURL = '/api';
 
@@ -15,6 +13,7 @@ const request = async (url, options = {}) => {
     'Content-Type': 'application/json',
     ...options.headers,
   };
+
   // 检查并确保 options.body 是对象
   if (options.body && typeof options.body === 'object') {
     // 直接字符串化加密后的请求体或普通对象
@@ -30,6 +29,15 @@ const request = async (url, options = {}) => {
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    console.log(1);
+    // 针对文件下载的处理
+    if (options.method === 'GET' && options.responseType === 'blob') {
+      const blob = await response.blob(); // 获取 Blob 数据
+      return {
+        success: true,
+        data: blob,
+      };
     }
 
     const apiResponse = await response.json();
@@ -57,16 +65,12 @@ const request = async (url, options = {}) => {
         data: data,
         message: apiResponse.message,
       };
-      throw new Error(apiResponse.message);
     }
   } catch (error) {
     console.error('Fetch error:', error);
     throw error;
   }
 };
-
-
-
 
 // POST 请求封装
 export const post = (url, data) => {
@@ -77,9 +81,10 @@ export const post = (url, data) => {
 };
 
 // GET 请求封装
-export const get = (url) => {
+export const get = (url, options = {}) => {
   return request(url, {
-    method: 'GET'
+    method: 'GET',
+    ...options // 允许传递其他选项，例如 responseType
   });
 };
 

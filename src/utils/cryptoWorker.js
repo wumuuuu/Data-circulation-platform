@@ -49,8 +49,11 @@ onmessage = async function (e) {
       break;
 
     case 'decryptFile':
-      // 处理文件分块解密的逻辑
-      await decryptFile(payload.file, payload.sharedSecret);
+      const decryptedFile = await decryptFile(payload.sharedSecret, payload.encryptedData);
+      postMessage({
+        type: 'decryptedFile',
+        data: decryptedFile,
+      });
       break;
 
     default:
@@ -180,48 +183,25 @@ async function encryptFile(file, sharedSecret, chunkSize) {
   postMessage({ type: 'done', message: 'File encryption completed' });
 }
 
-// 解密文件（分块解密，主线程负责合并）
-async function decryptFile(file, sharedSecret, chunkSize) {
-  const totalChunks = Math.ceil(file.size / chunkSize);
-  console.log(`Worker: file.size = ${file.size}, chunkSize = ${chunkSize}, totalChunks = ${totalChunks}`);
+async function decryptFile(sharedSecret, encryptedDataArrayBuffer) {
+  // 将 ArrayBuffer 转换为 Uint8Array 以便使用 slice 方法分割 IV 和加密数据
+  const encryptedDataArray = new Uint8Array(encryptedDataArrayBuffer);
+  const iv = encryptedDataArray.slice(0, 16); // 提取前 16 字节为 IV
+  const encryptedData = encryptedDataArray.slice(16); // 剩余部分为加密数据
+  console.log('IV:', iv);
+  console.log('Encrypted Data:', encryptedData);
 
-  let offset = 0;
-  let currentChunk = 0;
+  // 解密数据
+  const decryptedData = await crypto.subtle.decrypt({
+    name: 'AES-CTR',
+    counter: iv, // 使用相同的 IV
+    length: 64 // 计数器长度为 64 位
+  }, sharedSecret, encryptedData);
 
-  while (offset < file.size) {
-    // 读取文件的一个块
-    const chunkBlob = file.slice(offset, offset + chunkSize);
-    const chunkArrayBuffer = await chunkBlob.arrayBuffer();
-
-    // 解密数据
-    const encryptedChunkBase64 = arrayBufferToBase64(chunkArrayBuffer);
-    const decryptedChunkString = await decryptData(sharedSecret, encryptedChunkBase64);
-
-    // 将解密后的字符串转换为 ArrayBuffer
-    const decryptedChunkArrayBuffer = new TextEncoder().encode(decryptedChunkString);
-
-    // 向主线程发送解密后的块
-    postMessage({
-      type: 'decryptedChunk',
-      decryptedChunkArrayBuffer,
-      currentChunk,
-      totalChunks,
-    }, [decryptedChunkArrayBuffer]); // 使用 Transferable 对象传递
-
-    // 更新进度
-    currentChunk += 1;
-    const progress = (currentChunk / totalChunks) * 100;
-    postMessage({
-      type: 'progress',
-      progress: progress.toFixed(2),
-    });
-
-    offset += chunkSize;
-  }
-
-  // 当所有块都解密完成后，通知主线程
-  postMessage({ type: 'done', message: 'File decryption completed' });
+  // 返回解密后的 ArrayBuffer
+  return decryptedData; // 返回 ArrayBuffer，用于后续处理
 }
+
 
 // 辅助函数：连接多个 ArrayBuffer
 function concatenateArrayBuffers(buffers) {

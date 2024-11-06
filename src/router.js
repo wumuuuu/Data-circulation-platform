@@ -111,6 +111,7 @@ export const handleCommand = (command) => {
     console.log('localStorage');
     // 然后跳转到登录页面
     router.push('/');
+    window.location.reload(); // 刷新页面
   }
 };
 

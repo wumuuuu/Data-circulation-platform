@@ -7,21 +7,20 @@ import {
   addMember,
   fetchApplications,
   encryptCsvFileWithProgress,
-  decryptCsvFileWithProgress,
-  fetchFiles, onReject
+  fetchFiles, onReject,
 } from '@/service/Examine1Service.js'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 const activeMenu = ref('4');
 const username = localStorage.getItem('username');
-
 const formData = ref({
   signer: {
     members: []
   },
   selectFile: '',
-  taskType: 'sign',
+  taskType: '签名',
   status:'',
   username:'',
+  applicationId:'',
 });
 
 const files = ref([]);
@@ -109,29 +108,9 @@ const encryptAndUpload = async () => {
     progress,
     fileName.value,
     username,
-    fileOutline.value
+    fileOutline.value,
   );
 };
-
-
-// 解密文件并保存在本地
-// const decryptAndSave = async () => {
-//   isProcessing.value = true; // 显示进度条
-//
-//   const startTime = Date.now(); // 记录开始时间
-//   const progressCallback = (progressValue) => {
-//     progress.value = progressValue; // 更新进度
-//   };
-//
-//   try {
-//     await decryptCsvFileWithProgress(selectedFile.value, progressCallback); // 调用解密函数
-//     ElMessage.success('文件解密成功并已保存到本地');
-//   } catch (error) {
-//     ElMessage.error('文件解密失败');
-//   } finally {
-//     isProcessing.value = false; // 停止进度条
-//   }
-// };
 
 // 提示
 const open = () => {
@@ -231,8 +210,9 @@ const onExplain = (id) => {
                 <div style="height: 66vh;">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center"/>
+                    <el-table-column prop="id" label="申请ID" align="center"/>
                     <el-table-column prop="username" label="用户名" align="center" width="100"/>
-                    <el-table-column prop="text" label="申请内容" width="400">
+                    <el-table-column prop="text" label="申请内容" width="300">
                       <template #default="scope">
                         <div>
                           <div>需求：{{ scope.row.text }}</div>
@@ -266,8 +246,8 @@ const onExplain = (id) => {
                 <div class="sign">上传新数据</div>
                 <el-divider />
                 <el-row class="form-row">
-                  <el-col :span="6" class="label-col">命名数据：</el-col>
-                  <el-col :span="18" class="input-col">
+                  <el-col :span="6" class="label-col" style="margin-top: 20px" >命名数据：</el-col>
+                  <el-col :span="18" class="input-col" style="margin-top: 20px">
                     <el-input v-model="fileName"/>
                   </el-col>
                   <el-input style="height: 30vh; margin-top: 20px" type="textarea" :rows="10" placeholder="上传数据的概要"  v-model="fileOutline"/>

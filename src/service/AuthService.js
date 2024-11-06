@@ -4,7 +4,7 @@ import {
   initKeyExchange, // 用于初始化密钥交换过程
   clientKeyPair, // 存储客户端的密钥对
   sharedKey // 存储生成的共享密钥
-} from '@/utils/cryptoUtils.js'
+} from '@/cryptoUtils.js'
 
 import {
   generatePrivateKey, // 使用 Web Worker 生成私钥的函数

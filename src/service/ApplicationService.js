@@ -83,7 +83,7 @@ export const onSubmit = async (formData) => {
   }
 }
 
-export const onSubmit1 = async (taskId) => {
+export const onSubmit1 = async (taskId, type) => {
   try {
     // 调用接口提交数据
     const response = await get(`/task/find_task?taskId=${taskId}`);
@@ -97,8 +97,9 @@ export const onSubmit1 = async (taskId) => {
         explanation:'',
         startDate: '',
         endDate: '',
-        applicationType: 'confirm',
-        status: '等待平台审核'
+        applicationType: type,
+        status: '等待平台审核',
+        fileName:'',
       };
       try {
         // 调用接口提交数据
@@ -116,3 +117,34 @@ export const onSubmit1 = async (taskId) => {
     ElMessage.error('申请提交失败');
   }
 }
+
+export const Download = async (row) => {
+  try {
+    // 发起请求下载文件
+    const response = await get(`/download?fileName=${row.fileName}`, { responseType: 'blob' });
+    
+    // 创建一个 URL 对象
+    const url = window.URL.createObjectURL(response.data);
+
+    // 创建下载链接
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', row.fileName + '.csv'); // 设置下载文件名
+
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+
+    // 清理
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    ElMessage.success('下载成功');
+  } catch (error) {
+    console.error('Error:', error);
+    ElMessage.error('下载失败');
+  }
+};
+
+
+

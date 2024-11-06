@@ -5,7 +5,7 @@ import { ref } from 'vue'
 const username = localStorage.getItem('username');
 
 // 更新申请状态的通用函数
-export const update = async (Username, id, tableData, status, explanation = '') => {
+export const update = async (Username, id, tableData, status, explanation) => {
   // 确保 tableData 是一个数组
   if (!tableData || !Array.isArray(tableData.value)) {
     console.error('tableData is not defined or not an array');
@@ -14,30 +14,31 @@ export const update = async (Username, id, tableData, status, explanation = '') 
 
   // 查找对应的申请记录
   const row = tableData.value.find(item => item.id === id);
-  if (!row) return;
+  if (!row) {
+    ElMessage.error("没用对应任务ID的记录")
+    return;
+  }
 
-  if(row.applicationType === 'confirm') {
-    status = '申请已通过';
-    explanation = '等待验证';
+  if(row.applicationType !== '签名') {
     const applicationData = {
       signer: {
         members: []
       },
       selectFile: '',
-      taskType: 'confirm',
+      taskType: row.applicationType,
       status:'',
       confirmId: row.text,
       username: Username,
+      applicationId:id,
     };
 
-    console.log(Username);
     // 调用后端API，更新申请状态
     const response = await post('/task/create', applicationData);
 
     if (response.success) {
-      ElMessage.success('确权任务已创建');
+      ElMessage.success('任务已创建');
     } else {
-      ElMessage.error('确权任务创建失败');
+      ElMessage.error('任务创建失败');
     }
 
   }
@@ -46,6 +47,7 @@ export const update = async (Username, id, tableData, status, explanation = '') 
     id: id,
     status: status, // 动态设置状态
     explanation: explanation, // 动态设置解释（可为空）
+    fileName:'',
   };
 
   try {

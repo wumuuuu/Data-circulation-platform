@@ -2,9 +2,8 @@
 
 import { get, post } from '@/utils/request.js'; // 导入用于发送请求的函数
 import { ElMessage } from 'element-plus';
-import { getSharedKey } from '@/utils/cryptoUtils.js';
-import { decryptFile, encryptFile } from '@/service/cryptoWorkerService.js';
-import { saveAs } from 'file-saver';
+import { getSharedKey } from '@/cryptoUtils.js';
+import { encryptFile } from '@/service/cryptoWorkerService.js';
 
 export const onSubmit = async (formData, id, username) => {
 
@@ -12,16 +11,23 @@ export const onSubmit = async (formData, id, username) => {
     id: id,
     status: '申请已通过',
     explanation: '请在处理界面完成私钥计算',
+    fileName:formData.selectFile,
   };
   formData.username = username;
+  formData.applicationId = id;
 
   const response = await post('/task/create', formData);
   const response1 = await post('/application/update', Data);
 
-  if (response.success && response1.success) {
-    console.log('签名任务已创建');
+  if (response.success ) {
+    ElMessage.success('签名任务已创建');
   } else {
-    console.error('签名任务创建失败');
+    ElMessage.error('签名任务创建失败');
+  }
+  if(response1.success){
+    ElMessage.success('申请已更新');
+  } else {
+    ElMessage.error('申请更新失败');
   }
 }
 
@@ -31,6 +37,7 @@ export const onReject = async (explanation, id) => {
       id: id,
       status: '数据所有方审核未通过',
       explanation: explanation,
+      fileName:'',
     };
     // 将 explanation 和 id 作为请求体发送给后端
     const response = await post('/application/update', Data);
@@ -82,7 +89,6 @@ export async function fetchFiles() {
     throw error; // 抛出错误，便于调用方捕获
   }
 }
-
 
 /**
  * 获取需要数据所有方审核的申请记录
@@ -209,17 +215,6 @@ export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, 
   }
 };
 
-// 辅助函数：将 ArrayBuffer 转换为 Base64 字符串
-function arrayBufferToBase641(buffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
 // 上传加密块到服务器的方法
 async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fileName, creatorName, fileOutline) {
 
@@ -259,64 +254,6 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
 
     // 如果有必要，可以在此添加重试逻辑或进一步的错误处理
     throw new Error(`Error uploading chunk ${currentChunk}: ${error.message}`);
-  }
-}
-
-
-// 解密文件，并更新进度
-export const decryptCsvFileWithProgress = async (encryptedDataBuffer, progressCallback) => {
-  try {
-    // 获取共享密钥
-    const sharedSecret = await getSharedKey();
-
-    // 调用解密函数
-    const decryptedDataBuffer = await decryptFile(encryptedDataBuffer, sharedSecret, (progress) => {
-      // 更新进度
-      if (progressCallback) {
-        progressCallback(progress);
-      }
-    });
-
-    // 将解密后的数据保存为文件
-    const decryptedBlob = new Blob([decryptedDataBuffer], { type: 'text/csv;charset=utf-8' });
-    saveAs(decryptedBlob, 'decrypted.csv');
-
-    ElMessage.success('文件解密完成');
-
-  } catch (error) {
-    ElMessage.error(`解密过程失败: ${error.message}`);
-    throw error;
-  }
-};
-
-// 保存解密后的 CSV 文件（如果需要）
-export async function saveDecryptedCsvFile(decryptedBlob) {
-  try {
-    // 显示保存文件对话框
-    const fileHandle = await window.showSaveFilePicker({
-      suggestedName: 'data.csv',
-      types: [
-        {
-          description: 'CSV Files',
-          accept: {
-            'text/csv': ['.csv'],
-          },
-        },
-      ],
-    });
-
-    // 创建写入流
-    const writableStream = await fileHandle.createWritable();
-
-    // 将 Blob 数据写入文件
-    await writableStream.write(decryptedBlob);
-
-    // 关闭写入流
-    await writableStream.close();
-
-    console.log('CSV 文件已保存');
-  } catch (error) {
-    console.error('保存文件失败:', error.message);
   }
 }
 

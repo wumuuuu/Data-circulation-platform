@@ -2,11 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
 import {
+  Download,
   fetchApplications,
   fetchDataOwners,
   onSubmit, onSubmit1
 } from '@/service/ApplicationService.js'
 import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const activeMenu = ref('2');
 const username = localStorage.getItem('username');
@@ -33,7 +35,7 @@ const formData = ref({
 // 分页相关数据
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页
-const pageSize = ref(6); // 每页显示条数
+const pageSize = ref(5); // 每页显示条数
 
 onMounted(async () => {
   tableData.value = await fetchApplications();
@@ -133,7 +135,7 @@ const onReset1 = () => {
                         <div style="display: flex; align-items: center; justify-content: center;">
                           <span>{{ scope.row.status }}</span>
                           <el-icon v-if="scope.row.status.includes('未通过')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
-                          <el-icon v-else-if="scope.row.status.includes('通过') || scope.row.status.includes('成功')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
+                          <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('无误')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
                           <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
                         </div>
                       </template>
@@ -149,10 +151,20 @@ const onReset1 = () => {
                     <el-table-column label="其他" align="center" width = "70" >
                       <template #default="scope">
                         <el-button
+                          v-if="scope.row.explanation === '已允许下载该数据'"
                           link
                           type="primary"
                           size="small"
-                          :disabled="!scope.row.explanation"
+                          @click="Download(scope.row)"
+                        >
+                          下载
+                        </el-button>
+                        <el-button
+                          v-else
+                          link
+                          type="primary"
+                          size="small"
+                          :disabled="!scope.row.explanation || scope.row.explanation === ''"
                           @click="openDialog(scope.row.explanation)"
                         >
                             详情
@@ -186,17 +198,17 @@ const onReset1 = () => {
                 <!-- 按钮排列 -->
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('sign')" class="custom-button custom-button-text">签名申请</el-button>
+                    <el-button type="primary" @click="showForm('签名')" class="custom-button custom-button-text">签名申请</el-button>
                   </el-col>
                 </el-row>
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('confirm')" class="custom-button custom-button-text">确权申请</el-button>
+                    <el-button type="primary" @click="showForm('确权')" class="custom-button custom-button-text">确权申请</el-button>
                   </el-col>
                 </el-row>
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('arbitrate')" class="custom-button custom-button-text">仲裁申请</el-button>
+                    <el-button type="primary" @click="showForm('仲裁')" class="custom-button custom-button-text">仲裁申请</el-button>
                   </el-col>
                 </el-row>
               </el-card>
@@ -210,7 +222,7 @@ const onReset1 = () => {
                   @click="formSelected = false"
                 >×</el-button>
                 <!-- 根据选择的表单类型显示不同的内容 -->
-                <div v-if="selectedForm === 'sign'" style="height: 70vh; overflow: auto;  width: 350px">
+                <div v-if="selectedForm === '签名'" style="height: 70vh; overflow: auto;  width: 350px">
                   <div class = "sign">
                     提交签名申请
                   </div>
@@ -253,7 +265,7 @@ const onReset1 = () => {
                   </el-row>
                 </div>
 
-                <div v-else-if="selectedForm === 'confirm'" style="height: 70vh; overflow: auto; width: 350px">
+                <div v-else-if="selectedForm === '确权'" style="height: 70vh; overflow: auto; width: 350px">
                   <!-- 确权申请表单内容 -->
                   <div class = "sign">
                     提交确权申请
@@ -268,13 +280,30 @@ const onReset1 = () => {
 
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit1(taskId); onReset1();">提交</el-button>
+                      <el-button type="primary" @click="onSubmit1(taskId, '确权'); onReset1();">提交</el-button>
                       <el-button @click="onReset1()">重置</el-button>
                     </el-col>
                   </el-row>
                 </div>
-                <div v-else-if="selectedForm === 'arbitrate'">
+                <div v-else-if="selectedForm === '仲裁'" style="height: 70vh; overflow: auto; width: 350px">
                   <!-- 仲裁申请表单内容 -->
+                  <div class = "sign">
+                    提交仲裁申请
+                  </div>
+                  <el-divider />
+                  <el-form>
+                    <el-form-item label="输入要仲裁的任务ID：" :rules="{required: true}">
+                      <el-input v-model="taskId"/>
+                    </el-form-item>
+                    <el-divider />
+                  </el-form>
+
+                  <el-row class="form-row">
+                    <el-col :span="24" class="input-col">
+                      <el-button type="primary" @click="onSubmit1(taskId, '仲裁'); onReset1();">提交</el-button>
+                      <el-button @click="onReset1()">重置</el-button>
+                    </el-col>
+                  </el-row>
                 </div>
               </el-card>
             </el-col>

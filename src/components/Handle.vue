@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
-import { calculateConfirm, calculateSign, fetchTask } from '@/service/HandleService.js'
+import { calculateArbitration, calculateConfirm, calculateSign, fetchTask } from '@/service/HandleService.js'
 const activeMenu = ref('3');
 const username = localStorage.getItem('username');
 
@@ -35,10 +35,12 @@ const privateKey = ref(null);
 const handleBeforeUpload = async (file, rowData) => {
   privateKey.value = file;
   // console.log(rowData.taskType);
-  if(rowData.taskType === 'sign'){
+  if(rowData.taskType === '签名'){
     await calculateSign(privateKey.value, rowData, username);
-  } else if(rowData.taskType === 'confirm'){
+  } else if(rowData.taskType === '确权'){
     await calculateConfirm(privateKey.value, rowData, username);
+  } else {
+    await calculateArbitration(privateKey.value, rowData, username);
   }
 
 

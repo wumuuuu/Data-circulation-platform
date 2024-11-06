@@ -1,6 +1,9 @@
 import { get, post } from '@/utils/request.js'
 import { modInv, modPow } from 'bigint-mod-arith';
-
+import { ElMessage } from 'element-plus'
+const p = BigInt('132165373947571709001890899559578394061572732290158236845675979056783176833192189640519330577968623712019753279011546461561086378291703395170828826203868040544703192493236905634659492348075654172349595065574318562378095706622284475060330389667603958501055142626804746804365447731489915179943331725842802927799');
+const q = BigInt('66082686973785854500945449779789197030786366145079118422837989528391588416596094820259665288984311856009876639505773230780543189145851697585414413101934020272351596246618452817329746174037827086174797532787159281189047853311142237530165194833801979250527571313402373402182723865744957589971665862921401463899');
+const g = BigInt('436921')
 export async function fetchTask(userName) {
   try {
 
@@ -21,7 +24,6 @@ export async function fetchTask(userName) {
 
 export async function calculateSign(file, Data, username) {
 
-  const p = BigInt('132165373947571709001890899559578394061572732290158236845675979056783176833192189640519330577968623712019753279011546461561086378291703395170828826203868040544703192493236905634659492348075654172349595065574318562378095706622284475060330389667603958501055142626804746804365447731489915179943331725842802927799');
   let y = BigInt(Data.y);
   let b = BigInt(Data.b);
 
@@ -36,13 +38,16 @@ export async function calculateSign(file, Data, username) {
     y: y.toString(),
     b: b.toString(),
   });
-
+  if(response.success) {
+    ElMessage.success('计算完成');
+  }else{
+    ElMessage.error('计算出错');
+  }
+  window.location.reload(); // 刷新当前页面
 }
 
 export async function calculateConfirm(file, Data, username) {
 
-  const p = BigInt('132165373947571709001890899559578394061572732290158236845675979056783176833192189640519330577968623712019753279011546461561086378291703395170828826203868040544703192493236905634659492348075654172349595065574318562378095706622284475060330389667603958501055142626804746804365447731489915179943331725842802927799');
-  const q = BigInt('66082686973785854500945449779789197030786366145079118422837989528391588416596094820259665288984311856009876639505773230780543189145851697585414413101934020272351596246618452817329746174037827086174797532787159281189047853311142237530165194833801979250527571313402373402182723865744957589971665862921401463899');
 
   const pemContent = await readFileContent(file);
   const privateKey = BigInt(await extractKeyFromPem(pemContent));
@@ -56,8 +61,65 @@ export async function calculateConfirm(file, Data, username) {
     username: username,
     d: d.toString(),
   });
-
+  if(response.success) {
+    ElMessage.success('计算完成');
+  }else{
+    ElMessage.error('计算出错');
+  }
+  window.location.reload(); // 刷新当前页面
 }
+
+export async function calculateArbitration(file, Data, username) {
+
+  const pemContent = await readFileContent(file);
+  const privateKey = BigInt(await extractKeyFromPem(pemContent));
+  let c, d = 0, d1 = 0, a_inv,t = 0;
+  let t1 = 0, t2 = 0, r=0, delta=0;
+  let s = 0, ch;
+  if(Data.num === '1'){
+    c = BigInt(Data.d);
+    a_inv = modInv(privateKey, q);
+
+    console.log(a_inv);
+
+    d = modPow(c, a_inv, p);
+    r = generateRandom1024BitBigInt();
+    delta = generateRandom1024BitBigInt();
+
+    t = modPow(g, r, p);
+    t1 = modPow(d, r, p);
+    t2 = modPow(g, delta, p);
+  }else if(Data.num === '2'){
+    c = BigInt(Data.d1);
+    a_inv = modInv(privateKey, q);
+    d1 = modPow(c, a_inv, p);
+  } else{
+    r = BigInt(Data.r);
+    ch = BigInt(Data.ch);
+    s = r - ch * privateKey;
+  }
+
+  const response = await post('/task/arbitrationUpdate', {
+    taskId: Data.taskId,
+    username: username,
+    d: d.toString(),
+    d1: d1.toString(),
+    t: t.toString(),
+    t1: t1.toString(),
+    t2: t2.toString(),
+    r: r.toString(),
+    delta: delta.toString(),
+    s : s.toString(),
+    num : Data.num,
+  });
+  if(response.success) {
+    ElMessage.success('计算完成');
+  }else{
+    ElMessage.error('计算出错');
+  }
+  // window.location.reload(); // 刷新当前页面
+}
+
 
 // 用于读取文件内容的异步函数
 function readFileContent(file) {
@@ -100,4 +162,13 @@ async function modularExponentiation(base, exponent, modulus) {
     base = (base * base) % modulus;
   }
   return result;
+}
+
+function generateRandom1024BitBigInt() {
+  const byteArray = new Uint8Array(128); // 128 字节 = 1024 位
+  window.crypto.getRandomValues(byteArray); // 生成随机数并填充到数组
+
+  // 将每个字节转为十六进制字符串并连接，然后转换为 BigInt
+  const hexString = Array.from(byteArray, byte => byte.toString(16).padStart(2, '0')).join('');
+  return BigInt('0x' + hexString);
 }
