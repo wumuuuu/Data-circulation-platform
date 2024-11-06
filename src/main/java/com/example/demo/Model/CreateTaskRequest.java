@@ -8,10 +8,19 @@ public class CreateTaskRequest {
     private String taskType;
     private String confirmId;
     private String username;
+    private Integer applicationId;
 
 
 // Getter 和 Setter
 
+
+    public Integer getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(Integer applicationId) {
+        this.applicationId = applicationId;
+    }
 
     public String getUsername() {
         return username;

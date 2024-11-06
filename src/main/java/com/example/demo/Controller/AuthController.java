@@ -149,7 +149,8 @@ public class AuthController {
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(decryptedPassword)); // 对解密后的密码进行加密
             user.setPublic_key(passwordEncoder.encode(decryptedPublicKey)); // 对解密后的公钥进行加密
-            user.setRole((String) requestBody.get("role")); // 获取其他字段如角色
+            user.setRole("普通用户"); // 获取其他字段如角色
+            System.out.println(user);
             customUserDetailsService.saveUser(user); // 保存用户到数据库
 
             // 4. 注册完成后，清除会话中的共享密钥

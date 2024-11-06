@@ -20,4 +20,7 @@ public interface FileMapper extends BaseMapper<File> {
     @Select("SELECT file_name FROM files WHERE creator_name = #{creator_name}")
     List<String> findFileByCreatorName(String creator_name);
 
+    // 根据 file_name 查找所有 file
+    @Select("SELECT * FROM files WHERE file_name = #{fileName}")
+    File findFileByFileName(String fileName);
 }

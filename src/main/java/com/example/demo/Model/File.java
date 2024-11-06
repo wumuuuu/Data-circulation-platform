@@ -8,62 +8,74 @@ import java.util.Date;
 @TableName("FILES")
 public class File {
 
-    private String file_id;
-    private String file_name;
-    private String file_path;
-    private String creator_name;
-    private String file_outline;
+    private String fileId;
+    private String fileName;
+    private String filePath;
+    private String creatorName;
+    private String fileOutline;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private Date usage_time;
+    private Date usageTime;
 
     // Getters and Setters
-    public String getFile_id() {
-        return file_id;
+    public String getFileId() {
+        return fileId;
     }
 
-    public void setFile_id(String file_id) {
-        this.file_id = file_id;
+    public void setFileId(String fileId) {
+        this.fileId = fileId;
     }
 
-    public String getCreator_name() {
-        return creator_name;
+    public String getCreatorName() {
+        return creatorName;
     }
 
-    public void setCreator_name(String creator_name) {
-        this.creator_name = creator_name;
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
     }
 
-    public String getFile_name() {
-        return file_name;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setFile_name(String file_name) {
-        this.file_name = file_name;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
-    public String getFile_path() {
-        return file_path;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setFile_path(String file_path) {
-        this.file_path = file_path;
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
-    public String getFile_outline() {
-        return file_outline;
+    public String getFileOutline() {
+        return fileOutline;
     }
 
-    public void setFile_outline(String file_outline) {
-        this.file_outline = file_outline;
+    public void setFileOutline(String fileOutline) {
+        this.fileOutline = fileOutline;
     }
 
-    public Date getUsage_time() {
-        return usage_time;
+    public Date getUsageTime() {
+        return usageTime;
     }
 
-    public void setUsage_time(Date usage_time) {
-        this.usage_time = usage_time;
+    public void setUsageTime(Date usageTime) {
+        this.usageTime = usageTime;
+    }
+
+    @Override
+    public String toString() {
+        return "File{" +
+                "fileId='" + fileId + '\'' +
+                ", fileName='" + fileName + '\'' +
+                ", filePath='" + filePath + '\'' +
+                ", creatorName='" + creatorName + '\'' +
+                ", fileOutline='" + fileOutline + '\'' +
+                ", usageTime=" + usageTime +
+                '}';
     }
 
     public static class SignTask {

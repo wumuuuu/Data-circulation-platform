@@ -16,11 +16,9 @@ public class User {
     private String id;
     private String username;
     private String password;
-    private String rePassword;
-    @TableField("public_key") // 映射数据库字段
+    private String rePassword;// 映射数据库字段
     private String public_key;
     private String role;
-    @TableField("shared_secret")
     private String shared_secret;
 
     public String getId() {

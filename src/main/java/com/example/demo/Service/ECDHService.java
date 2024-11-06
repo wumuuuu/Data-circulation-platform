@@ -5,9 +5,7 @@ import com.example.demo.Model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -15,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 
@@ -59,42 +58,44 @@ public class ECDHService {
      * 采用 AES/CTR/NoPadding 算法，CTR 模式提供了加密功能。
      *
      * @param data 要加密的原始数据
-     * @param username 用户名，用于获取共享密钥
      * @return 加密后的数据，Base64 编码，包含加密后的数据和 IV
      * @throws Exception 如果加密过程出现问题时抛出
      */
-    public String encrypt(byte[] data, String username) throws Exception {
-        // 从数据库获取该用户的共享密钥
-        User userSecretOptional = userMapper.findByUsername(username);
-        if (userSecretOptional == null) {
-            throw new IllegalArgumentException("User not found or shared secret is missing");
+    public String encrypt(byte[] data, byte[] sharedSecret) {
+        try {
+            // 检查共享密钥是否为 null 或空
+            if (sharedSecret == null || sharedSecret.length == 0) {
+                throw new IllegalArgumentException("Shared secret is null or empty");
+            }
+
+            // 创建 AES 密钥
+            SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
+
+            // 使用 AES/CTR/NoPadding 模式
+            Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+
+            // 生成随机的 IV，长度为 16 字节
+            byte[] iv = new byte[16];
+            SecureRandom secureRandom = new SecureRandom();
+            secureRandom.nextBytes(iv);  // 生成随机的 IV
+
+            // 初始化 Cipher
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));  // 使用 IV 初始化
+
+            // 加密数据
+            byte[] encryptedData = cipher.doFinal(data);
+
+            // 将 IV 和加密后的数据组合在一起
+            byte[] encryptedDataWithIv = new byte[iv.length + encryptedData.length];
+            System.arraycopy(iv, 0, encryptedDataWithIv, 0, iv.length);
+            System.arraycopy(encryptedData, 0, encryptedDataWithIv, iv.length, encryptedData.length);
+
+            // 返回 Base64 编码字符串
+            return Base64.getEncoder().encodeToString(encryptedDataWithIv);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error during encryption: " + e.getMessage(), e);
         }
-
-        String sharedSecretString = userSecretOptional.getShared_secret();
-        byte[] sharedSecret = Base64.getDecoder().decode(sharedSecretString);
-        SecretKey secretKey = new SecretKeySpec(sharedSecret, "AES");
-
-        // 使用 AES/CTR/NoPadding 模式
-        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-        byte[] iv = new byte[16];  // CTR 通常使用 16 字节的 IV
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(iv);  // 生成随机的 IV
-
-        // 初始化 Cipher
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new IvParameterSpec(iv));  // 使用 IV 初始化
-
-        // 加密数据
-        byte[] encryptedData = cipher.doFinal(data);
-
-        // 将 IV 和加密后的数据组合在一起
-        byte[] encryptedDataWithIv = new byte[iv.length + encryptedData.length];
-        System.arraycopy(iv, 0, encryptedDataWithIv, 0, iv.length);
-        System.arraycopy(encryptedData, 0, encryptedDataWithIv, iv.length, encryptedData.length);
-
-        // 返回 Base64 编码字符串
-        return Base64.getEncoder().encodeToString(encryptedDataWithIv);
     }
-
 
 
     // 将字节数组转换为十六进制字符串

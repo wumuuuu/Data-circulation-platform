@@ -21,7 +21,10 @@ public class Task {
     private String x;
     private String e1;
     private String e2;
+    private String f1;
+    private String f2;
     private String username;
+    private Integer applicationId;
 
     // 无参构造函数
     public Task() {
@@ -30,7 +33,7 @@ public class Task {
     // 带参构造函数（包含所有字段）
     public Task(Integer taskId, String taskType, String fileId, String confirmId,
                 java.sql.Timestamp createdAt, String status, String y,
-                String b, String x, String e1, String e2, String username) {
+                String b, String x, String e1, String e2, String f1, String f2, String username, Integer applicationId) {
         this.taskId = taskId;
         this.taskType = taskType;
         this.fileId = fileId;
@@ -42,11 +45,22 @@ public class Task {
         this.x = x;
         this.e1 = e1;
         this.e2 = e2;
+        this.f1 = f1;
+        this.f2 = f2;
         this.username = username;
+        this.applicationId = applicationId;
     }
 
     // Getter 和 Setter 方法
 
+
+    public Integer getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(Integer applicationId) {
+        this.applicationId = applicationId;
+    }
 
     public String getUsername() {
         return username;
@@ -144,6 +158,25 @@ public class Task {
         this.e2 = e2;
     }
 
+    public String getF1() {
+        return f1;
+    }
+
+    public void setF1(String f1) {
+
+        this.f1 = f1;
+    }
+
+    public String getF2() {
+        return f2;
+    }
+
+    public void setF2(String f2) {
+
+        this.f2 = f2;
+    }
+
+
     // toString 方法
     @Override
     public String toString() {
@@ -159,7 +192,10 @@ public class Task {
                 ", x='" + x + '\'' +
                 ", e1='" + e1 + '\'' +
                 ", e2='" + e2 + '\'' +
+                ", f1='" + f1 + '\'' +
+                ", f2='" + f2 + '\'' +
                 ", username='" + username + '\'' +
+                ", applicationId=" + applicationId +
                 '}';
     }
 }

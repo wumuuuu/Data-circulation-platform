@@ -4,17 +4,20 @@ import com.example.demo.Mapper.FileMapper;
 import com.example.demo.Model.APIResponse;
 import com.example.demo.Model.File;
 import com.example.demo.Service.ECDHService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
-import java.io.OutputStream;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.*;
 
 import java.nio.file.*;
 
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -88,12 +91,12 @@ public class FileController {
             if (uploadedChunks == totalChunks) {
                 // 所有块都上传完毕，执行合并
                 if (areAllChunksPresent(totalChunks, fileId)) {
-                    mergeChunks(totalChunks, fileId);
+                    mergeChunks(totalChunks, fileId, fileName);
 
-                    if(insertFile(fileId, fileName, creatorName, fileOutline)) {
+                    if (insertFile(fileId, fileName, creatorName, fileOutline)) {
+
                         return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
-                    }
-                    else {
+                    } else {
                         return APIResponse.error(500, "插入数据库失败");
                     }
 
@@ -109,6 +112,44 @@ public class FileController {
             // 返回错误响应
             return APIResponse.error(500, "Error uploading chunk " + (chunkIndex + 1) + ": " + e.getMessage());
         }
+    }
+
+    @GetMapping("/download")
+    public StreamingResponseBody downloadFile(@RequestParam("fileName") String fileName,
+                                              HttpServletResponse response) {
+        return outputStream -> {
+            try {
+                File fileRecord = fileMapper.findFileByFileName(fileName);
+                if (fileRecord == null) {
+                    throw new FileNotFoundException("File not found");
+                }
+
+                String filePath = fileRecord.getFilePath();
+                java.io.File file = new java.io.File(Paths.get(filePath, fileName + ".csv").toString());
+                if (!file.exists()) {
+                    throw new FileNotFoundException("File not found on server");
+                }
+
+
+                // 设置响应内容类型和文件名
+                response.setContentType("text/csv");
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + ".csv\"");
+
+                try (InputStream inputStream = Files.newInputStream(file.toPath())) {
+                    byte[] buffer = new byte[10 * 1024]; // 10KB buffer
+                    int bytesRead;
+
+                    // 直接将文件内容写入响应输出流
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                        outputStream.flush(); // 立即发送数据
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace(); // 打印堆栈跟踪信息
+                throw new IOException("Error processing file download: " + e.getMessage(), e);
+            }
+        };
     }
 
 
@@ -154,10 +195,10 @@ public class FileController {
     }
 
     // 合并所有块
-    private void mergeChunks(int totalChunks, String fileId) throws IOException {
-        // 创建合并后的输出文件，保存在 C:\Users\zzy\Desktop\1\fileId_complete.dat
+    private void mergeChunks(int totalChunks, String fileId, String fileName) throws IOException {
+        // 创建合并后的输出文件，保存在 C:\Users\zzy\Desktop\1\fileName.dat
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId); // 确保使用 fileId 作为文件夹
-        Path outputFile = chunkDir.resolve("complete.csv"); // 合并后的文件名
+        Path outputFile = chunkDir.resolve(fileName + ".csv"); // 合并后的文件名
 
         try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
             // 遍历所有块，按顺序合并它们
@@ -188,14 +229,16 @@ public class FileController {
     private boolean insertFile(String fileId, String fileName, String creatorName, String fileOutline) {
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
         File file = new File();
-        file.setFile_id(fileId);
-        file.setFile_name(fileName);
-        file.setFile_path(chunkDir.toString()); // 将 Path 转为 String
-        file.setUsage_time(new Date());
-        file.setCreator_name(creatorName);
-        file.setFile_outline(fileOutline);
+        file.setFileId(fileId);
+        file.setFileName(fileName);
+        file.setFilePath(chunkDir.toString()); // 将 Path 转为 String
+        file.setUsageTime(new Date());
+        file.setCreatorName(creatorName);
+        file.setFileOutline(fileOutline);
         int result = fileMapper.insert(file);
         return result > 0;
     }
+
+
 
 }

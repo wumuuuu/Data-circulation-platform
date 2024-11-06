@@ -9,7 +9,8 @@ import java.util.List;
 public interface ApplicationMapper extends BaseMapper<Application> {
 
     // 插入新的申请记录
-    @Insert("INSERT INTO application (username, applicationType, status, dataUser, text, explanation, startDate, endDate, applicationTime) VALUES (#{username}, #{applicationType}, #{status}, #{dataUser}, #{text}, #{explanation}, #{startDate}, #{endDate}, #{applicationTime})")
+    @Insert("INSERT INTO application (username, applicationType, status, dataUser, text, explanation, startDate, endDate, applicationTime, file_name)"+
+            " VALUES (#{username}, #{applicationType}, #{status}, #{dataUser}, #{text}, #{explanation}, #{startDate}, #{endDate}, #{applicationTime}, #{fileName})")
     int insert(Application application);
 
     // 根据用户名查找申请记录
@@ -18,11 +19,11 @@ public interface ApplicationMapper extends BaseMapper<Application> {
 
     // 更新申请记录
     @Update("UPDATE application SET status = #{status}, explanation = #{explanation} WHERE id = #{id}")
-    void updateApplication(@Param("id") String id, @Param("status") String status, @Param("explanation") String explanation);
+    void updateApplication(String id, String status, String explanation);
 
-    // 更新申请状态
-    @Update("UPDATE application SET status = #{status} WHERE username = #{username} AND text = #{text}")
-    void updateApplicationStatus(String username, String text, String status);
+    // 更新申请数据名
+    @Update("UPDATE application SET file_name = #{fileName} WHERE id = #{id}")
+    void updateFileName(String id, String fileName);
 
     // 查找所有状态为 "等待管理员审核" 的申请记录
     @Select("SELECT * FROM application WHERE status = '等待平台审核'")

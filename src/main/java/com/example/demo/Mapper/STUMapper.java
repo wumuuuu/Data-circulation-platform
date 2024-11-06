@@ -19,7 +19,7 @@ public interface STUMapper {
     @Select("SELECT * FROM signtask_user WHERE user_name = #{userName}")
     List<SignTaskUser> findInProgressTasksByUserName(String userName);
 
-    // 根据 taskId 和 userName 更新 status
+    // 根据 taskId 和 userName 更新 status, y, b
     @Update("UPDATE signtask_user SET status = #{status}, y = #{y}, b = #{b} " +
             "WHERE task_id = #{taskId} AND user_name = #{userName}")
     void updateStatus(int taskId, String userName, String status, String y, String b);
@@ -35,6 +35,10 @@ public interface STUMapper {
     // 根据 taskId 查找所有的任务
     @Select("SELECT * FROM signtask_user WHERE task_id = #{taskId}")
     List<SignTaskUser> findUserNamesAndSignerNumbersByTaskId(int taskId);
+
+    // 根据 taskId 和 username 查找 b
+    @Select("SELECT b FROM SIGNTASK_USER WHERE task_id = #{taskId} AND user_name = #{username}")
+    String findB(int taskId, String username);
 
 }
 

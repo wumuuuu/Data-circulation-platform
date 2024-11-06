@@ -6,8 +6,13 @@ public class Handle {
     private String taskType;
     private String status;
     private String d;
+    private String d1;
     private String b;
     private String y;
+    private String ch;
+    private String r;
+    private String num;
+
     private java.sql.Timestamp completedAt;
 
     // 默认构造函数
@@ -16,15 +21,19 @@ public class Handle {
 
     // 带参数的构造函数
     public Handle(Integer taskId, String fileId, String taskType, String status,
-                  String d, String b, String y,
+                  String d, String d1, String b, String y, String ch, String r, String num,
                   java.sql.Timestamp completedAt) {
         this.taskId = taskId;
         this.fileId = fileId;
         this.taskType = taskType;
         this.status = status;
         this.d = d;
+        this.d1 = d1;
         this.b = b;
         this.y = y;
+        this.ch = ch;
+        this.r = r;
+        this.num = num;
         this.completedAt = completedAt;
     }
 
@@ -69,6 +78,14 @@ public class Handle {
         this.d = d;
     }
 
+    public String getD1() {
+        return d1;
+    }
+
+    public void setD1(String d1) {
+        this.d1 = d1;
+    }
+
     public String getB() {
         return b;
     }
@@ -93,6 +110,30 @@ public class Handle {
         this.completedAt = completedAt;
     }
 
+    public String getCh() {
+        return ch;
+    }
+
+    public void setCh(String ch) {
+        this.ch = ch;
+    }
+
+    public String getR() {
+        return r;
+    }
+
+    public void setR(String r) {
+        this.r = r;
+    }
+
+    public String getNum() {
+        return num;
+    }
+
+    public void setNum(String num) {
+        this.num = num;
+    }
+
     // toString 方法
     @Override
     public String toString() {
@@ -102,8 +143,12 @@ public class Handle {
                 ", taskType='" + taskType + '\'' +
                 ", status='" + status + '\'' +
                 ", d='" + d + '\'' +
+                ", d1='" + d1 + '\'' +
                 ", b='" + b + '\'' +
                 ", y='" + y + '\'' +
+                ", ch='" + ch + '\'' +
+                ", r='" + r + '\'' +
+                ", num='" + num + '\'' +
                 ", completedAt=" + completedAt +
                 '}';
     }

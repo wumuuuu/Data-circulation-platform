@@ -18,6 +18,7 @@ public class Application {
     private String dataUser;
     private String text;
     private String explanation;
+    private String fileName;
     private Date startDate;
     private Date endDate;
     private Date applicationTime;
@@ -26,9 +27,10 @@ public class Application {
     public Application() {
     }
 
-    public Application(int id, String username, String applicationType, String explanation, String text, String dataUser, String status, Date startDate, Date endDate, Date applicationTime) {
+    public Application(int id, String username, String fileName, String applicationType, String explanation, String text, String dataUser, String status, Date startDate, Date endDate, Date applicationTime) {
         this.id = id;
         this.username = username;
+        this.fileName = fileName;
         this.applicationType = applicationType;
         this.explanation = explanation;
         this.text = text;
@@ -40,6 +42,15 @@ public class Application {
     }
 
     // Getters and Setters
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
     public int getId() {
         return id;
     }
@@ -125,6 +136,7 @@ public class Application {
         return "Application{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
+                ", fileName='" + fileName + '\'' +
                 ", applicationType='" + applicationType + '\'' +
                 ", status='" + status + '\'' +
                 ", dataUser='" + dataUser + '\'' +

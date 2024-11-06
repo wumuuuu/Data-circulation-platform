@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Date;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/application")
@@ -27,7 +28,7 @@ public class ApplicationController {
         try {
             // 设置 applicationTime 为当前系统时间
             application.setApplicationTime(new Date());
-
+            application.setFileName("");
             // 设置 startDate 和 endDate 的默认值（假设默认值为当前日期）
             if (application.getStartDate() == null) {
                 application.setStartDate(new Date()); // 可以根据需要设为其他日期
@@ -79,6 +80,11 @@ public class ApplicationController {
             String id = requestData.get("id");
             String status = requestData.get("status");
             String explanation = requestData.get("explanation");
+            String fileName = requestData.get("fileName");
+
+            if(!Objects.equals(fileName, "")){
+                applicationMapper.updateFileName(id, fileName);
+            }
 
              //更新申请
             applicationMapper.updateApplication(id, status, explanation);
