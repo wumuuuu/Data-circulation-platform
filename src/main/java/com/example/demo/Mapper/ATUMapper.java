@@ -26,11 +26,11 @@ public interface ATUMapper {
     @Update("UPDATE ARBITRATION_USER SET status = #{status}, d= #{d}, t=#{t}, t1=#{t1}, t2=#{t2}, r=#{r}, delta=#{delta} WHERE task_id = #{taskId} AND user_name = #{userName}")
     void updateStatus1(int taskId, String userName, String status, String d, String t, String t1, String t2, String r, String delta);
 
-    // 根据 taskId 和 userName 更新 status,d1,num
+    // 根据 taskId 和 userName 更新 status,d1
     @Update("UPDATE ARBITRATION_USER SET status = #{status}, d1= #{d1} WHERE task_id = #{taskId} AND user_name = #{userName}")
     void updateStatus2(int taskId, String userName, String status, String d1);
 
-    // 根据 taskId 和 userName 更新 status
+    // 根据 taskId 和 userName 更新 status num
     @Update("UPDATE ARBITRATION_USER SET status = #{status}, num = #{num} WHERE task_id = #{taskId}")
     void updateStatus3(int taskId, String status, String num);
 
