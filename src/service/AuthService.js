@@ -154,36 +154,6 @@ function stringToArrayBuffer(str) {
   return encoder.encode(str);  // 返回 Uint8Array (ArrayBufferView)
 }
 
-
-
-// 发送加密数据到服务器的函数
-export async function sendEncryptedData(data) {
-  // 检查共享密钥是否已初始化
-  if (!sharedKey) {
-    throw new Error('共享密钥未初始化');
-  }
-
-  try {
-    // 使用共享密钥加密数据
-    const encryptedData = await encryptData(sharedKey, data);
-
-    // 发送加密数据到服务器的安全端点
-    const response = await post('/secure-endpoint', { encryptedData });
-
-    // 如果服务器成功响应，解密服务器返回的数据
-    if (response.success) {
-      const decryptedResponse = await decryptData(sharedKey, response.encryptedData);
-      console.log('服务器响应:', decryptedResponse);
-    } else {
-      // 如果发送数据失败，输出错误信息
-      console.error('发送加密数据失败', response.message);
-    }
-  } catch (error) {
-    // 捕获并处理加密数据传输过程中的任何错误
-    console.error('加密数据传输失败:', error);
-  }
-}
-
 // 将私钥保存到指定位置的函数
 export async function toSavePrivateKey() {
   // 从本地存储中获取私钥

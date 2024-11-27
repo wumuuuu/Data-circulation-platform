@@ -56,6 +56,15 @@ export const onReject = async (explanation, id) => {
 
 
 export const addMember = async (memberSearch, signer) => {
+  // 检查签名人列表人数是否已达上限
+  if (signer.members.length >= 3) {
+    ElMessage.error('最多添加三人');
+    return;
+  }
+  if(memberSearch === null){
+    ElMessage.error('用户名不得为空');
+    return;
+  }
   if (memberSearch && signer.members.find(m => m.name === memberSearch)) {
     ElMessage.error('用户名已在列表');
     return;

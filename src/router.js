@@ -16,17 +16,17 @@ const routes = [
     name: 'Auth',
     component: Auth
   },
-  // {
-  //   path: '/home',
-  //   name: 'Home',
-  //   component: Home,
-  //   meta: { requiresAuth: true }  // 需要登录权限
-  // },
+  {
+    path: '/home',
+    name: 'Home',
+    component: Home,
+    meta: { requiresAuth: true }  // 需要登录权限
+  },
   {
     path: '/application',
     name: 'Application',
     component: Application,
-    meta: { requiresAuth: true }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['数据所有方', '普通用户'] }  // 需要登录权限，且只允许 数据所有方 和 普通用户 角色访问
   },
   {
     path: '/handle',
@@ -38,13 +38,13 @@ const routes = [
     path: '/examine1',
     name: 'Examine1',
     component: Examine1,
-    meta: { requiresAuth: true }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['数据所有方'] }  // 需要登录权限
   },
   {
     path: '/examine2',
     name: 'Examine2',
     component: Examine2,
-    meta: { requiresAuth: true }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['Admin'] } // 需要登录权限
   },
   // {
   //   path: '/approvalProcess',
@@ -56,7 +56,7 @@ const routes = [
     path: '/userMgr',
     name: 'UserMgr',
     component: UserMgr,
-    meta: { requiresAuth: true }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['Admin'] }  // 需要登录权限
   }
 ];
 

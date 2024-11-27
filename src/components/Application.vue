@@ -12,12 +12,28 @@ import { ElMessage } from 'element-plus'
 
 const activeMenu = ref('2');
 const username = localStorage.getItem('username');
+const userRole = localStorage.getItem('role');  // 获取当前用户角色
 const selectedForm = ref('');  // 用于跟踪用户选择的表单
 const formSelected = ref(false); // 标记是否选择了表单
 const options = ref([]); // 用于存储从后端获取的用户数据
 const taskId = ref('');
 
+// 用户角色对应的可访问菜单项
+const availableMenus = computed(() => {
+  const role = userRole; // 获取当前用户角色
 
+  // 根据角色过滤菜单项
+  const menus = [
+    { index: '1', name: '主页', roles: ['Admin', '普通用户', '数据所有方'] },
+    { index: '2', name: '申请', roles: ['普通用户', '数据所有方'] },
+    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方'] },
+    { index: '4', name: '数据所有方审批', roles: ['数据所有方'] },
+    { index: '5', name: '审核员审批', roles: ['Admin'] },
+    { index: '6', name: '管理', roles: ['Admin'] }
+  ];
+
+  return menus.filter(menu => menu.roles.includes(role));  // 过滤出用户角色可访问的菜单项
+});
 // 用于根据选择显示对应的卡片
 function showForm(type) {
   selectedForm.value = type;
@@ -80,26 +96,17 @@ const onReset1 = () => {
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
+    <!-- 侧边栏 -->
     <el-aside width="205px" class="custom-aside">
       <div class="logo"><strong>数据流转平台</strong></div>
       <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
-        <el-menu-item index="1">
-          <span>主页</span>
-        </el-menu-item>
-        <el-menu-item index="2">
-          <span>申请</span>
-        </el-menu-item>
-        <el-menu-item index="3">
-          <span>处理</span>
-        </el-menu-item>
-        <el-menu-item index="4">
-          <span>数据所有方审批</span>
-        </el-menu-item>
-        <el-menu-item index="5">
-          <span>审核员审批</span>
-        </el-menu-item>
-        <el-menu-item index="6">
-          <span>管理</span>
+        <!-- 动态渲染菜单项 -->
+        <el-menu-item
+          v-for="menu in availableMenus"
+          :key="menu.index"
+          :index="menu.index"
+        >
+          <span>{{ menu.name }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -315,108 +322,211 @@ const onReset1 = () => {
 </template>
 
 <style scoped>
-:deep(.el-step__icon-inner) {
-  font-size: 15px !important;
+/* 基本设置 */
+body, html {
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-size: 14px;
 }
 
-:deep(.el-steps__line) {
-  height: 3px !important;
+/* 全局容器 */
+.el-container {
+  background-color: #f0f2f5;
+  min-height: 100vh;
 }
 
-:deep(.el-step__title) {
-  font-size: 13px !important;
-}
-.custom-button {
-  width: 200px;  /* 固定宽度 */
-  height: 60px;  /* 按钮高度 */
-  margin-bottom: 10px;
-}
-.el-header{
-  background-color: #365380;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 20px;
-  color: #fff;
-  cursor: pointer;
-}
-.sign{
-  text-align: center;
-  font-size: 22px;
-}
-.form-row {
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px; /* 行之间的间隔 */
-}
-
-.label-col {
-  text-align: left;
-}
-
-.input-col {
-  text-align: center;
-}
-
-.button-col {
-  text-align: right;
-}
-.el-table {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 24px; /* 表格与下方按钮的间隔 */
-
-}
-.el-aside{
-  background-color: #f4f8f9;
-}
+/* 侧边栏 */
 .custom-aside {
-  background-color: #365380;
+  background: linear-gradient(135deg, #1f2f47, #304156);
   color: #fff;
-  padding: 20px 0;
-  text-align: center;
 }
 
 .logo {
-  font-size: 24px;
-  color: #fff;
-  margin-bottom: 30px;
-  font-family: 'Arial', sans-serif;
-}
-
-.logo strong {
+  font-size: 18px;
   font-weight: bold;
+  color: #fff;
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #3a4a5f;
+  letter-spacing: 1px;
 }
 
 .custom-menu {
-  border-right: none;
+  background-color: transparent;
+  font-size: 15px;
 }
 
-.el-menu{
-  background-color: #365380;
-}
-.el-menu-item {
-  font-size: 18px;
-  color: #afafaf;
-  margin-bottom: 10px;
-  padding: 10px 20px;
-  text-align: center;
-
+.custom-menu .el-menu-item {
+  color: #c0c4cc;
+  padding: 15px 20px;
+  transition: all 0.3s ease;
 }
 
-.el-menu-item:hover {
-  background-color: #365380;
+.custom-menu .el-menu-item:hover {
+  color: #ffd04b;
+  background-color: rgba(255, 208, 75, 0.1);
 }
 
-.el-menu-item.is-active {
-  background-color: #365380;
-  color: #fff;
-  border-right: 5px solid #e67e22; /* 右侧橙色条 */
+.custom-menu .el-menu-item.is-active {
+  background-color: #ffd04b;
+  color: #333;
+  font-weight: bold;
+  border-radius: 5px;
 }
-.el-dropdown-link {
-  color: #fff !important;
+
+/* 顶部栏 */
+.el-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 20px;
+  background-color: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  height: 60px;
 }
-.custom-button-text {
-  font-size: 17px; /* 自定义字体大小 */
+
+.el-avatar {
+  cursor: pointer;
+  font-weight: bold;
+  color: #409eff;
+  font-size: 15px;
+  transition: color 0.3s ease;
+}
+
+.el-avatar:hover {
+  color: #ffd04b;
+}
+
+/* 内容区 */
+.sign {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.el-divider {
+  margin: 15px 0;
+}
+
+/* 卡片 */
+.el-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+.el-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.el-table th, .el-table td {
+  font-size: 13px;
+}
+
+/* 表单 */
+.form-row {
+  margin-top: 15px;
+}
+
+.label-col {
+  font-size: 14px;
+  font-weight: bold;
+  text-align: right;
+  color: #333;
+}
+
+.input-col {
+  padding-left: 10px;
+}
+
+.el-input,
+.el-select {
+  width: 100%;
+  transition: border-color 0.3s ease;
+}
+
+.el-input:focus,
+.el-select:focus {
+  border-color: #ffd04b;
+}
+
+.button-col {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.el-button {
+  font-size: 14px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 上传部分 */
+.el-upload .el-button {
+  margin-right: 10px;
+}
+
+.el-progress {
+  width: 100%;
+  font-size: 13px;
+}
+
+/* 分页 */
+.el-pagination {
+  margin-top: 20px;
+  font-size: 13px;
+}
+
+/* 弹出卡片 */
+.el-card .close-btn {
+  font-size: 24px;
+  color: #409eff;
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.el-card .close-btn:hover {
+  color: #ffd04b;
+}
+
+/* 按钮颜色 */
+.el-button--primary {
+  background-color: #409eff;
+  border-color: #409eff;
+  font-size: 14px;
+}
+
+.el-button--primary:hover {
+  background-color: #ffd04b;
+  border-color: #ffd04b;
+  color: #333;
+}
+
+.el-button--success {
+  background-color: #67c23a;
+  border-color: #67c23a;
+}
+
+.el-button--success:hover {
+  background-color: #5cbd2a;
+  border-color: #5cbd2a;
+}
+
+.el-button--danger {
+  background-color: #f56c6c;
+  border-color: #f56c6c;
+}
+
+.el-button--danger:hover {
+  background-color: #f54848;
+  border-color: #f54848;
 }
 </style>
