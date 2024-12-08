@@ -2,6 +2,7 @@ package com.example.demo.Controller;
 
 import com.example.demo.Mapper.*;
 import com.example.demo.Model.*;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
@@ -34,6 +35,9 @@ public class TaskController {
 
     @Autowired
     private ApplicationMapper applicationMapper;
+
+    @Autowired
+    private FileMapper fileMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(TaskController.class);  // 日志记录器
 
@@ -680,6 +684,53 @@ public class TaskController {
             // 捕获所有异常并输出错误信息
             System.err.println("An error occurred while creating confirm users: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    /**
+     * 返回完成流转的数据参数
+     *
+     * @return APIResponse 包装的 DataRequset 列表
+     */
+    @GetMapping("/getCompletedData")
+    public APIResponse<List<DataRequset>> getCompletedData() {
+        try {
+            System.out.println("1111");
+            // 查询状态为 "completed" 的任务
+            List<Task> tasks = taskMapper.findCompletedDataTasks();
+            List<DataRequset> dataRequsetList = new ArrayList<>();
+            System.out.println("2222");
+            // 遍历每个任务，组装 DataRequset 对象
+            for (Task task : tasks) {
+                DataRequset data = new DataRequset();
+
+                // 根据文件名查询文件信息
+                File file = fileMapper.findFileByFileName(task.getFileId());
+
+                // 如果文件不存在，跳过当前任务
+                if (file == null) {
+                    System.err.println("File not found for fileId: " + task.getFileId());
+                    continue;
+                }
+
+                // 设置 DataRequset 对象的属性
+                data.setTaskId(task.getTaskId());
+                data.setTime(task.getCreatedAt());
+                data.setB(task.getB());
+                data.setY(task.getY());
+                data.setDataId(file.getFileId());
+                data.setCreator(file.getCreatorName());
+                data.setOutline(file.getFileOutline());
+
+                // 添加到列表
+                dataRequsetList.add(data);
+            }
+
+            // 返回成功响应
+            return APIResponse.success(dataRequsetList);
+        } catch (Exception e) {
+            // 打印异常日志并返回错误响应
+            e.printStackTrace();
+            return APIResponse.error(400, "获取完成流转的数据失败: " + e.getMessage());
         }
     }
 

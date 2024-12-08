@@ -23,4 +23,8 @@ public interface FileMapper extends BaseMapper<File> {
     // 根据 file_name 查找所有 file
     @Select("SELECT * FROM files WHERE file_name = #{fileName}")
     File findFileByFileName(String fileName);
+
+    // 根据 file_name 查找 file_id
+    @Select("SELECT file_id FROM files WHERE file_name = #{fileName}")
+    String findFileIdByFileName(String fileName);
 }
