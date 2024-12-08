@@ -52,8 +52,7 @@ const savePrivateKey = async () => {
 
 const register = async () => {
   // 校验表单
-  formRef.value.validate(async (valid) => {
-    if (valid) {
+
       try {
         await onRegister(registerData.value);
         console.log('注册成功');
@@ -61,10 +60,6 @@ const register = async () => {
       } catch (error) {
         console.error('注册失败', error);
       }
-    } else {
-      console.log('表单校验失败');
-    }
-  });
 };
 
 const login = async () => {

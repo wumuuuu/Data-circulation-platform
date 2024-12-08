@@ -161,7 +161,7 @@ body, html {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-size: 14px;
+  font-size: 14px; /* 设置基础字体大小，方便整体适配 */
 }
 
 /* 全局容器 */
@@ -177,26 +177,24 @@ body, html {
 }
 
 .logo {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: #fff;
   text-align: center;
   padding: 20px 0;
   border-bottom: 1px solid #3a4a5f;
   letter-spacing: 1px;
-  cursor: pointer;
 }
 
 .custom-menu {
   background-color: transparent;
-  font-size: 16px;
+  font-size: 15px; /* 侧边栏菜单字体大小适中 */
 }
 
 .custom-menu .el-menu-item {
   color: #c0c4cc;
   padding: 15px 20px;
   transition: all 0.3s ease;
-  border-radius: 5px;
 }
 
 .custom-menu .el-menu-item:hover {
@@ -226,7 +224,7 @@ body, html {
   cursor: pointer;
   font-weight: bold;
   color: #409eff;
-  font-size: 16px;
+  font-size: 15px; /* 顶部栏头像文字大小 */
   transition: color 0.3s ease;
 }
 
@@ -236,7 +234,7 @@ body, html {
 
 /* 内容区 */
 .sign {
-  font-size: 18px;
+  font-size: 16px; /* 调整内容区标题大小 */
   font-weight: bold;
   margin-bottom: 20px;
   color: #333;
@@ -252,8 +250,6 @@ body, html {
   border-radius: 8px;
   background-color: #fff;
   transition: all 0.3s ease;
-  padding: 20px;
-  margin-bottom: 20px;
 }
 
 .el-card:hover {
@@ -261,41 +257,83 @@ body, html {
 }
 
 .el-table th, .el-table td {
+  font-size: 13px; /* 表格内容字体小而精炼 */
+}
+
+/* 表单 */
+.form-row {
+  margin-top: 15px;
+}
+
+.label-col {
   font-size: 14px;
-  text-align: center;
-  padding: 10px;
+  font-weight: bold;
+  text-align: right;
+  color: #333;
 }
 
-.el-table .el-upload .el-button {
-  font-size: 13px;
-  padding: 6px 12px;
+.input-col {
+  padding-left: 10px;
 }
 
+.el-input,
+.el-select {
+  width: 100%;
+  transition: border-color 0.3s ease;
+}
+
+.el-input:focus,
+.el-select:focus {
+  border-color: #ffd04b;
+}
+
+.button-col {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.el-button {
+  font-size: 14px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 上传部分 */
 .el-upload .el-button {
   margin-right: 10px;
 }
 
 .el-progress {
   width: 100%;
-  font-size: 13px;
+  font-size: 13px; /* 调整进度条文字大小 */
 }
 
 /* 分页 */
 .el-pagination {
   margin-top: 20px;
-  font-size: 13px;
-  text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-size: 13px; /* 分页文字适配 */
+}
+
+/* 弹出卡片 */
+.el-card .close-btn {
+  font-size: 24px;
+  color: #409eff;
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.el-card .close-btn:hover {
+  color: #ffd04b;
 }
 
 /* 按钮颜色 */
 .el-button--primary {
   background-color: #409eff;
   border-color: #409eff;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-size: 14px; /* 按钮文字适配 */
 }
 
 .el-button--primary:hover {
@@ -322,44 +360,5 @@ body, html {
 .el-button--danger:hover {
   background-color: #f54848;
   border-color: #f54848;
-}
-
-/* 小屏幕优化 */
-@media screen and (max-width: 768px) {
-  .el-container {
-    flex-direction: column;
-  }
-
-  .el-header {
-    justify-content: space-between;
-    padding: 10px 20px;
-  }
-
-  .custom-aside {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-
-  .custom-menu {
-    font-size: 14px;
-  }
-
-  .el-card {
-    margin-bottom: 15px;
-    padding: 15px;
-  }
-
-  .el-table th, .el-table td {
-    font-size: 12px;
-  }
-
-  .el-avatar {
-    font-size: 14px;
-  }
-
-  .el-pagination {
-    font-size: 12px;
-  }
 }
 </style>

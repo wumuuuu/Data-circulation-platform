@@ -21,8 +21,13 @@ import { ElMessage } from 'element-plus'
 export async function onRegister(registerData) {
   // 验证用户输入的两次密码是否一致
   if (registerData.password !== registerData.rePassword) {
-    alert('两次输入的密码不一致');
+    ElMessage.error('两次输入的密码不一致');
     return; // 如果密码不一致，则停止注册流程
+  }
+
+  if(registerData.password === '' || registerData.rePassword === '' || registerData.username === '') {
+    ElMessage.error('用户名或密码不规范');
+    return;
   }
 
   // 如果客户端密钥对未生成，则先初始化密钥交换
@@ -43,12 +48,8 @@ export async function onRegister(registerData) {
     // 使用 Web Worker 生成私钥
     const privateKey = await generatePrivateKey();
 
-
-
     // 使用生成的私钥计算相应的公钥
     const publicKey = await calculatePublicKey(privateKey);
-
-
 
     // 使用生成的共享密钥加密用户的密码和公钥
     const encryptedPassword = await encryptData(sharedKey, stringToArrayBuffer(registerData.password));
