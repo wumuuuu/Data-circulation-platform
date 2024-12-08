@@ -1,7 +1,7 @@
 import { get, post } from '@/utils/request.js'; // 导入 POST 请求函数
 import { ElMessage } from 'element-plus'
 
-export const fetchUser = async (tableData) => {
+export const fetchUser = async () => {
   try {
     const response = await get('/allUsers'); // 这里假设后端的接口路径为 /users
     if (response.success) {

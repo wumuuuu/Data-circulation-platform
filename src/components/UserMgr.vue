@@ -6,7 +6,10 @@ import { fetchUser, onDelete, updateUser } from '@/service/UserMgrService.js'
 const activeMenu = ref('6');
 const username = localStorage.getItem('username');
 const userRole = localStorage.getItem('role');  // 获取当前用户角色
-
+// 分页相关数据
+let tableData = ref([]);
+const currentPage = ref(1); // 当前页
+const pageSize = ref(12); // 每页显示条数
 // 用户角色对应的可访问菜单项
 const availableMenus = computed(() => {
   const role = userRole; // 获取当前用户角色
@@ -23,10 +26,7 @@ const availableMenus = computed(() => {
 
   return menus.filter(menu => menu.roles.includes(role));  // 过滤出用户角色可访问的菜单项
 });
-// 分页相关数据
-let tableData = ref([]);
-const currentPage = ref(1); // 当前页
-const pageSize = ref(12); // 每页显示条数
+
 
 // 存储当前正在编辑的用户信息
 const editingUser = ref({
@@ -42,10 +42,16 @@ onMounted(async () => {
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
+  if (!Array.isArray(tableData.value)) {
+    console.error("tableData is not an array:", tableData.value);
+    return []; // 如果不是数组，返回空数组
+  }
+
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return tableData.value.slice(start, end);
 });
+
 
 // 修改用户信息
 const onModify = (id) => {

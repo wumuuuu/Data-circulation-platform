@@ -18,6 +18,11 @@ const formSelected = ref(false); // 标记是否选择了表单
 const options = ref([]); // 用于存储从后端获取的用户数据
 const taskId = ref('');
 
+// 分页相关数据
+let tableData = ref([]);
+const currentPage = ref(1); // 当前页
+const pageSize = ref(5); // 每页显示条数
+
 // 用户角色对应的可访问菜单项
 const availableMenus = computed(() => {
   const role = userRole; // 获取当前用户角色
@@ -48,23 +53,29 @@ const formData = ref({
   dateTimeRange: [] // 用户选择的日期和时间范围
 });
 
-// 分页相关数据
-let tableData = ref([]);
-const currentPage = ref(1); // 当前页
-const pageSize = ref(5); // 每页显示条数
+const loading = ref(true);  // 数据加载状态
 
 onMounted(async () => {
-  tableData.value = await fetchApplications();
-  options.value = await fetchDataOwners();
-  // updateTaskSteps();
+  try {
+    tableData.value = await fetchApplications();
+    options.value = await fetchDataOwners();
+  } catch (error) {
+    console.error("数据加载失败", error);
+  } finally {
+    loading.value = false;  // 数据加载完成，更新 loading 状态
+  }
 });
 
-// 计算分页后的数据
 const paginatedData = computed(() => {
+  if (loading.value) {
+    return [];  // 如果还在加载中，返回空数组
+  }
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return tableData.value.slice(start, end);
 });
+
+
 
 // 对话框显示控制
 const dialogVisible = ref(false);
