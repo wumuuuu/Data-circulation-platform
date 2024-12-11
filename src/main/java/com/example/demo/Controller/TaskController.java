@@ -694,11 +694,9 @@ public class TaskController {
     @GetMapping("/getCompletedData")
     public APIResponse<List<DataRequset>> getCompletedData() {
         try {
-            System.out.println("1111");
             // 查询状态为 "completed" 的任务
             List<Task> tasks = taskMapper.findCompletedDataTasks();
             List<DataRequset> dataRequsetList = new ArrayList<>();
-            System.out.println("2222");
             // 遍历每个任务，组装 DataRequset 对象
             for (Task task : tasks) {
                 DataRequset data = new DataRequset();

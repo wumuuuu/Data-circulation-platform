@@ -3,7 +3,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
   datasource:
-    url: jdbc:oracle:thin:@localhost:1521:orcl?useUnicode=true&characterEncoding=ZHS16GBK
+    url: jdbc:oracle:thin:@112.124.6.194:1521:orcl?useUnicode=true&characterEncoding=ZHS16GBK
     username: zzy
     password: 123456
     driver-class-name: oracle.jdbc.OracleDriver

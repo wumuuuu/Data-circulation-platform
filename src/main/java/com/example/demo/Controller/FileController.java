@@ -67,10 +67,8 @@ public class FileController {
             @RequestParam("fileOutline") String fileOutline,
             HttpSession session) {
         try {
-
             // **从会话中获取共享密钥**
             byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
-
             if (sharedSecret == null) {
                 return APIResponse.error(500, "共享密钥不存在于会话中");
             }
@@ -92,14 +90,13 @@ public class FileController {
                 // 所有块都上传完毕，执行合并
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId, fileName);
-
+                    System.out.println("7");
                     if (insertFile(fileId, fileName, creatorName, fileOutline)) {
-
+                        System.out.println("8");
                         return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
                     } else {
                         return APIResponse.error(500, "插入数据库失败");
                     }
-
                 } else {
                     return APIResponse.error(500, "数据块缺失");
                 }
@@ -228,6 +225,7 @@ public class FileController {
     // 在数据库插入记录
     private boolean insertFile(String fileId, String fileName, String creatorName, String fileOutline) {
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
+
         File file = new File();
         file.setFileId(fileId);
         file.setFileName(fileName);
@@ -235,7 +233,10 @@ public class FileController {
         file.setUsageTime(new Date());
         file.setCreatorName(creatorName);
         file.setFileOutline(fileOutline);
+        System.out.println(file);
         int result = fileMapper.insert(file);
+
+
         return result > 0;
     }
 

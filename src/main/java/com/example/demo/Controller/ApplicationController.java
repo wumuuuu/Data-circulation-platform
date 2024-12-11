@@ -58,11 +58,7 @@ public class ApplicationController {
     public APIResponse<List<Application>> getApplicationsByUsername(@PathVariable String username) {
         try {
             List<Application> applications = applicationMapper.findApplicationsByUsername(username);
-            if (applications != null && !applications.isEmpty()) {
-                return APIResponse.success(applications);
-            } else {
-                return APIResponse.error(404, "未找到该用户的申请记录");
-            }
+            return APIResponse.success(applications);
         } catch (Exception e) {
             return APIResponse.error(500, "获取申请记录时发生错误: " + e.getMessage());
         }
