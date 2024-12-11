@@ -44,7 +44,7 @@ const routes = [
     path: '/examine2',
     name: 'Examine2',
     component: Examine2,
-    meta: { requiresAuth: true, roles: ['Admin'] } // 需要登录权限
+    meta: { requiresAuth: true, roles: ['Admin','审核人员'] } // 需要登录权限
   },
   // {
   //   path: '/approvalProcess',

@@ -144,7 +144,7 @@ const getFileId = async () => {
 // 加密文件，并更新进度
 export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, showUpload, estimatedTime, progress, fileName, creator_name, fileOutline) => {
   const chunkSize = 1024 * 1024 * 50; // 每次处理 50MB
-
+  console.log("111");
   const FileId = await getFileId();
 
   try {

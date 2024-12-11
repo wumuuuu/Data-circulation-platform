@@ -137,7 +137,7 @@ export async function onLogin(loginData) {
       if (role === 'Admin') {
         await router.push({ name: 'UserMgr' });
       } else {
-        await router.push({ name: 'UserMgr' });
+        await router.push({ name: 'Home' });
       }
     } else {
       // 如果登录失败，输出错误信息

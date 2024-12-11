@@ -54,9 +54,9 @@ const availableMenus = computed(() => {
   const menus = [
     { index: '1', name: '主页', roles: ['Admin', '普通用户', '数据所有方'] },
     { index: '2', name: '申请', roles: ['普通用户', '数据所有方'] },
-    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方'] },
+    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方','审核人员'] },
     { index: '4', name: '数据所有方审批', roles: ['数据所有方'] },
-    { index: '5', name: '审核员审批', roles: ['Admin'] },
+    { index: '5', name: '审核员审批', roles: ['Admin','审核人员'] },
     { index: '6', name: '管理', roles: ['Admin'] }
   ];
 
