@@ -2,11 +2,26 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus';
 import {handleCommand, handleSelect} from '@/router.js'
-import { fetchDataRecord } from '@/service/HomeService.js'
+import { fetchDataRecord, searchUsernamesAPI } from '@/service/HomeService.js'
+import { post } from '@/utils/request.js'
+import { Search } from '@element-plus/icons-vue'
 
 const activeMenu = ref('1');
-const username = localStorage.getItem('username');
-const userRole = localStorage.getItem('role');  // 获取当前用户角色
+const username = sessionStorage.getItem('username');
+const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
+
+// 定义用户名建议列表
+const usernameSuggestions = ref([]);
+
+const usernameSuggestions1 = ref([
+  'user1',
+  'user2',
+  'user3',
+  'user4',
+  'user5'
+]);
+//
+const name = ref();
 
 // 用户角色对应的可访问菜单项
 const availableMenus = computed(() => {
@@ -31,7 +46,7 @@ const pageSize = ref(12); // 每页显示条数
 
 // 详情对话框的可见性和选中的行数据
 const dialogVisible = ref(false);
-const Outline = ref();
+const Outline = ref(null);
 
 // 计算分页后的数据
 const formattedTableData = computed(() => {
@@ -83,6 +98,23 @@ function shortenDataId(dataId) {
   const end = dataId.slice(-4);
   return `${start}...${end}`;
 }
+
+// 用户名模糊查询
+const searchUsernames = async () => {
+  if (name === '') {
+    usernameSuggestions.value = [];  // 清空建议列表
+    return;
+  }
+
+  try {
+    const response = await searchUsernamesAPI(name.value); // 调用后端接口获取匹配用户名
+    usernameSuggestions.value = response.data || []; // 假设返回的是一个数组
+    console.log(usernameSuggestions.value);
+  } catch (error) {
+    console.error("用户名查询失败", error);
+  }
+};
+
 </script>
 
 <template>
@@ -185,7 +217,23 @@ function shortenDataId(dataId) {
             </el-col>
             <el-col :span="8">
               <el-card style="height: 87vh;">
-                <!-- 其他内容 -->
+                 <el-form-item label="搜索用户：" style="margin-top: 20px">
+                   <el-row>
+                     <el-col>
+                     <el-input v-model="name" placeholder="输入用户名" />
+                     </el-col>
+                   </el-row>
+                   <el-button :icon="Search" primary style="margin-left: 10px" @click="searchUsernames"/>
+                 </el-form-item>
+                <!-- 显示模糊搜索到的用户 -->
+                <el-table :data="usernameSuggestions" style="width: 100%" v-if="usernameSuggestions.length > 0" stripe :header-cell-style="{'text-align': 'center'}">
+                  <el-table-column label="用户名" prop="USERNAME"  align="center"/>
+                  <el-table-column label="公钥" prop="PUBLIC_KEY"  align="center">
+                    <template #default="scope">
+                      <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.PUBLIC_KEY)">复制公钥</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
               </el-card>
             </el-col>
 

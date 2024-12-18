@@ -3,8 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
 import { calculateArbitration, calculateConfirm, calculateSign, fetchTask } from '@/service/HandleService.js'
 const activeMenu = ref('3');
-const username = localStorage.getItem('username');
-const userRole = localStorage.getItem('role');  // 获取当前用户角色
+const username = sessionStorage.getItem('username');
+const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
 const formData = ref({
   dataUser:'',
   text: '', // 用户提交的申请文本
@@ -31,7 +31,7 @@ const availableMenus = computed(() => {
 // 分页相关数据1
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页
-const pageSize = ref(6); // 每页显示条数
+const pageSize = ref(9); // 每页显示条数
 
 onMounted(async () => {
   tableData.value = await fetchTask(username);

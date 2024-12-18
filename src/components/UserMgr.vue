@@ -4,8 +4,8 @@ import {handleCommand, handleSelect} from '@/router.js'
 import { fetchUser, onDelete, updateUser } from '@/service/UserMgrService.js'
 
 const activeMenu = ref('6');
-const username = localStorage.getItem('username');
-const userRole = localStorage.getItem('role');  // 获取当前用户角色
+const username = sessionStorage.getItem('username');
+const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
 // 分页相关数据
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页

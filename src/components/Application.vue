@@ -11,8 +11,8 @@ import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons
 import { ElMessage } from 'element-plus'
 
 const activeMenu = ref('2');
-const username = localStorage.getItem('username');
-const userRole = localStorage.getItem('role');  // 获取当前用户角色
+const username = sessionStorage.getItem('username');
+const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
 const selectedForm = ref('');  // 用于跟踪用户选择的表单
 const formSelected = ref(false); // 标记是否选择了表单
 const options = ref([]); // 用于存储从后端获取的用户数据
@@ -153,7 +153,7 @@ const onReset1 = () => {
                         <div style="display: flex; align-items: center; justify-content: center;">
                           <span>{{ scope.row.status }}</span>
                           <el-icon v-if="scope.row.status.includes('未通过')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
-                          <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('无误')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
+                          <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('完成')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
                           <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
                         </div>
                       </template>

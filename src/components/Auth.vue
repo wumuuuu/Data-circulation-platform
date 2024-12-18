@@ -1,13 +1,15 @@
 <script setup>
 import { Download, Lock, User } from '@element-plus/icons-vue'
-import { ref } from 'vue';
-import { onLogin, onRegister, toSavePrivateKey } from '@/service/AuthService.js'
+import { onMounted, ref } from 'vue'
+import { onLogin, onRegister, toSavePrivateKey, validateToken } from '@/service/AuthService.js'
 import '@/assets/login_bg.jpg'
 
 // 控制注册与登录表单的显示， 默认显示注册
 const isRegister = ref(false);
 const isLogin = ref(true);
 const formRef = ref(null);
+const rememberMe = ref(false);
+
 // 定义数据模型
 const registerData = ref({
   username: '',
@@ -16,12 +18,20 @@ const registerData = ref({
   public_key: '',
   role:'普通用户'
 });
-
 // 定义数据模型
 const loginData = ref({
   username: '',
   password: ''
 })
+onMounted(async () => {
+  const token = localStorage.getItem('authToken');
+  console.log(token);
+  if(token){
+    await validateToken(token);
+  }
+});
+
+
 
 // 二次校验密码的函数
 const checkRePassword = (rule, value, callback) => {
@@ -63,8 +73,8 @@ const register = async () => {
 };
 
 const login = async () => {
-  await onLogin(loginData.value);
 
+  await onLogin(loginData.value, rememberMe.value);
 };
 
 // 定义函数，清空数据模型
@@ -154,7 +164,7 @@ const toLogin = () => {
 
         <el-form-item class="login-flex">
           <div class="login-flex">
-            <el-checkbox>记住我</el-checkbox>
+            <el-checkbox v-model="rememberMe">记住我</el-checkbox>
             <el-link type="primary" :underline="false">忘记密码？</el-link>
           </div>
         </el-form-item>

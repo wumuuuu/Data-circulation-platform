@@ -1,4 +1,4 @@
-import { get } from '@/utils/request.js'
+import { get, post } from '@/utils/request.js'
 import { ElMessage } from 'element-plus'
 
 export const fetchDataRecord = async () => {
@@ -10,3 +10,10 @@ export const fetchDataRecord = async () => {
     console.error('Error:', error);
   }
 };
+
+export async function searchUsernamesAPI(username) {
+  const response = await get(`/user/search?username=${encodeURIComponent(username)}`);
+  if (response.success) {
+    return response;
+  }
+}

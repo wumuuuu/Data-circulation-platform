@@ -2,7 +2,7 @@ import { ElMessage } from 'element-plus'
 import { get, post } from '@/utils/request.js'
 import { ref } from 'vue'
 
-const username = localStorage.getItem('username');
+const username = sessionStorage.getItem('username');
 
 // 更新申请状态的通用函数
 export const update = async (Username, id, tableData, status, explanation) => {

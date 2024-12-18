@@ -12,8 +12,8 @@ import {
 } from '@/service/Examine1Service.js'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 const activeMenu = ref('4');
-const username = localStorage.getItem('username');
-const userRole = localStorage.getItem('role');  // 获取当前用户角色
+const username = sessionStorage.getItem('username');
+const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
 const formData = ref({
   signer: {
     members: []

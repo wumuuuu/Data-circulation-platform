@@ -16,6 +16,7 @@ import {
 import { post } from '@/utils/request.js'; // 导入用于发送 POST 请求的函数
 import router from '@/router.js'; // 导入 Vue 路由器，用于页面跳转
 import { ElMessage } from 'element-plus'
+import { jwtDecode } from "jwt-decode";
 
 // 处理用户注册请求的函数
 export async function onRegister(registerData) {
@@ -98,7 +99,7 @@ export async function onRegister(registerData) {
 }
 
 // 处理用户登录请求的函数
-export async function onLogin(loginData) {
+export async function onLogin(loginData, rememberMe) {
   // 如果客户端密钥对未生成，则先初始化密钥交换
   if (!clientKeyPair) {
     await initKeyExchange();
@@ -128,10 +129,21 @@ export async function onLogin(loginData) {
       ElMessage.success('登录成功');
 
       // 保存服务器返回的身份标识（如角色和 Token）到本地存储
-      const role = response.data;
-      localStorage.setItem('role', role);
-      localStorage.setItem('authToken', response.token);
-      localStorage.setItem('username', loginData.username);
+      const token = response.data;
+
+      const decoded = jwtDecode(token);  // 解析 JWT Token
+      const username = decoded.sub;       // 通常在 JWT 中用户名放在 'sub' (subject) 字段
+      const role = decoded.role;          // role 是你自定义的字段
+
+      if(rememberMe) {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('username', username);
+        localStorage.setItem('role', role);
+      }
+      sessionStorage.setItem('authToken', token);
+      sessionStorage.setItem('username', username);
+      sessionStorage.setItem('role', role);
+
 
       // 根据用户角色跳转到相应的页面
       if (role === 'Admin') {
@@ -153,6 +165,37 @@ export async function onLogin(loginData) {
 function stringToArrayBuffer(str) {
   const encoder = new TextEncoder();
   return encoder.encode(str);  // 返回 Uint8Array (ArrayBufferView)
+}
+
+export async function validateToken(token){
+  const response = await post('/validateToken', {
+    token: token
+  });
+  // 如果登录成功，执行以下操作
+  if (response.success) {
+    ElMessage.success('登录成功');
+
+    // 保存服务器返回的身份标识（如角色和 Token）到本地存储
+    const token = response.data;
+
+    const decoded = jwtDecode(token);  // 解析 JWT Token
+    const username = decoded.sub;       // 通常在 JWT 中用户名放在 'sub' (subject) 字段
+    const role = decoded.role;          // role 是你自定义的字段
+
+    sessionStorage.setItem('authToken', token);
+    sessionStorage.setItem('username', username);
+    sessionStorage.setItem('role', role);
+
+    // 根据用户角色跳转到相应的页面
+    if (role === 'Admin') {
+      await router.push({ name: 'UserMgr' });
+    } else {
+      await router.push({ name: 'Home' });
+    }
+  } else {
+    // 如果登录失败，输出错误信息
+    ElMessage.error('登录过期请重新登录');
+  }
 }
 
 // 将私钥保存到指定位置的函数

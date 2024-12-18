@@ -83,7 +83,7 @@ export const addMember = async (memberSearch, signer) => {
 
 export async function fetchFiles() {
   try {
-    const creatorName = localStorage.getItem('username');
+    const creatorName = sessionStorage.getItem('username');
     // 在请求中传递 creatorName 作为查询参数
     const response = await get(`/files?creatorName=${encodeURIComponent(creatorName)}`);
 
@@ -105,7 +105,7 @@ export async function fetchFiles() {
  */
 export async function fetchApplications() {
   try {
-    const username = localStorage.getItem('username');
+    const username = sessionStorage.getItem('username');
     const response = await get(`/application/pending1?username=${encodeURIComponent(username)}`);
     if (response.success) {
       return response.data;
@@ -144,7 +144,7 @@ const getFileId = async () => {
 // 加密文件，并更新进度
 export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, showUpload, estimatedTime, progress, fileName, creator_name, fileOutline) => {
   const chunkSize = 1024 * 1024 * 50; // 每次处理 50MB
-  console.log("111");
+
   const FileId = await getFileId();
 
   try {

@@ -67,7 +67,7 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = !!localStorage.getItem('authToken'); // 通过 localStorage 判断用户是否已登录
+  const isLoggedIn = !!sessionStorage.getItem('authToken'); // 通过 localStorage 判断用户是否已登录
 
   if (to.matched.some(record => record.meta.requiresAuth) && !isLoggedIn) {
     // 如果未登录且尝试访问需要登录的页面，则重定向到登录页面
@@ -106,9 +106,8 @@ export const handleSelect = (index) => {
 export const handleCommand = (command) => {
   if (command === 'logout') {
     // 清理登录状态，例如移除 token 或用户信息
-    localStorage.clear();
     sessionStorage.clear();
-    console.log('localStorage');
+    localStorage.clear();
     // 然后跳转到登录页面
     router.push('/');
     window.location.reload(); // 刷新页面

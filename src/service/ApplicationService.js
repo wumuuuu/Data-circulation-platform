@@ -4,7 +4,7 @@ import { get, post } from '@/utils/request.js'
 import { ElMessage } from 'element-plus'
 
 
-const username = localStorage.getItem('username');
+const username = sessionStorage.getItem('username');
 /**
  * 获取所有数据所有方的名字列表
  * @returns {Promise<Array<string>>} 包含所有数据所有方名字的数组
