@@ -5,6 +5,7 @@ import com.example.demo.Model.User;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
@@ -35,5 +36,14 @@ public interface UserMapper extends BaseMapper<User> {
 
     @Select("SELECT username FROM users WHERE role = '数据所有方'")
     List<User> findAllDataOwners();
+
+    /**
+     * 根据用户名进行模糊查询
+     * @param username 用户名的搜索关键字
+     * @return 匹配的用户名和公钥列表
+     */
+    @Select("SELECT username, public_key FROM users WHERE username LIKE '%' || #{username} || '%'")
+    List<Map<String, String>> findUsersByUsername2(@Param("username") String username);
+
 
 }

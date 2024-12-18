@@ -5,6 +5,8 @@ import com.example.demo.Model.User;
 import com.example.demo.Service.CustomUserDetailsService;
 import com.example.demo.Service.ECDHService;
 import com.example.demo.Model.APIResponse;
+import com.example.demo.Model.JwtTokenUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +25,9 @@ public class AuthController {
     // 注入 ECDHService，用于处理密钥生成和共享密钥计算
     @Autowired
     private ECDHService dhService;
+
+    @Autowired
+    private JwtTokenUtil jwtUtil;
 
     // 注入 CustomUserDetailsService，用于处理用户相关的业务逻辑
     @Autowired
@@ -204,7 +209,9 @@ public class AuthController {
                 // 获取用户的角色信息
                 String role = customUserDetailsService.findUserRoleByUsername(username);
 
-                return APIResponse.success(role);
+                // 如果认证成功，生成 JWT token
+                String token = jwtUtil.generateToken(username, role);
+                return APIResponse.success(token);
             } else {
                 // 用户名或密码错误，返回未授权响应
                 return APIResponse.error(401, "用户名或密码错误");
@@ -213,5 +220,24 @@ public class AuthController {
             // 如果发生异常，返回错误响应
             return APIResponse.error(500, "登录失败: " + e.getMessage());
         }
+    }
+
+    @Autowired
+    public AuthController(JwtTokenUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
+    @PostMapping("/validateToken")
+    public APIResponse<String> validateToken(@RequestBody Map<String, Object> requestBody) {
+
+        String token = (String) requestBody.get("token");
+        if (jwtUtil.isTokenExpired(token)) {
+            return APIResponse.error(401, "token过期");
+        }
+
+        String username = jwtUtil.validateToken(token);
+        // 这里可以进一步验证用户身份（比如查询数据库确认用户是否存在）懒得写了
+
+        return APIResponse.success(token);
     }
 }

@@ -647,7 +647,6 @@ public class TaskController {
             BigInteger Y = y.modPow(e1, p);
             BigInteger B = b.modPow(e2, p);
             BigInteger c = Y.multiply(B).mod(p);
-            System.out.println("c = " + c);
 
             ArbitrationTaskUser arbitration = new ArbitrationTaskUser();
             arbitration.setTaskType("仲裁");            arbitration.setT("");
