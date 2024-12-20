@@ -46,12 +46,7 @@ const routes = [
     component: Examine2,
     meta: { requiresAuth: true, roles: ['Admin','审核人员'] } // 需要登录权限
   },
-  // {
-  //   path: '/approvalProcess',
-  //   name: 'ApprovalProcess',
-  //   component: ApprovalProcess,
-  //   meta: { requiresAuth: true }  // 需要登录权限
-  // }
+
   {
     path: '/userMgr',
     name: 'UserMgr',
