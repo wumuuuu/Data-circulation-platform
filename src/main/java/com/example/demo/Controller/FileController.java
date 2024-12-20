@@ -4,12 +4,11 @@ import com.example.demo.Mapper.FileMapper;
 import com.example.demo.Model.APIResponse;
 import com.example.demo.Model.File;
 import com.example.demo.Service.ECDHService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.io.*;

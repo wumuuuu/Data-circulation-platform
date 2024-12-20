@@ -29,24 +29,16 @@ public class SecurityConfig {
         auth.authenticationProvider(authenticationProvider);
     }
 
-    // 配置 HTTP 安全设置
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)  // 使用新的方式禁用 CSRF
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**", "/login", "/register", "/exchange-keys", "/find-username").permitAll()
-                        .anyRequest().authenticated()
+                .csrf(csrf -> csrf.disable()) // 禁用 CSRF
+                .authorizeRequests(auth -> auth
+                        .antMatchers("/**").permitAll() // 允许这些路径公开访问
+                        .anyRequest().authenticated() // 其余请求需登录认证
                 )
-                .formLogin(form -> form
-                        .loginPage("/auth")
-                        .defaultSuccessUrl("/home", true)
-                        .permitAll()
-                )
-                .logout(LogoutConfigurer::permitAll
-                );
+                .logout(LogoutConfigurer::permitAll); // 允许注销操作
 
         return http.build();
     }
-
 }

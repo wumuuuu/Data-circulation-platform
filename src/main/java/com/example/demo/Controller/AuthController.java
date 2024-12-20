@@ -7,7 +7,7 @@ import com.example.demo.Service.ECDHService;
 import com.example.demo.Model.APIResponse;
 import com.example.demo.Model.JwtTokenUtil;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;

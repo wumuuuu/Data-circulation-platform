@@ -26,6 +26,8 @@ public class ApplicationController {
     @PostMapping("/add")
     public APIResponse<String> addApplication(@RequestBody Application application) {
         try {
+            System.out.println(application.getStartDate());
+            System.out.println(application.getEndDate());
             // 设置 applicationTime 为当前系统时间
             application.setApplicationTime(new Date());
             application.setFileName("");
