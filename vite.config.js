@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   plugins: [vue()],
+  base:'/dataflow5/',
   define: {
     'global': {}
   },
@@ -13,13 +14,13 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173,  // 端口号
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8082',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      }
-    }
+    port: 18082,  // 端口号
+    // proxy: {
+    //   '/api': {
+    //     target: 'http://localhost:8082',
+    //     changeOrigin: true,
+    //     rewrite: (path) => path.replace(/^\/api/, ''),
+    //   }
+    // }
   }
 });

@@ -2,9 +2,6 @@
 
 import { get, post } from '@/utils/request.js'
 import { ElMessage } from 'element-plus'
-
-
-const username = sessionStorage.getItem('username');
 /**
  * 获取所有数据所有方的名字列表
  * @returns {Promise<Array<string>>} 包含所有数据所有方名字的数组
@@ -30,6 +27,7 @@ export async function fetchDataOwners() {
  */
 export async function fetchApplications() {
   try {
+    const username = sessionStorage.getItem('username');
     const response = await get(`/application/user/${username}`);
     if (response.success) {
       return response.data;
@@ -60,7 +58,7 @@ export const onSubmit = async (formData) => {
     ElMessage.warning('请选择日期时间范围');
     return;
   }
-
+  const username = sessionStorage.getItem('username');
   // 准备要上传的数据
   const applicationData = {
     username: username,
@@ -87,6 +85,7 @@ export const onSubmit1 = async (taskId, type) => {
   try {
     // 调用接口提交数据
     const response = await get(`/task/find_task?taskId=${taskId}`);
+    const username = sessionStorage.getItem('username');
     if(response.success) {
 
       // 准备要上传的数据
@@ -122,7 +121,7 @@ export const Download = async (row) => {
   try {
     // 发起请求下载文件
     const response = await get(`/download?fileName=${row.fileName}`, { responseType: 'blob' });
-    
+
     // 创建一个 URL 对象
     const url = window.URL.createObjectURL(response.data);
 
