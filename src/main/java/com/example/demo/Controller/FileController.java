@@ -71,7 +71,6 @@ public class FileController {
             if (sharedSecret == null) {
                 return APIResponse.error(500, "共享密钥不存在于会话中");
             }
-
             // **获取上传的二进制数据**
             byte[] encryptedChunkBytes = chunk.getBytes();
 
@@ -89,9 +88,9 @@ public class FileController {
                 // 所有块都上传完毕，执行合并
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId, fileName);
-                    System.out.println("7");
+
                     if (insertFile(fileId, fileName, creatorName, fileOutline)) {
-                        System.out.println("8");
+
                         return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
                     } else {
                         return APIResponse.error(500, "插入数据库失败");
@@ -166,7 +165,7 @@ public class FileController {
     private void saveChunk(byte[] data, int chunkIndex, String fileId) throws IOException {
         // 指定保存目录为 C:\Users\zzy\Desktop\1\fileId
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
-
+        
         // 创建保存目录（如果不存在）
         if (!Files.exists(chunkDir)) {
             Files.createDirectories(chunkDir);

@@ -14,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -200,12 +201,13 @@ public class TaskController {
         try {
             String y = request.getY(); // 获取 y 值
             String b = request.getB(); // 获取 b 值
+            String b1 = request.getB1(); // 获取 b 值
             String userName = request.getUsername(); // 获取用户名
             int taskId = request.getTaskId(); // 获取任务 ID
             Task task = taskMapper.findTaskById(taskId);
             Integer id = task.getApplicationId();
             // 更新当前用户的状态
-            stuMapper.updateStatus(taskId, userName, "completed", y, b);
+            stuMapper.updateStatus(taskId, userName, "completed", y, b, b1);
 
             // 查找当前用户的 signerNumber
             int currentSignerNumber = stuMapper.findSignerNumber(taskId, userName);
@@ -213,7 +215,7 @@ public class TaskController {
             SignTaskUser nextUser = stuMapper.findNextSigner(taskId, currentSignerNumber + 1);
 
             if (nextUser != null) {
-                stuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", y, b);
+                stuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", y, b, "0");
             } else {
                 // 如果没有下一个用户，标记任务为完成
 
@@ -453,9 +455,9 @@ public class TaskController {
                         }
                     }
                 }
-
             } else {
                 // 前两轮验证均失败，第三轮验证欺骗者
+                System.out.println(request);
                 String S = request.getS();
                 atuMapper.updateStatus5(taskId, userName, S);
                 atuMapper.updateStatus0(taskId, userName, "pending");
@@ -466,7 +468,8 @@ public class TaskController {
                     String confirmId = task1.getConfirmId();
                     StringBuilder resultBuilder = new StringBuilder();
                     int index = 1;
-
+                    int i = 1;
+                    BigInteger d1, d2 = new BigInteger("0");
                     // 遍历任务中的每个用户
                     while (true) {
                         ArbitrationTaskUser user = atuMapper.findNextArbitration(taskId, index++);
@@ -475,10 +478,11 @@ public class TaskController {
                         }
 
                         // 验证用户诚实性
-                        String result = verifyHonesty(user, Integer.parseInt(confirmId), p, g, new BigInteger(user.getC()), new BigInteger(user.getD()));
-
+                        d1 = i == 1 ? new BigInteger(user.getC()) : d2;
+                        d2 = new BigInteger(user.getD());
+                        String result = verifyHonesty(user, Integer.parseInt(confirmId), p, g, d1, d2);
+                        i = 0;
                         resultBuilder.append(result);
-                        resultBuilder.append(result.contains("欺骗") ? "欺骗，" : "诚实");
                     }
 
                     String finalResult = resultBuilder.toString();
@@ -491,9 +495,8 @@ public class TaskController {
 
                     return APIResponse.success(finalResult);
                 }
-
+                return APIResponse.success("等待所有用户提交私钥");
             }
-            return APIResponse.error(400, "出错");
         } catch (NumberFormatException e) {
             // 捕获数字格式异常，记录错误信息
             System.err.println("Error parsing number: " + e.getMessage());
@@ -509,7 +512,7 @@ public class TaskController {
     private String verifyHonesty(ArbitrationTaskUser user, int confirmId, BigInteger p, BigInteger g, BigInteger d1, BigInteger d2) {
         BigInteger t = new BigInteger(user.getT());
         BigInteger t1 = new BigInteger(user.getT1());
-        BigInteger b = new BigInteger(stuMapper.findB(confirmId, user.getUserName()));
+        BigInteger b = new BigInteger(stuMapper.findB1(confirmId, user.getUserName()));
         BigInteger s = new BigInteger(user.getS());
         BigInteger ch = new BigInteger(user.getCh());
 
@@ -518,6 +521,12 @@ public class TaskController {
 
         System.out.println("b = " + b);
         System.out.println("ans = " + ans);
+
+        System.out.println("d1 = " + d1);
+        System.out.println("ch = " + ch);
+        System.out.println("p = " + p);
+        System.out.println("d2 = " + d2);
+        System.out.println("s = " + s);
         System.out.println("ans1 = " + ans1);
 
         // 返回用户的诚信状态
@@ -560,7 +569,7 @@ public class TaskController {
                 signTaskUser.setTaskType(createTaskRequest.getTaskType()); // 设置任务类型
                 signTaskUser.setFileId(createTaskRequest.getSelectFile()); // 设置文件 ID
                 signTaskUser.setCompletedAt(new Timestamp(System.currentTimeMillis())); // 当前时间作为完成时间
-
+                signTaskUser.setB1("0");
                 // 对第一个成员设置 B 和 Y 为 g 和 x，其他成员设置为 0
                 signTaskUser.setB(i == 0 ? String.valueOf(g) : "0"); // 设置 B
                 signTaskUser.setY(i == 0 ? String.valueOf(x) : "0"); // 设置 Y
@@ -613,8 +622,8 @@ public class TaskController {
                     confirm.setCompletedAt(new Timestamp(System.currentTimeMillis()));
 
                     // 第一个用户设置 c，其他用户设置 0
-                    confirm.setD(i == 0 ? String.valueOf(c) : "0");
-                    confirm.setStatus(i == 0 ? "in_progress" : "pending");
+                    confirm.setD(user.getSignerNumber() == 1 ? String.valueOf(c) : "0");
+                    confirm.setStatus(user.getSignerNumber() == 1 ? "in_progress" : "pending");
 
 
                     // 插入记录到数据库
@@ -649,7 +658,8 @@ public class TaskController {
             BigInteger c = Y.multiply(B).mod(p);
 
             ArbitrationTaskUser arbitration = new ArbitrationTaskUser();
-            arbitration.setTaskType("仲裁");            arbitration.setT("");
+            arbitration.setTaskType("仲裁");
+            arbitration.setT("");
             arbitration.setT1("");
             arbitration.setT2("");
             arbitration.setD1("0");
@@ -670,8 +680,8 @@ public class TaskController {
                     arbitration.setCompletedAt(new Timestamp(System.currentTimeMillis()));
 
                     // 第一个用户设置 c，其他用户设置 0
-                    arbitration.setD(i == 0 ? String.valueOf(c) : "0");
-                    arbitration.setStatus(i == 0 ? "in_progress" : "pending");
+                    arbitration.setD(user.getSignerNumber() == 1 ? String.valueOf(c) : "0");
+                    arbitration.setStatus(user.getSignerNumber() == 1 ? "in_progress" : "pending");
 
 
                     // 插入记录到数据库

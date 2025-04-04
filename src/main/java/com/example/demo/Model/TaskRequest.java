@@ -8,6 +8,7 @@ public class TaskRequest {
     private String username;       // 用户名
     private String y;              // 字段 y
     private String b;              // 字段 b
+    private String b1;              // 字段 b1
     private String d;              // 字段 d
     private String d1;             // 字段 d1
     private String t;              // 字段 t
@@ -24,7 +25,7 @@ public class TaskRequest {
     }
 
     // 带参数的构造函数
-    public TaskRequest(Integer taskId, Integer applicationId, String username, String y, String b,
+    public TaskRequest(Integer taskId, Integer applicationId, String username, String y, String b, String b1,
                        String d, String d1, String t, String t1, String t2, String ch, String delta,
                        String num, String r, String s) {
         this.taskId = taskId;
@@ -32,6 +33,7 @@ public class TaskRequest {
         this.username = username;
         this.y = y;
         this.b = b;
+        this.b1 = b1;
         this.d = d;
         this.d1 = d1;
         this.t = t;
@@ -83,6 +85,14 @@ public class TaskRequest {
 
     public void setB(String b) {
         this.b = b;
+    }
+
+    public String getB1() {
+        return b1;
+    }
+
+    public void setB1(String b1) {
+        this.b1 = b1;
     }
 
     public String getD() {
@@ -173,6 +183,7 @@ public class TaskRequest {
                 ", username='" + username + '\'' +
                 ", y='" + y + '\'' +
                 ", b='" + b + '\'' +
+                ", b1='" + b1 + '\'' +
                 ", d='" + d + '\'' +
                 ", d1='" + d1 + '\'' +
                 ", t='" + t + '\'' +
@@ -196,6 +207,7 @@ public class TaskRequest {
                 Objects.equals(username, that.username) &&
                 Objects.equals(y, that.y) &&
                 Objects.equals(b, that.b) &&
+                Objects.equals(b1, that.b1) &&
                 Objects.equals(d, that.d) &&
                 Objects.equals(d1, that.d1) &&
                 Objects.equals(t, that.t) &&
@@ -209,6 +221,6 @@ public class TaskRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, applicationId, username, y, b, d, d1, t, t1, t2);
+        return Objects.hash(taskId, applicationId, username, y, b, b1, d, d1, t, t1, t2);
     }
 }

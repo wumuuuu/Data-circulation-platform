@@ -16,13 +16,14 @@ public class SignTaskUser {
     private String b;
     private String y;
     private java.sql.Timestamp completedAt;
+    private String b1;
 
     // 无参构造函数
     public SignTaskUser() {
     }
 
     // 带参构造函数
-    public SignTaskUser(Integer Id, Integer taskId, Integer signerNumber, String fileId, String taskType, String userName, String status, String b, String y, java.sql.Timestamp completedAt) {
+    public SignTaskUser(Integer Id, Integer taskId, Integer signerNumber, String fileId, String taskType, String userName, String status, String b, String y, java.sql.Timestamp completedAt, String b1) {
         this.Id = Id;
         this.taskId = taskId;
         this.signerNumber = signerNumber;
@@ -33,6 +34,7 @@ public class SignTaskUser {
         this.b = b;
         this.y = y;
         this.completedAt = completedAt;
+        this.b1 = b1;
     }
 
     // Getter 和 Setter 方法
@@ -115,6 +117,14 @@ public class SignTaskUser {
         this.completedAt = completedAt;
     }
 
+    public String getB1() {
+        return b1;
+    }
+
+    public void setB1(String b1) {
+        this.b1 = b1;
+    }
+
     @Override
     public String toString() {
         return "SignTaskUser{" +
@@ -127,7 +137,8 @@ public class SignTaskUser {
                 ", status='" + status + '\'' +
                 ", b='" + b + '\'' +
                 ", y='" + y + '\'' +
-                ", completedAt=" + completedAt +
+                ", completedAt=" + completedAt + '\''+
+                ", b1='" + b1 + '\'' +
                 '}';
     }
 
