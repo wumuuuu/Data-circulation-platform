@@ -9,10 +9,15 @@ import {
 } from '@/service/ApplicationService.js'
 import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useMenu } from '@/service/useMenu.js'
+import { jwtDecode } from 'jwt-decode'
+
+const token = sessionStorage.getItem('authToken');
+const decoded = jwtDecode(token);  // 解析 JWT Token
+const username = decoded.sub;
+const userRole = decoded.role;  // 获取当前用户角色
 
 const activeMenu = ref('2');
-const username = sessionStorage.getItem('username');
-const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
 const selectedForm = ref('');  // 用于跟踪用户选择的表单
 const formSelected = ref(false); // 标记是否选择了表单
 const options = ref([]); // 用于存储从后端获取的用户数据
@@ -24,21 +29,7 @@ const currentPage = ref(1); // 当前页
 const pageSize = ref(5); // 每页显示条数
 
 // 用户角色对应的可访问菜单项
-const availableMenus = computed(() => {
-  const role = userRole; // 获取当前用户角色
-
-  // 根据角色过滤菜单项
-  const menus = [
-    { index: '1', name: '主页', roles: ['Admin', '普通用户', '数据所有方'] },
-    { index: '2', name: '申请', roles: ['普通用户', '数据所有方'] },
-    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方','审核人员'] },
-    { index: '4', name: '数据所有方审批', roles: ['数据所有方'] },
-    { index: '5', name: '审核员审批', roles: ['Admin','审核人员'] },
-    { index: '6', name: '管理', roles: ['Admin'] }
-  ];
-
-  return menus.filter(menu => menu.roles.includes(role));  // 过滤出用户角色可访问的菜单项
-});
+const { availableMenus } = useMenu(userRole);
 // 用于根据选择显示对应的卡片
 function showForm(type) {
   selectedForm.value = type;
@@ -152,7 +143,7 @@ const onReset1 = () => {
                       <template #default="scope">
                         <div style="display: flex; align-items: center; justify-content: center;">
                           <span>{{ scope.row.status }}</span>
-                          <el-icon v-if="scope.row.status.includes('未通过')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
+                          <el-icon v-if="scope.row.status.includes('未通过')|| scope.row.status.includes('失败')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
                           <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('完成')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
                           <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
                         </div>

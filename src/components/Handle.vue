@@ -2,9 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
 import { calculateArbitration, calculateConfirm, calculateSign, fetchTask } from '@/service/HandleService.js'
+import { useMenu } from '@/service/useMenu.js'
+import { jwtDecode } from 'jwt-decode'
 const activeMenu = ref('3');
-const username = sessionStorage.getItem('username');
-const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
+const token = sessionStorage.getItem('authToken');
+const decoded = jwtDecode(token);  // 解析 JWT Token
+const username = decoded.sub;
+const userRole = decoded.role;  // 获取当前用户角色
 const formData = ref({
   dataUser:'',
   text: '', // 用户提交的申请文本
@@ -13,21 +17,7 @@ const formData = ref({
 });
 
 // 用户角色对应的可访问菜单项
-const availableMenus = computed(() => {
-  const role = userRole; // 获取当前用户角色
-
-  // 根据角色过滤菜单项
-  const menus = [
-    { index: '1', name: '主页', roles: ['Admin', '普通用户', '数据所有方'] },
-    { index: '2', name: '申请', roles: ['普通用户', '数据所有方'] },
-    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方','审核人员'] },
-    { index: '4', name: '数据所有方审批', roles: ['数据所有方'] },
-    { index: '5', name: '审核员审批', roles: ['Admin','审核人员'] },
-    { index: '6', name: '管理', roles: ['Admin'] }
-  ];
-
-  return menus.filter(menu => menu.roles.includes(role));  // 过滤出用户角色可访问的菜单项
-});
+const { availableMenus } = useMenu(userRole);
 // 分页相关数据1
 let tableData = ref([]);
 const currentPage = ref(1); // 当前页

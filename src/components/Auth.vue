@@ -4,7 +4,7 @@ import { onMounted, ref } from 'vue'
 import { onLogin, onRegister, toSavePrivateKey, validateToken } from '@/service/AuthService.js'
 import '@/assets/login_bg.jpg'
 
-// 控制注册与登录表单的显示， 默认显示注册
+// 控制注册与登录表单的显示，默认显示登录
 const isRegister = ref(false);
 const isLogin = ref(true);
 const formRef = ref(null);
@@ -18,11 +18,12 @@ const registerData = ref({
   public_key: '',
   role:'普通用户'
 });
-// 定义数据模型
+
 const loginData = ref({
   username: '',
   password: ''
 })
+
 onMounted(async () => {
   const token = localStorage.getItem('authToken');
   console.log(token);
@@ -31,28 +32,88 @@ onMounted(async () => {
   }
 });
 
+// 去除用户名空格
+const trimUsername = (username) => {
+  return username.replace(/\s+/g, '');
+};
 
+// 密码复杂度验证
+const validatePassword = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入密码'));
+    return;
+  }
+
+  // 去除空格
+  const trimmedValue = value.trim();
+
+  // 长度至少8位
+  if (trimmedValue.length < 8) {
+    callback(new Error('密码长度至少8位'));
+    return;
+  }
+
+  // 包含数字
+  if (!/\d/.test(trimmedValue)) {
+    callback(new Error('密码必须包含数字'));
+    return;
+  }
+
+  // 包含特殊字符
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(trimmedValue)) {
+    callback(new Error('密码必须包含特殊字符'));
+    return;
+  }
+
+  callback();
+};
 
 // 二次校验密码的函数
 const checkRePassword = (rule, value, callback) => {
   if (value === '') {
     callback(new Error('请再次确认密码'));
   } else if (value !== registerData.value.password) {
-    callback('二次确认密码不相同请重新输入');
+    callback(new Error('二次确认密码不相同请重新输入'));
+  } else {
+    callback();
   }
+};
+
+// 用户名验证
+const validateUsername = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入用户名'));
+    return;
+  }
+
+  // 去除空格
+  const trimmedValue = value.replace(/\s+/g, '');
+
+  // 长度验证
+  if (trimmedValue.length < 5 || trimmedValue.length > 16) {
+    callback(new Error('用户名长度应为5-16个字符'));
+    return;
+  }
+
+  // 更新去除空格后的用户名
+  if (isRegister.value) {
+    registerData.value.username = trimmedValue;
+  } else {
+    loginData.value.username = trimmedValue;
+  }
+
+  callback();
 };
 
 // 定义表单校验规则
 const rules = ref({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 5, max: 16, message: '请输入长度5~16非空字符', trigger: 'blur' },
+    { required: true, validator: validateUsername, trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 5, max: 16, message: '请输入长度5~16非空字符', trigger: 'blur' },
+    { required: true, validator: validatePassword, trigger: 'blur' }
   ],
-  rePassword: [{ validator: checkRePassword, trigger: 'blur' }], // 校验二次输入密码是否相同
+  rePassword: [{ validator: checkRePassword, trigger: 'blur' }],
 });
 
 // 使用文件系统访问 API 保存私钥到指定位置
@@ -61,23 +122,24 @@ const savePrivateKey = async () => {
 };
 
 const register = async () => {
-  // 校验表单
-
-      try {
-        await onRegister(registerData.value);
-        console.log('注册成功');
-        clearRegisterData(); // 清空表单数据
-      } catch (error) {
-        console.error('注册失败', error);
-      }
+  try {
+    // 提交前再次去除用户名空格
+    registerData.value.username = trimUsername(registerData.value.username);
+    await onRegister(registerData.value);
+    console.log('注册成功');
+    clearRegisterData();
+  } catch (error) {
+    console.error('注册失败', error);
+  }
 };
 
 const login = async () => {
-
+  // 提交前去除用户名空格
+  loginData.value.username = trimUsername(loginData.value.username);
   await onLogin(loginData.value, rememberMe.value);
 };
 
-// 定义函数，清空数据模型
+// 清空数据模型
 const clearRegisterData = () => {
   registerData.value = {
     username: '',
@@ -97,7 +159,6 @@ const toLogin = () => {
   isRegister.value = false;
   isLogin.value = true;
 };
-
 </script>
 
 

@@ -59,7 +59,7 @@ export async function onRegister(registerData) {
 
     // 解密加密后的密码以验证加密过程是否正确
     const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
-    console.log("Decrypted Password:", decryptedPassword);
+    // console.log("Decrypted Password:", decryptedPassword);
 
 
     // 复制注册数据对象，并用加密后的密码替换原始密码
@@ -130,19 +130,14 @@ export async function onLogin(loginData, rememberMe) {
 
       // 保存服务器返回的身份标识（如角色和 Token）到本地存储
       const token = response.data;
-
       const decoded = jwtDecode(token);  // 解析 JWT Token
       const username = decoded.sub;       // 通常在 JWT 中用户名放在 'sub' (subject) 字段
       const role = decoded.role;          // role 是你自定义的字段
 
       if(rememberMe) {
         localStorage.setItem('authToken', token);
-        localStorage.setItem('username', username);
-        localStorage.setItem('role', role);
       }
       sessionStorage.setItem('authToken', token);
-      sessionStorage.setItem('username', username);
-      sessionStorage.setItem('role', role);
 
 
       // 根据用户角色跳转到相应的页面
@@ -223,14 +218,14 @@ export async function toSavePrivateKey() {
     // 将私钥写入指定位置的文件中
     await writable.write(privateKey);
     await writable.close();
-    alert('私钥保存成功');
+    ElMessage.success('私钥保存成功');
 
     // 保存后，移除本地存储中的私钥
     localStorage.removeItem('privateKey');
     document.getElementById('savePrivateKeyButton').style.display = 'none'; // 隐藏保存私钥的按钮
   } catch (error) {
     // 捕获并处理保存私钥过程中的任何错误
-    alert('私钥保存失败');
+    ElMessage.error('私钥保存失败');
     console.error('保存失败', error);
   }
 }

@@ -11,9 +11,13 @@ import {
   fetchFiles, onReject,
 } from '@/service/Examine1Service.js'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+import { useMenu } from '@/service/useMenu.js'
+import { jwtDecode } from 'jwt-decode'
 const activeMenu = ref('4');
-const username = sessionStorage.getItem('username');
-const userRole = sessionStorage.getItem('role');  // 获取当前用户角色
+const token = sessionStorage.getItem('authToken');
+const decoded = jwtDecode(token);  // 解析 JWT Token
+const username = decoded.sub;
+const userRole = decoded.role;  // 获取当前用户角色
 const formData = ref({
   signer: {
     members: []
@@ -47,21 +51,7 @@ onMounted(async () => {
 });
 
 // 用户角色对应的可访问菜单项
-const availableMenus = computed(() => {
-  const role = userRole; // 获取当前用户角色
-
-  // 根据角色过滤菜单项
-  const menus = [
-    { index: '1', name: '主页', roles: ['Admin', '普通用户', '数据所有方'] },
-    { index: '2', name: '申请', roles: ['普通用户', '数据所有方'] },
-    { index: '3', name: '处理', roles: ['Admin', '普通用户', '数据所有方','审核人员'] },
-    { index: '4', name: '数据所有方审批', roles: ['数据所有方'] },
-    { index: '5', name: '审核员审批', roles: ['Admin','审核人员'] },
-    { index: '6', name: '管理', roles: ['Admin'] }
-  ];
-
-  return menus.filter(menu => menu.roles.includes(role));  // 过滤出用户角色可访问的菜单项
-});
+const { availableMenus } = useMenu(userRole);
 
 // 控制详情卡片显示
 const isCardVisible = ref(false);
@@ -100,6 +90,18 @@ const selectedFile = ref(null);
 
 // 文件选择
 const handleBeforeUpload = (file) => {
+  // 检查文件是否存在
+  if (!file) {
+    ElMessage.error('请选择文件');
+    return false;
+  }
+
+  // 检查文件大小是否为0
+  if (file.size === 0) {
+    ElMessage.error('文件内容不能为空');
+    return false;
+  }
+
   selectedFile.value = file; // 选择的文件存储
   showUpload.value = true;
   ElMessage.success('已选中数据文件');

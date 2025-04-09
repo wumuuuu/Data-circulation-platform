@@ -26,17 +26,19 @@ export async function calculateSign(file, Data, username) {
 
   let y = BigInt(Data.y);
   let b = BigInt(Data.b);
+  let b1;
 
   const pemContent = await readFileContent(file);
   const privateKey = BigInt(await extractKeyFromPem(pemContent));
   y = BigInt(await modularExponentiation(y, privateKey, p));
   b = BigInt(await modularExponentiation(b, privateKey, p));
-
+  b1 = BigInt(await modularExponentiation(g, privateKey, p));
   const response = await post('/task/signUpdate', {
     taskId: Data.taskId,
     username: username,
     y: y.toString(),
     b: b.toString(),
+    b1: b1.toString(),
   });
   if(response.success) {
     ElMessage.success('计算完成');
@@ -76,11 +78,11 @@ export async function calculateArbitration(file, Data, username) {
   let c, d = 0, d1 = 0, a_inv,t = 0;
   let t1 = 0, t2 = 0, r=0, delta=0;
   let s = 0, ch;
+
+  console.log(Data);
   if(Data.num === '1'){
     c = BigInt(Data.d);
     a_inv = modInv(privateKey, q);
-
-    console.log(a_inv);
 
     d = modPow(c, a_inv, p);
     r = generateRandom1024BitBigInt();
@@ -98,6 +100,7 @@ export async function calculateArbitration(file, Data, username) {
     ch = BigInt(Data.ch);
     s = r - ch * privateKey;
   }
+
 
   const response = await post('/task/arbitrationUpdate', {
     taskId: Data.taskId,

@@ -115,7 +115,7 @@ export async function fetchApplications() {
   } catch (error) {
     // 判断错误类型
     if (error.message === '未找到等待数据所有方审核的申请记录') {
-      ElMessage.success('暂无数据');
+      // ElMessage.success('暂无数据');
     } else {
       ElMessage.error('获取等待数据所有方审核的申请记录失败');
     }
@@ -158,9 +158,10 @@ export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, 
 
     worker.onmessage = async function (e) {
       const { type, chunkWithLength, currentChunk, totalChunks, progress: progressValue } = e.data;
-
+      console.log(e.data);
+      console.log(1);
       if (type === 'encryptedChunk') {
-
+        console.log(2);
         // 在使用 await 之前，立即复制所有需要的变量
         const localChunkWithLength = chunkWithLength.slice(0); // 对于 ArrayBuffer，使用 slice 复制
         const localCurrentChunk = currentChunk;
@@ -170,7 +171,7 @@ export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, 
         // 接收到加密块，上传到服务器
         try {
           // console.log(`Main thread: Received chunk ${localCurrentChunk} of ${localTotalChunks}`);
-
+          console.log(3);
           await uploadEncryptedChunk(localChunkWithLength, localCurrentChunk, localTotalChunks, FileId, fileName, creator_name, fileOutline);
 
           // 更新进度
@@ -203,7 +204,7 @@ export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, 
         }
       } else if (type === 'done') {
         ElMessage.success('文件加密完成');
-        console.log('All chunks have been encrypted and uploaded successfully.');
+        console.log('所有分片已加密并上传成功');
       }
     };
 
@@ -229,10 +230,10 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
 
   // 创建 FormData 实例，用于存放要上传的块和其他元数据
   const formData = new FormData();
-
+  console.log(1);
   // 添加加密块，类型为 'application/octet-stream' 表示为二进制数据
   formData.append('chunk', new Blob([chunk], { type: 'application/octet-stream' }));
-
+  console.log(2);
   // 将块的索引（块编号）和总块数作为元数据传递给后端
   formData.append('chunkIndex', currentChunk - 1); // 当前上传的块编号
   formData.append('totalChunks', totalChunks); // 总的块数，便于后端知道这是第几块
@@ -241,7 +242,7 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
   formData.append("creatorName", creatorName);
   formData.append("fileOutline", fileOutline);
   try {
-
+    console.log(3);
     const response = await fetch('/api/upload-chunk', {
       method: 'POST',
       body: formData,
@@ -251,18 +252,19 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
 
     // 如果上传成功，处理响应
     if (response && apiResponse.code === 200) {
-      console.log(`Chunk ${currentChunk} of ${totalChunks} uploaded successfully.`);
+      console.log(`分片 ${currentChunk}/${totalChunks} 上传成功`);
     } else {
       // 上传失败时，记录错误信息
-      console.error(`Failed to upload chunk ${currentChunk}: ${response.message || 'Unknown error'}`);
-      throw new Error(`Failed to upload chunk ${currentChunk}: ${response.message || 'Unknown error'}`);
+      const errorMsg = response?.message || '未知错误';
+      console.error(`分片 ${currentChunk} 上传失败: ${errorMsg}`);
+      throw new Error(`分片 ${currentChunk} 上传失败: ${errorMsg}`);
     }
   } catch (error) {
     // 捕获网络错误或其他异常情况
-    console.error(`Error occurred while uploading chunk ${currentChunk}:`, error);
+    console.error(`上传分片 ${currentChunk} 时发生错误:`, error);
 
     // 如果有必要，可以在此添加重试逻辑或进一步的错误处理
-    throw new Error(`Error uploading chunk ${currentChunk}: ${error.message}`);
+    throw new Error(`分片 ${currentChunk} 上传过程中出错: ${error.message}`);
   }
 }
 

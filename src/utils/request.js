@@ -30,7 +30,6 @@ const request = async (url, options = {}) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    console.log(1);
     // 针对文件下载的处理
     if (options.method === 'GET' && options.responseType === 'blob') {
       const blob = await response.blob(); // 获取 Blob 数据

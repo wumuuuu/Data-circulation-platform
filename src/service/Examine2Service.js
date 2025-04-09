@@ -79,7 +79,7 @@ export async function fetchApplications() {
   } catch (error) {
     // 判断错误类型
     if (error.message === '未找到等待平台审核的申请记录') {
-      ElMessage.success('暂无数据');
+      // ElMessage.success('暂无数据');
     } else {
       ElMessage.error('获取等待平台审核的申请记录失败');
     }
