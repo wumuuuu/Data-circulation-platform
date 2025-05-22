@@ -76,7 +76,7 @@ const cancelEdit = () => {
     <!-- 侧边栏 -->
     <!-- 侧边栏 -->
     <el-aside width="205px" class="custom-aside">
-      <div class="logo"><strong>数据流转平台</strong></div>
+      <div class="logo"><strong>宁波市民卡联合确权数据流转平台</strong></div>
       <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
         <!-- 动态渲染菜单项 -->
         <el-menu-item

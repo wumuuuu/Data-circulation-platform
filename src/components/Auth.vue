@@ -306,7 +306,7 @@ const toForget = () => {
       <!-- 注册表单 -->
       <el-form ref="formRef" size="large" autocomplete="off" v-if="isRegister" :model="registerData" :rules="rules">
         <el-form-item class="reg-log_wrapper">
-          <h1 class="title">数据流转平台</h1>
+          <h1 class="title">宁波市民卡联合确权数据流转平台</h1>
         </el-form-item>
 
 
