@@ -25,9 +25,8 @@ export async function fetchDataOwners() {
  * 获取指定用户的所有申请记录
  * @returns {Promise<Array<Object>>} 返回包含该用户所有申请记录的数组
  */
-export async function fetchApplications() {
+export async function fetchApplications(username) {
   try {
-    const username = sessionStorage.getItem('username');
     const response = await get(`/application/user/${username}`);
     if (response.success) {
       return response.data;
@@ -41,7 +40,7 @@ export async function fetchApplications() {
   }
 }
 
-export const onSubmit = async (formData) => {
+export const onSubmit = async (formData, username) => {
 
   // 检查表单内容是否已填写完整
   if (!formData.dataUser) {
@@ -58,7 +57,6 @@ export const onSubmit = async (formData) => {
     ElMessage.warning('请选择日期时间范围');
     return;
   }
-  const username = sessionStorage.getItem('username');
   // 准备要上传的数据
   const applicationData = {
     username: username,
@@ -79,13 +77,13 @@ export const onSubmit = async (formData) => {
     console.error('Error:', error);
     ElMessage.error('申请提交失败');
   }
+  window.location.reload(); // 刷新当前页面
 }
 
-export const onSubmit1 = async (taskId, type) => {
+export const onSubmit1 = async (taskId, type, username) => {
   try {
     // 调用接口提交数据
     const response = await get(`/task/find_task?taskId=${taskId}`);
-    const username = sessionStorage.getItem('username');
     if(response.success) {
 
       // 准备要上传的数据
@@ -115,10 +113,12 @@ export const onSubmit1 = async (taskId, type) => {
   } catch (error) {
     ElMessage.error('申请提交失败');
   }
+  window.location.reload(); // 刷新当前页面
 }
 
 export const Download = async (row) => {
   try {
+    const startTime = Date.now(); // 记录开始时间
     // 发起请求下载文件
     const response = await get(`/download?fileName=${row.fileName}`, { responseType: 'blob' });
 
@@ -139,10 +139,18 @@ export const Download = async (row) => {
     window.URL.revokeObjectURL(url);
 
     ElMessage.success('下载成功');
+    const duration = Date.now() - startTime; // 单位：毫秒
+
+    const minutes = Math.floor(duration / 60000);
+    const seconds = Math.floor((duration % 60000) / 1000);
+    const milliseconds = duration % 1000;
+
+    console.log(`耗时：${minutes} 分 ${seconds} 秒 ${milliseconds} 毫秒`);
   } catch (error) {
     console.error('Error:', error);
     ElMessage.error('下载失败');
   }
+
 };
 
 

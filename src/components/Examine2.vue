@@ -87,15 +87,16 @@ const onReject = async (id, username) => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header>
+      <el-header style="display: flex; align-items: center; gap: 10px;">
         <el-dropdown @command="handleCommand">
-          <el-avatar> {{username}} </el-avatar>
+          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
       </el-header>
 
       <!-- 主内容区 -->
@@ -118,10 +119,10 @@ const onReject = async (id, username) => {
                           <div >时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
                         <div v-if="scope.row.applicationType === '确权'">
-                          <div>需求：对ID为 {{ scope.row.text }} 的流转数据进行确权</div>
+                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行确权</div>
                         </div>
                         <div v-if="scope.row.applicationType === '仲裁'">
-                          <div>需求：对ID为 {{ scope.row.text }} 的流转数据签名Y进行仲裁</div>
+                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行仲裁</div>
                         </div>
                       </template>
                     </el-table-column>

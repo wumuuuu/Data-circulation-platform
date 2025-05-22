@@ -29,6 +29,7 @@ export const onSubmit = async (formData, id, username) => {
   } else {
     ElMessage.error('申请更新失败');
   }
+  window.location.reload(); // 刷新当前页面
 }
 
 export const onReject = async (explanation, id) => {
@@ -52,6 +53,7 @@ export const onReject = async (explanation, id) => {
   } catch (error) {
     console.error('请求发生错误:', error);
   }
+  window.location.reload(); // 刷新当前页面
 };
 
 
@@ -72,7 +74,7 @@ export const addMember = async (memberSearch, signer) => {
   // 发送请求到服务器，检查用户名是否已存在
   const response = await post('/find-username', { username: memberSearch });
 
-  if (response.success) {
+  if (response.data === '用户名不存在') {
     // 如果用户名不存在，无法添加到签名人列表
     ElMessage.error('用户名不存在');
   } else {
@@ -81,11 +83,10 @@ export const addMember = async (memberSearch, signer) => {
   }
 };
 
-export async function fetchFiles() {
+export async function fetchFiles(creatorName) {
   try {
-    const creatorName = sessionStorage.getItem('username');
     // 在请求中传递 creatorName 作为查询参数
-    const response = await get(`/files?creatorName=${encodeURIComponent(creatorName)}`);
+    const response = await get(`/filesName?creatorName=${encodeURIComponent(creatorName)}`);
 
     // 检查响应是否成功
     if (response.success) {
@@ -103,9 +104,8 @@ export async function fetchFiles() {
  * 获取需要数据所有方审核的申请记录
  * @returns {Promise<Array<Object>>} 返回包含该用户所有申请记录的数组
  */
-export async function fetchApplications() {
+export async function fetchApplications(username) {
   try {
-    const username = sessionStorage.getItem('username');
     const response = await get(`/application/pending1?username=${encodeURIComponent(username)}`);
     if (response.success) {
       return response.data;
@@ -141,108 +141,126 @@ const getFileId = async () => {
   }
 };
 
-// 加密文件，并更新进度
-export const encryptCsvFileWithProgress = async (file, startTime, isProcessing, showUpload, estimatedTime, progress, fileName, creator_name, fileOutline) => {
-  const chunkSize = 1024 * 1024 * 50; // 每次处理 50MB
-
+export const encryptCsvFileWithProgress = async (
+  file,
+  startTime,
+  isProcessing,
+  showUpload,
+  estimatedTime,  // Vue ref，string
+  progress,       // Vue ref，number
+  fileName,
+  creator_name,
+  fileOutline
+) => {
+  const fileSize = file.size;
+  const subsequentChunkSize = 1024 * 1024 * 15; // 15MB
+  const initialChunkSize = fileSize % subsequentChunkSize || subsequentChunkSize;
+  let isFirstChunk = true;
   const FileId = await getFileId();
 
   try {
-    // 获取共享密钥
     const sharedSecret = await getSharedKey();
-
-    const fileSize = file.size; // 文件总大小（字节）
-
-    // 启动 Web Worker 处理文件加密
     const worker = new Worker(new URL('@/utils/cryptoWorker.js', import.meta.url));
 
-    worker.onmessage = async function (e) {
+    const uploadQueue = new Map();
+    let nextExpectedChunk = 0;
+
+    worker.onmessage = async (e) => {
       const { type, chunkWithLength, currentChunk, totalChunks, progress: progressValue } = e.data;
-      console.log(e.data);
-      console.log(1);
+
       if (type === 'encryptedChunk') {
-        console.log(2);
-        // 在使用 await 之前，立即复制所有需要的变量
-        const localChunkWithLength = chunkWithLength.slice(0); // 对于 ArrayBuffer，使用 slice 复制
-        const localCurrentChunk = currentChunk;
-        const localTotalChunks = totalChunks;
-        const localProgressValue = progressValue;
+        // 加入队列
+        uploadQueue.set(currentChunk, { chunkWithLength, progressValue });
 
-        // 接收到加密块，上传到服务器
-        try {
-          // console.log(`Main thread: Received chunk ${localCurrentChunk} of ${localTotalChunks}`);
-          console.log(3);
-          await uploadEncryptedChunk(localChunkWithLength, localCurrentChunk, localTotalChunks, FileId, fileName, creator_name, fileOutline);
+        // 按顺序上传
+        while (uploadQueue.has(nextExpectedChunk)) {
+          const { chunkWithLength: chunk, progressValue } = uploadQueue.get(nextExpectedChunk);
+          uploadQueue.delete(nextExpectedChunk);
 
-          // 更新进度
-          progress.value = Number(localProgressValue);
-          console.log(`Current Progress: ${progress.value}`);
+          try {
+            await uploadEncryptedChunk(
+              chunk.slice(0),
+              nextExpectedChunk,
+              totalChunks,
+              FileId,
+              fileName,
+              creator_name,
+              fileOutline
+            );
 
-          // // 使用局部变量
-          // console.log(`Uploaded chunk ${localCurrentChunk} of ${localTotalChunks}`);
+            // 更新进度条
+            const percent = ((nextExpectedChunk + 1) / totalChunks) * 100;
+            progress.value = Number(percent.toFixed(2));
 
-          // 计算经过的时间
-          const elapsedTime = (Date.now() - startTime) / 1000; // 秒
+            // 时间估算
+            const now = Date.now();
+            const elapsedSec = (now - startTime) / 1000;
+            const avgPerChunk = elapsedSec / (nextExpectedChunk + 1);
+            const remainingChunks = totalChunks - (nextExpectedChunk + 1);
+            const remainSec = Math.ceil(avgPerChunk * remainingChunks);
+            const min = Math.floor(remainSec / 60);
+            const sec = remainSec % 60;
+            estimatedTime.value = `${min} 分 ${sec} 秒`;
 
-          // 已处理的数据量
-          const processedData = (progress.value / 100) * fileSize;
+            // 首块上传后切换chunkSize
+            if (isFirstChunk) {
+              isFirstChunk = false;
+              worker.postMessage({
+                type: 'updateChunkSize',
+                payload: { chunkSize: subsequentChunkSize },
+              });
+            }
 
-          // 处理速度（字节/秒）
-          const processingSpeed = processedData / elapsedTime;
-
-          // 预估剩余时间 = 剩余数据量 / 处理速度
-          const remainingData = fileSize - processedData;
-          const remainingTime = remainingData / processingSpeed; // 以秒为单位
-
-          // 更新 estimatedTime.value
-          estimatedTime.value = formatTime(Math.max(remainingTime, 0)); // 确保剩余时间不为负数
-
-          console.log(progress.value);
-
-        } catch (uploadError) {
-          console.error(`Error uploading chunk ${localCurrentChunk}:`, uploadError);
+            nextExpectedChunk++;
+          } catch (uploadError) {
+            console.error(`上传第 ${nextExpectedChunk} 块出错:`, uploadError);
+            // 出错跳过该块继续上传后续，避免阻塞
+            nextExpectedChunk++;
+          }
         }
       } else if (type === 'done') {
+        progress.value = 100;
+        estimatedTime.value = '0 分 0 秒';
         ElMessage.success('文件加密完成');
-        console.log('所有分片已加密并上传成功');
       }
     };
 
-    // 向 Web Worker 发送加密文件的消息
+    // 启动初始加密
     worker.postMessage({
       type: 'encryptFile',
       payload: {
-        file: file,
-        sharedSecret: sharedSecret,
-        chunkSize: chunkSize,
+        file,
+        sharedSecret,
+        chunkSize: initialChunkSize,
       },
     });
-
   } catch (error) {
     ElMessage.error(`加密过程失败: ${error.message}`);
-    console.error(`Encryption error:`, error);
     throw error;
   }
 };
+
+
+
 
 // 上传加密块到服务器的方法
 async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fileName, creatorName, fileOutline) {
 
   // 创建 FormData 实例，用于存放要上传的块和其他元数据
   const formData = new FormData();
-  console.log(1);
+
   // 添加加密块，类型为 'application/octet-stream' 表示为二进制数据
   formData.append('chunk', new Blob([chunk], { type: 'application/octet-stream' }));
-  console.log(2);
+
   // 将块的索引（块编号）和总块数作为元数据传递给后端
-  formData.append('chunkIndex', currentChunk - 1); // 当前上传的块编号
+  formData.append('chunkIndex', currentChunk); // 当前上传的块编号
   formData.append('totalChunks', totalChunks); // 总的块数，便于后端知道这是第几块
   formData.append("fileId", fileId);
   formData.append("fileName", fileName);
   formData.append("creatorName", creatorName);
   formData.append("fileOutline", fileOutline);
   try {
-    console.log(3);
+
     const response = await fetch('/api/upload-chunk', {
       method: 'POST',
       body: formData,
@@ -252,19 +270,19 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
 
     // 如果上传成功，处理响应
     if (response && apiResponse.code === 200) {
-      console.log(`分片 ${currentChunk}/${totalChunks} 上传成功`);
+      console.log(`分片 ${currentChunk + 1}/${totalChunks} 上传成功`);
     } else {
       // 上传失败时，记录错误信息
       const errorMsg = response?.message || '未知错误';
-      console.error(`分片 ${currentChunk} 上传失败: ${errorMsg}`);
+      console.error(`分片 ${currentChunk + 1} 上传失败: ${errorMsg}`);
       throw new Error(`分片 ${currentChunk} 上传失败: ${errorMsg}`);
     }
   } catch (error) {
     // 捕获网络错误或其他异常情况
-    console.error(`上传分片 ${currentChunk} 时发生错误:`, error);
+    console.error(`上传分片 ${currentChunk + 1} 时发生错误:`, error);
 
     // 如果有必要，可以在此添加重试逻辑或进一步的错误处理
-    throw new Error(`分片 ${currentChunk} 上传过程中出错: ${error.message}`);
+    throw new Error(`分片 ${currentChunk + 1} 上传过程中出错: ${error.message}`);
   }
 }
 

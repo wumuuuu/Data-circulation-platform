@@ -3,11 +3,6 @@ import { get, post } from '@/utils/request.js'
 
 // 更新申请状态的通用函数
 export const update = async (Username, id, tableData, status, explanation) => {
-  // 确保 tableData 是一个数组
-  if (!tableData || !Array.isArray(tableData.value)) {
-    console.error('tableData is not defined or not an array');
-    return;
-  }
 
   // 查找对应的申请记录
   const row = tableData.value.find(item => item.id === id);

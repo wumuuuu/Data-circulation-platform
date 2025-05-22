@@ -27,6 +27,7 @@ const formData = ref({
   status:'',
   username:'',
   applicationId:'',
+  usagePolicy:'',
 });
 
 const files = ref([]);
@@ -37,6 +38,7 @@ const currentPage = ref(1); // 当前页
 const pageSize = ref(6); // 每页显示条数
 const fileName = ref();
 const fileOutline = ref();
+const usagePolicy = ref();
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -46,8 +48,8 @@ const paginatedData = computed(() => {
 });
 
 onMounted(async () => {
-  tableData.value = await fetchApplications();
-  files.value = await fetchFiles();
+  tableData.value = await fetchApplications(username);
+  files.value = await fetchFiles(username);
 });
 
 // 用户角色对应的可访问菜单项
@@ -130,7 +132,7 @@ const encryptAndUpload = async () => {
     progress,
     fileName.value,
     username,
-    fileOutline.value,
+    fileOutline.value + usagePolicy.value,
   );
 };
 
@@ -200,15 +202,16 @@ const onExplain = (id) => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header>
+      <el-header style="display: flex; align-items: center; gap: 10px;">
         <el-dropdown @command="handleCommand">
-          <el-avatar> {{username}} </el-avatar>
+          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
       </el-header>
 
       <!-- 主内容区 -->
@@ -258,11 +261,14 @@ const onExplain = (id) => {
                 <div class="sign">上传新数据</div>
                 <el-divider />
                 <el-row class="form-row">
-                  <el-col :span="6" class="label-col" style="margin-top: 20px" >命名数据：</el-col>
-                  <el-col :span="18" class="input-col" style="margin-top: 20px">
+                  <el-col :span="6" class="label-col" style="margin-top: 20px" >数据集名称：</el-col>
+                  <el-col :span="16" class="input-col" style="margin-top: 20px">
                     <el-input v-model="fileName"/>
                   </el-col>
-                  <el-input style="height: 30vh; margin-top: 20px" type="textarea" :rows="10" placeholder="上传数据的概要"  v-model="fileOutline"/>
+                  <el-col :span="6" class="label-col" style="margin-top: 20px" >数据集描述：</el-col>
+                  <el-col :span="18" class="input-col" style="margin-top: 20px">
+                    <el-input style="height: 12vh" :rows="4" type="textarea" v-model="fileOutline"/>
+                  </el-col>
                 </el-row>
                 <!-- 文件选择和加密上传按钮部分 -->
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
@@ -316,6 +322,13 @@ const onExplain = (id) => {
                     </el-select>
 
                   </el-row>
+
+                  <el-row class="form-row">
+                    <el-col :span="6" class="label-col">授权细则：</el-col>
+                    <el-col :span="18" class="input-col">
+                      <el-input style="height: 6vh" :rows="2" type="textarea" v-model="formData.usagePolicy"/>
+                    </el-col>
+                  </el-row >
                   <!-- 参与成员部分 -->
                   <el-row class="form-row">
                     <el-col :span="6" class="label-col">参与成员：</el-col>

@@ -22,7 +22,8 @@ const { availableMenus } = useMenu(userRole);
 const editingUser = ref({
   id: null,
   username: '',
-  role: ''
+  role: '',
+  email: ''
 });
 const isEditing = ref(false);
 
@@ -91,15 +92,16 @@ const cancelEdit = () => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header>
+      <el-header style="display: flex; align-items: center; gap: 10px;">
         <el-dropdown @command="handleCommand">
-          <el-avatar> {{username}} </el-avatar>
+          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
       </el-header>
 
       <!-- 主内容区 -->
@@ -119,6 +121,12 @@ const cancelEdit = () => {
                         <span v-else>{{ scope.row.username }}</span>
                       </template>
                     </el-table-column>
+                    <el-table-column prop="email" label="邮箱" align="center" >
+                      <template #default="scope">
+                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.email" />
+                        <span v-else>{{ scope.row.email }}</span>
+                      </template>
+                    </el-table-column>
                     <el-table-column prop="role" label="用户权限" align="center" >
                       <template #default="scope">
                         <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">
@@ -126,6 +134,7 @@ const cancelEdit = () => {
                           <el-option label="普通用户" value="普通用户"></el-option>
                           <el-option label="数据所有方" value="数据所有方"></el-option>
                           <el-option label="审核人员" value="审核人员"></el-option>
+                          <el-option label="测试账号" value="测试账号"></el-option>
                         </el-select>
                         <span v-else>{{ scope.row.role }}</span>
                       </template>

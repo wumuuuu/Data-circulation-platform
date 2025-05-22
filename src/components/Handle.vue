@@ -82,15 +82,16 @@ const onReset = () => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header>
+      <el-header style="display: flex; align-items: center; gap: 10px;">
         <el-dropdown @command="handleCommand">
-          <el-avatar> {{username}} </el-avatar>
+          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
       </el-header>
 
       <!-- 主内容区 -->
@@ -105,7 +106,7 @@ const onReset = () => {
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="completedAt" label="时间" align="center" />
                     <el-table-column prop="taskId" label="任务ID" align="center" />
-                    <el-table-column prop="fileId" label="数据名" align="center" />
+                    <el-table-column prop="fileName" label="数据名" align="center" />
                     <el-table-column prop="taskType" label="类型" align="center" />
                     <el-table-column prop="status" label="状态" align="center" />
                     <el-table-column label="操作" align="center" width="100">

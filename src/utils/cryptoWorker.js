@@ -133,55 +133,35 @@ async function decryptData(sharedSecret, encryptedDataWithIvBase64) {
 
 // 加密文件
 async function encryptFile(file, sharedSecret, chunkSize) {
-
-  // 导出共享密钥为原始字节形式并输出其十六进制表示
-
-  const totalChunks = Math.ceil(file.size / chunkSize); // 计算总块数
-  // console.log(`Worker: file.size = ${file.size}, chunkSize = ${chunkSize}, totalChunks = ${totalChunks}`);
-
+  const totalChunks = Math.ceil(file.size / chunkSize);
   let offset = 0;
   let currentChunk = 0;
 
   while (offset < file.size) {
-    // 读取文件的一个块
     const chunkBlob = file.slice(offset, offset + chunkSize);
     const chunkArrayBuffer = await chunkBlob.arrayBuffer();
 
-    // 加密数据
     const encryptedChunkBase64 = await encryptData(sharedSecret, new Uint8Array(chunkArrayBuffer));
-
-    // 将加密结果从 Base64 转换回 ArrayBuffer
     const encryptedChunkArrayBuffer = base64ToArrayBuffer(encryptedChunkBase64);
 
-    // 添加长度前缀（4 字节，表示加密块的长度）
-    const lengthPrefix = new Uint32Array([encryptedChunkArrayBuffer.byteLength]);
-    const lengthPrefixBuffer = lengthPrefix.buffer; // 4 字节
+    const lengthPrefix = new Uint32Array([encryptedChunkArrayBuffer.byteLength]).buffer;
+    const chunkWithLength = concatenateArrayBuffers([lengthPrefix, encryptedChunkArrayBuffer]);
 
-    // 合并长度前缀和加密块
-    const chunkWithLength = concatenateArrayBuffers([lengthPrefixBuffer, encryptedChunkArrayBuffer]);
-
-    // 更新块索引和偏移
-    currentChunk += 1;
-    offset += chunkSize;
-
-    const progress = (currentChunk / totalChunks) * 100;
-
-    // // 输出当前块的信息
-    // console.log(`Worker: currentChunk = ${currentChunk}, totalChunks = ${totalChunks}, offset = ${offset}`);
-
-    // 将加密块和进度发送回主线程，主线程负责上传
     postMessage({
       type: 'encryptedChunk',
       chunkWithLength,
       currentChunk,
       totalChunks,
-      progress: progress.toFixed(2),
-    }, [chunkWithLength]); // 使用 Transferable 对象来传递 ArrayBuffer
+      progress: Number(((currentChunk + 1) / totalChunks * 100).toFixed(2)),
+    }, [chunkWithLength]);
+
+    currentChunk++;
+    offset += chunkSize;
   }
 
-  // 当所有块都加密完成后，通知主线程
-  postMessage({ type: 'done', message: 'File encryption completed' });
+  postMessage({ type: 'done', progress: 100, message: 'File encryption completed' });
 }
+
 
 async function decryptFile(sharedSecret, encryptedDataArrayBuffer) {
   // 将 ArrayBuffer 转换为 Uint8Array 以便使用 slice 方法分割 IV 和加密数据

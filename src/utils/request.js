@@ -1,7 +1,7 @@
-import { sharedKey } from '@/cryptoUtils.js';
+import { getSharedKey } from '@/cryptoUtils.js'
 
 const baseURL = '/api';
-
+const sharedKey = await getSharedKey();
 // 判断是否需要加密或解密的辅助函数
 const isEncryptionRequired = (url) => {
   return !url.includes('/exchange-keys') && !url.includes('/find-username');

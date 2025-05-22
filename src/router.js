@@ -7,7 +7,8 @@ import UserMgr from '@/components/UserMgr.vue'
 import Handle from '@/components/Handle.vue'
 import Examine1 from '@/components/Examine1.vue'
 import Examine2 from '@/components/Examine2.vue'
-
+import PIM from '@/components/PIM.vue'
+import File from '@/components/File.vue'
 // const BASE_URL = '/dataflow5/'; // 手动设置 BASE_URL
 const BASE_URL = '/'; // 手动设置 BASE_URL
 const routes = [
@@ -26,32 +27,44 @@ const routes = [
     path: '/application',
     name: 'Application',
     component: Application,
-    meta: { requiresAuth: true, roles: ['Admin','数据所有方', '普通用户'] }  // 需要登录权限，且只允许 数据所有方 和 普通用户 角色访问
+    meta: { requiresAuth: true, roles: ['数据所有方', '普通用户','测试账号'] }  // 需要登录权限，且只允许 数据所有方 和 普通用户 角色访问
   },
   {
     path: '/handle',
     name: 'Handle',
     component: Handle,
-    meta: { requiresAuth: true }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['数据所有方', '普通用户','测试账号'] }  // 需要登录权限
   },
   {
     path: '/examine1',
     name: 'Examine1',
     component: Examine1,
-    meta: { requiresAuth: true, roles: ['Admin','数据所有方'] }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','数据所有方'] }  // 需要登录权限
   },
   {
     path: '/examine2',
     name: 'Examine2',
     component: Examine2,
-    meta: { requiresAuth: true, roles: ['Admin','审核人员'] } // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','审核人员'] } // 需要登录权限
   },
 
   {
     path: '/userMgr',
     name: 'UserMgr',
     component: UserMgr,
-    meta: { requiresAuth: true, roles: ['Admin'] }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','Admin'] }  // 需要登录权限
+  },
+  {
+    path: '/PIM',
+    name: 'PIM',
+    component: PIM,
+    meta: { requiresAuth: true}  // 需要登录权限
+  },
+  {
+    path: '/File',
+    name: 'File',
+    component: File,
+    meta: { requiresAuth: true, roles: ['测试账号','数据所有方']}  // 需要登录权限
   }
 ];
 
@@ -93,6 +106,12 @@ export const handleSelect = (index) => {
       break;
     case '6':
       router.push('/userMgr');
+      break;
+    case '7':
+      router.push('/PIM');
+      break;
+    case '8':
+      router.push('/File');
       break;
   }
 };

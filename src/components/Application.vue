@@ -48,7 +48,7 @@ const loading = ref(true);  // 数据加载状态
 
 onMounted(async () => {
   try {
-    tableData.value = await fetchApplications();
+    tableData.value = await fetchApplications(username);
     options.value = await fetchDataOwners();
   } catch (error) {
     console.error("数据加载失败", error);
@@ -98,7 +98,6 @@ const onReset1 = () => {
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
-    <!-- 侧边栏 -->
     <el-aside width="205px" class="custom-aside">
       <div class="logo"><strong>数据流转平台</strong></div>
       <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
@@ -116,15 +115,16 @@ const onReset1 = () => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header>
+      <el-header style="display: flex; align-items: center; gap: 10px;">
         <el-dropdown @command="handleCommand">
-          <el-avatar> {{username}} </el-avatar>
+          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
           <template v-slot:dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="logout">登出</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
       </el-header>
 
       <!-- 主内容区 -->
@@ -149,35 +149,52 @@ const onReset1 = () => {
                         </div>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="text" label="申请内容" width = "250" >
+                    <el-table-column  prop="text" label="申请内容" width = "250" >
                       <template #default="scope">
-                        <div>
-                          <div>需求：{{ scope.row.text }}</div>
+                        <div v-if="scope.row.applicationType === '签名'">
+                          <div >需求：{{ scope.row.text }}</div>
+                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        </div>
+                        <div v-if="scope.row.applicationType === '确权'">
+                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行确权</div>
+                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        </div>
+                        <div v-if="scope.row.applicationType === '仲裁'">
+                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行仲裁</div>
                           <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
                       </template>
                     </el-table-column>
                     <el-table-column label="其他" align="center" width = "70" >
                       <template #default="scope">
-                        <el-button
-                          v-if="scope.row.explanation === '已允许下载该数据'"
-                          link
-                          type="primary"
-                          size="small"
-                          @click="Download(scope.row)"
+
+                        <el-tooltip
+                          :disabled="scope.row.explanation !== '不允许下载该数据'"
+                          content="确权验证失败，无法继续下载该数据"
+                          placement="top"
                         >
-                          下载
-                        </el-button>
-                        <el-button
-                          v-else
-                          link
-                          type="primary"
-                          size="small"
-                          :disabled="!scope.row.explanation || scope.row.explanation === ''"
-                          @click="openDialog(scope.row.explanation)"
-                        >
+                          <el-button
+                            v-if="scope.row.explanation === '已允许下载该数据' || scope.row.explanation === '不允许下载该数据'"
+                            link
+                            type="primary"
+                            size="small"
+                            :disabled="scope.row.explanation === '不允许下载该数据'"
+                            @click="Download(scope.row)"
+                          >
+                            下载
+                          </el-button>
+                          <el-button
+                            v-else
+                            link
+                            type="primary"
+                            size="small"
+                            :disabled="!scope.row.explanation || scope.row.explanation === ''"
+                            @click="openDialog(scope.row.explanation)"
+                          >
                             详情
-                        </el-button>
+                          </el-button>
+                        </el-tooltip>
+
                       </template>
                     </el-table-column>
                   </el-table>
@@ -207,7 +224,7 @@ const onReset1 = () => {
                 <!-- 按钮排列 -->
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
                   <el-col>
-                    <el-button type="primary" @click="showForm('签名')" class="custom-button custom-button-text">签名申请</el-button>
+                    <el-button type="primary" @click="showForm('签名')" class="custom-button custom-button-text">数据申请</el-button>
                   </el-col>
                 </el-row>
                 <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
@@ -268,7 +285,7 @@ const onReset1 = () => {
 
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit(formData); onReset();">提交</el-button>
+                      <el-button type="primary" @click="onSubmit(formData, username); onReset();">提交</el-button>
                       <el-button @click="onReset()">重置</el-button>
                     </el-col>
                   </el-row>
@@ -289,7 +306,7 @@ const onReset1 = () => {
 
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit1(taskId, '确权'); onReset1();">提交</el-button>
+                      <el-button type="primary" @click="onSubmit1(taskId, '确权',username); onReset1();">提交</el-button>
                       <el-button @click="onReset1()">重置</el-button>
                     </el-col>
                   </el-row>
@@ -309,7 +326,7 @@ const onReset1 = () => {
 
                   <el-row class="form-row">
                     <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit1(taskId, '仲裁'); onReset1();">提交</el-button>
+                      <el-button type="primary" @click="onSubmit1(taskId, '仲裁',username); onReset1();">提交</el-button>
                       <el-button @click="onReset1()">重置</el-button>
                     </el-col>
                   </el-row>

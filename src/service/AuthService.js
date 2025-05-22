@@ -2,8 +2,7 @@
 import {
   clearSharedKey, // 用于清除存储的共享密钥
   initKeyExchange, // 用于初始化密钥交换过程
-  clientKeyPair, // 存储客户端的密钥对
-  sharedKey // 存储生成的共享密钥
+  clientKeyPair, getSharedKey // 存储客户端的密钥对
 } from '@/cryptoUtils.js'
 
 import {
@@ -20,16 +19,17 @@ import { jwtDecode } from "jwt-decode";
 
 // 处理用户注册请求的函数
 export async function onRegister(registerData) {
-  // 验证用户输入的两次密码是否一致
-  if (registerData.password !== registerData.rePassword) {
-    ElMessage.error('两次输入的密码不一致');
-    return; // 如果密码不一致，则停止注册流程
-  }
 
-  if(registerData.password === '' || registerData.rePassword === '' || registerData.username === '') {
-    ElMessage.error('用户名或密码不规范');
-    return;
-  }
+  // // 验证用户输入的两次密码是否一致
+  // if (registerData.password !== registerData.rePassword) {
+  //   ElMessage.error('两次输入的密码不一致');
+  //   return false; // 如果密码不一致，则停止注册流程
+  // }
+  //
+  // if(registerData.password === '' || registerData.rePassword === '' || registerData.username === '') {
+  //   ElMessage.error('用户名或密码不规范');
+  //   return false;
+  // }
 
   // 如果客户端密钥对未生成，则先初始化密钥交换
   if (!clientKeyPair) {
@@ -40,25 +40,18 @@ export async function onRegister(registerData) {
   const response = await post('/find-username', { username: registerData.username });
 
   // 如果用户名已存在，则停止注册流程
-  if (!response.success) {
+  if (response.data === "用户名已存在") {
     ElMessage.error('用户名已存在');
-    return;
+    return false;
   }
 
   try {
-    // 使用 Web Worker 生成私钥
-    const privateKey = await generatePrivateKey();
-
-    // 使用生成的私钥计算相应的公钥
-    const publicKey = await calculatePublicKey(privateKey);
-
+    const sharedKey = await getSharedKey();
     // 使用生成的共享密钥加密用户的密码和公钥
     const encryptedPassword = await encryptData(sharedKey, stringToArrayBuffer(registerData.password));
-    const encryptedPublicKey = await encryptData(sharedKey, stringToArrayBuffer(publicKey));
 
-
-    // 解密加密后的密码以验证加密过程是否正确
-    const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
+    // // 解密加密后的密码以验证加密过程是否正确
+    // const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
     // console.log("Decrypted Password:", decryptedPassword);
 
 
@@ -66,17 +59,16 @@ export async function onRegister(registerData) {
     const payload = {
       ...registerData,
       password: encryptedPassword, // 加密后的密码
-      public_key: encryptedPublicKey, // 加密后的公钥
       rePassword: '' // 清空重复密码字段
     };
-
-    // 验证解密后的密码是否与用户输入的密码一致
-    if (decryptedPassword === registerData.password) {
-      console.log("解密验证成功，数据一致。");
-    } else {
-      console.error("解密验证失败，数据不一致！");
-      return;
-    }
+    //
+    // // 验证解密后的密码是否与用户输入的密码一致
+    // if (decryptedPassword === registerData.password) {
+    //   console.log("解密验证成功，数据一致。");
+    // } else {
+    //   console.error("解密验证失败，数据不一致！");
+    //   return;
+    // }
 
     // 发送注册请求到服务器
     const registerResponse = await post('/register', payload);
@@ -85,12 +77,12 @@ export async function onRegister(registerData) {
     if (registerResponse.success) {
       ElMessage.success('注册成功');
       clearSharedKey(); // 清除存储的共享密钥
-      localStorage.setItem('privateKey', privateKey.toString()); // 将私钥保存到本地存储
-      document.getElementById('savePrivateKeyButton').style.display = 'block'; // 显示保存私钥的按钮
+      return true;
     } else {
       // 如果注册失败，输出错误信息
       ElMessage.error('注册失败');
       console.error('注册失败', registerResponse.message);
+      return false;
     }
   } catch (error) {
     // 捕获并处理注册过程中的任何错误
@@ -108,15 +100,15 @@ export async function onLogin(loginData, rememberMe) {
   try {
 
     const encodedData = new TextEncoder().encode(loginData.password); // data 是字符串
-
+    const sharedKey = await getSharedKey();
     // 使用共享密钥加密用户输入的密码
     const encryptedPassword = await encryptData(sharedKey, encodedData);
 
     console.log("Encrypted Password:", encryptedPassword);
 
     // 解密加密后的密码以验证加密过程是否正确
-    const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
-    console.log("Decrypted Password:", decryptedPassword);
+    // const decryptedPassword = await decryptData(sharedKey, encryptedPassword);
+    // console.log("Decrypted Password:", decryptedPassword);
 
     // 发送登录请求到服务器，传递加密后的用户名和密码
     const response = await post('/login', {
@@ -131,7 +123,6 @@ export async function onLogin(loginData, rememberMe) {
       // 保存服务器返回的身份标识（如角色和 Token）到本地存储
       const token = response.data;
       const decoded = jwtDecode(token);  // 解析 JWT Token
-      const username = decoded.sub;       // 通常在 JWT 中用户名放在 'sub' (subject) 字段
       const role = decoded.role;          // role 是你自定义的字段
 
       if(rememberMe) {
@@ -148,8 +139,7 @@ export async function onLogin(loginData, rememberMe) {
       }
     } else {
       // 如果登录失败，输出错误信息
-      ElMessage.error('登录失败');
-      console.error('登录失败', response.message);
+      ElMessage.error('登录失败：用户名或密码错误');
     }
   } catch (error) {
     // 捕获并处理登录过程中的任何错误
@@ -193,39 +183,36 @@ export async function validateToken(token){
   }
 }
 
-// 将私钥保存到指定位置的函数
-export async function toSavePrivateKey() {
-  // 从本地存储中获取私钥
-  const privateKey = localStorage.getItem('privateKey');
-
-  // 设置文件保存对话框的选项
-  const options = {
-    types: [
-      {
-        description: 'Text Files',
-        accept: {
-          'text/plain': ['.pem'],
-        },
-      },
-    ],
-  };
-
+export const validateResetCode = async (forgetData) => {
   try {
-    // 显示文件保存对话框并获取文件句柄
-    const handle = await window.showSaveFilePicker(options);
-    const writable = await handle.createWritable();
 
-    // 将私钥写入指定位置的文件中
-    await writable.write(privateKey);
-    await writable.close();
-    ElMessage.success('私钥保存成功');
+  // 发送请求到服务器，检查用户名是否已存在
+    const response = await post('/find-username', { username: forgetData.username });
 
-    // 保存后，移除本地存储中的私钥
-    localStorage.removeItem('privateKey');
-    document.getElementById('savePrivateKeyButton').style.display = 'none'; // 隐藏保存私钥的按钮
+    console.log(response.data);
+
+    // 如果用户名不存在，则停止验证流程
+    if (response.data === "用户名不存在") {
+      ElMessage.error('用户名不存在');
+      return false;
+    }
+    const response1 = await post('/validate', {
+      username:forgetData.username,
+      securityQuestion:forgetData.securityQuestion,
+      securityAnswer:forgetData.securityAnswer,
+    });
+
+    if(response1.data === "验证成功"){
+      //修改密码
+      await initKeyExchange();
+      const sharedKey = await getSharedKey();
+      const Password = await encryptData(sharedKey, stringToArrayBuffer(forgetData.newPassword));
+      const response2 =await post('/update_password', {username:forgetData.username, password:Password});
+      return response2.data;
+    } else {
+      return response1.data;
+    }
   } catch (error) {
-    // 捕获并处理保存私钥过程中的任何错误
-    ElMessage.error('私钥保存失败');
-    console.error('保存失败', error);
+    throw new Error(error.response?.data?.message || '');
   }
-}
+};

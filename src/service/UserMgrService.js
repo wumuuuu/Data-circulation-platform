@@ -51,6 +51,7 @@ export const updateUser = async (user) => {
     console.error('更新用户信息失败:', error);
     throw error;
   }
+  window.location.reload(); // 刷新当前页面
 };
 
 export default {

@@ -45,6 +45,7 @@ export async function calculateSign(file, Data, username) {
   }else{
     ElMessage.error('计算出错');
   }
+
   window.location.reload(); // 刷新当前页面
 }
 
@@ -69,6 +70,7 @@ export async function calculateConfirm(file, Data, username) {
     ElMessage.error('计算出错');
   }
   window.location.reload(); // 刷新当前页面
+
 }
 
 export async function calculateArbitration(file, Data, username) {
@@ -120,7 +122,8 @@ export async function calculateArbitration(file, Data, username) {
   }else{
     ElMessage.error('计算出错');
   }
-  // window.location.reload(); // 刷新当前页面
+  window.location.reload(); // 刷新当前页面
+
 }
 
 
