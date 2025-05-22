@@ -1,8 +1,10 @@
 package com.example.demo.Controller;
 
 import com.example.demo.Mapper.ApplicationMapper;
+import com.example.demo.Mapper.TaskMapper;
 import com.example.demo.Model.Application;
 import com.example.demo.Model.APIResponse;
+import com.example.demo.Model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +19,8 @@ public class ApplicationController {
 
     @Autowired
     private ApplicationMapper applicationMapper;
+    @Autowired
+    private TaskMapper taskMapper;
 
     /**
      * 插入新的申请记录到数据库
@@ -30,6 +34,11 @@ public class ApplicationController {
             // 设置 applicationTime 为当前系统时间
             application.setApplicationTime(new Date());
             application.setFileName("");
+            if(!Objects.equals(application.getApplicationType(), "签名")){
+                String taskId = application.getText();
+                Task task = taskMapper.findTaskById(Integer.parseInt(taskId));
+                application.setFileName(task.getFileName());
+            }
             // 设置 startDate 和 endDate 的默认值（假设默认值为当前日期）
             if (application.getStartDate() == null) {
                 application.setStartDate(new Date()); // 可以根据需要设为其他日期
@@ -59,6 +68,7 @@ public class ApplicationController {
     public APIResponse<List<Application>> getApplicationsByUsername(@PathVariable String username) {
         try {
             List<Application> applications = applicationMapper.findApplicationsByUsername(username);
+            applications.sort((a1, a2) -> a2.getApplicationTime().compareTo(a1.getApplicationTime()));
             return APIResponse.success(applications);
         } catch (Exception e) {
             return APIResponse.error(500, "获取申请记录时发生错误: " + e.getMessage());

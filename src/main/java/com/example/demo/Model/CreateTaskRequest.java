@@ -9,7 +9,7 @@ public class CreateTaskRequest {
     private String confirmId;
     private String username;
     private Integer applicationId;
-
+    private String usagePolicy;
 
 // Getter 和 Setter
 
@@ -59,6 +59,14 @@ public class CreateTaskRequest {
 
     public void setTaskType(String taskType) {
         this.taskType = taskType;
+    }
+
+    public String getUsagePolicy() {
+        return usagePolicy;
+    }
+
+    public void setUsagePolicy(String usagePolicy) {
+        this.usagePolicy = usagePolicy;
     }
 
     public static class Signer {

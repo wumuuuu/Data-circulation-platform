@@ -3,6 +3,7 @@ package com.example.demo.Controller;
 import com.example.demo.Mapper.FileMapper;
 import com.example.demo.Model.APIResponse;
 import com.example.demo.Model.File;
+import com.example.demo.Model.Handle;
 import com.example.demo.Service.ECDHService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -36,10 +37,21 @@ public class FileController {
     @Autowired
     private FileMapper fileMapper;
 
-    @GetMapping("/files")
+    @GetMapping("/filesName")
     public APIResponse<List<String>> getFileNamesByCreatorName(@RequestParam("creatorName") String creatorName) {
         try {
             List<String> fileNames = fileMapper.findFileByCreatorName(creatorName);
+            return APIResponse.success(fileNames);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return APIResponse.error(500, "Error retrieving file names: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/files")
+    public APIResponse<List<File>> getFilesByCreatorName(@RequestParam("creatorName") String creatorName) {
+        try {
+            List<File> fileNames = fileMapper.findFilesByCreatorName(creatorName);
             return APIResponse.success(fileNames);
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,10 +97,11 @@ public class FileController {
 
             // 检查是否所有块都上传完毕
             if (uploadedChunks == totalChunks) {
+                // 重置计数器
+                uploadedChunksCounter.set(0);
                 // 所有块都上传完毕，执行合并
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId, fileName);
-
                     if (insertFile(fileId, fileName, creatorName, fileOutline)) {
 
                         return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
@@ -98,6 +111,7 @@ public class FileController {
                 } else {
                     return APIResponse.error(500, "数据块缺失");
                 }
+
             }
 
             // 如果不是最后一个块，返回成功消息
@@ -146,6 +160,8 @@ public class FileController {
             }
         };
     }
+
+
 
 
     // **将字节数组转换为十六进制字符串的方法**
@@ -207,8 +223,6 @@ public class FileController {
         deleteChunks(totalChunks, fileId);
         System.out.println("Chunks merged successfully into: " + outputFile.toString());
 
-        // 合并完成后，重置计数器
-        uploadedChunksCounter.set(0);
     }
 
     // 删除所有块文件

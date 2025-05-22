@@ -19,6 +19,17 @@ spring:
     multipart:
       max-file-size: 128MB  # 设置最大文件大小
       max-request-size: 128MB  # 设置请求总大小
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 931060609@qq.com
+    password: saknboumnbjzbdaj
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
 
 server:
   port: 8082

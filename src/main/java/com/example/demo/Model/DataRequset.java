@@ -5,24 +5,28 @@ import java.sql.Timestamp;
 public class DataRequset {
     private Integer taskId;  // 任务ID
     private String dataId;  // 数据ID
+    private String fileName;
     private Timestamp time;    // 时间
     private String b;       // B字段
     private String y;       // Y字段
     private String creator; // 创建者
     private String outline; // 大纲
+    private String usagePolicy;
 
     // 默认构造方法
     public DataRequset() {}
 
     // 带参数的构造方法
-    public DataRequset(Integer taskId, String dataId, Timestamp time, String b, String y, String creator, String outline) {
+    public DataRequset(Integer taskId, String dataId, String fileName,Timestamp time, String b, String y, String creator, String outline, String usagePolicy) {
         this.taskId = taskId;
         this.dataId = dataId;
+        this.fileName = fileName;
         this.time = time;
         this.b = b;
         this.y = y;
         this.creator = creator;
         this.outline = outline;
+        this.usagePolicy = usagePolicy;
     }
 
     // Getter 和 Setter 方法
@@ -82,6 +86,22 @@ public class DataRequset {
         this.outline = outline;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getUsagePolicy() {
+        return usagePolicy;
+    }
+
+    public void setUsagePolicy(String usagePolicy) {
+        this.usagePolicy = usagePolicy;
+    }
+
     // toString() 方法（可选）
     @Override
     public String toString() {
@@ -93,6 +113,7 @@ public class DataRequset {
                 ", y='" + y + '\'' +
                 ", creator='" + creator + '\'' +
                 ", outline='" + outline + '\'' +
+                ", usagePolicy='" + usagePolicy + '\'' +
                 '}';
     }
 }

@@ -70,7 +70,7 @@ public class TaskController {
             task.setCreatedAt(new Timestamp(System.currentTimeMillis()));  // 当前时间作为创建时间
             task.setUsername(createTaskRequest.getUsername());
             task.setApplicationId(createTaskRequest.getApplicationId());
-
+            task.setUsagePolicy("");
             // 创建 SecureRandom 实例
             SecureRandom random = new SecureRandom();
             // 生成 1024 位随机数
@@ -80,7 +80,7 @@ public class TaskController {
             BigInteger f2 = "仲裁".equals(task.getTaskType()) ? new BigInteger(1024, random) : new BigInteger("0");
 
             if (Objects.equals(task.getTaskType(), "签名")) {
-                task.setFileId(createTaskRequest.getSelectFile()); // 设置文件 ID
+                task.setFileName(createTaskRequest.getSelectFile()); // 设置文件 ID
                 task.setConfirmId("");
                 task.setB("");
                 task.setY("");
@@ -89,13 +89,16 @@ public class TaskController {
                 task.setE2("");
                 task.setF1("");
                 task.setF2("");
+                task.setUsagePolicy(createTaskRequest.getUsagePolicy());
+                task.setSignApplicationId(-1);
             } else  {
                 task.setConfirmId(createTaskRequest.getConfirmId());
                 Task task1 = taskMapper.findTaskById(Integer.parseInt(task.getConfirmId()));
-                task.setFileId(task1.getFileId());
+                task.setFileName(task1.getFileName());
                 task.setB(task1.getB());
                 task.setY(task1.getY());
                 task.setX(task1.getX());
+                task.setSignApplicationId(task1.getApplicationId());
                 task.setE1(String.valueOf(e1));
                 task.setE2(String.valueOf(e2));
                 task.setF1(String.valueOf(f1));
@@ -112,6 +115,7 @@ public class TaskController {
             if (result > 0) {
                 // 根据任务类型创建相应的用户
                 if (Objects.equals(task.getTaskType(), "签名")) {
+
                     createSignUser(createTaskRequest, taskId); // 创建签名用户
                 } else if (Objects.equals(task.getTaskType(), "确权")) {
                     createConfirmUser(Integer.parseInt(createTaskRequest.getConfirmId()), taskId, e1, e2);
@@ -147,7 +151,7 @@ public class TaskController {
             for (SignTaskUser signTaskUser : signTaskUsers) {
                 Handle handle = new Handle();
                 handle.setTaskId(signTaskUser.getTaskId());
-                handle.setFileId(signTaskUser.getFileId());
+                handle.setFileName(signTaskUser.getFileName());
                 handle.setTaskType(signTaskUser.getTaskType());
                 handle.setStatus(signTaskUser.getStatus());
                 handle.setCompletedAt(signTaskUser.getCompletedAt());
@@ -160,19 +164,24 @@ public class TaskController {
             for (ConfirmTaskUser confirmTaskUser : confirmTaskUsers) {
                 Handle handle = new Handle();
                 handle.setTaskId(confirmTaskUser.getTaskId());
-                handle.setFileId("无");
+                Task task = taskMapper.findTaskById(confirmTaskUser.getTaskId());
+
+                handle.setFileName(task.getFileName());
                 handle.setTaskType(confirmTaskUser.getTaskType());
                 handle.setStatus(confirmTaskUser.getStatus());
                 handle.setCompletedAt(confirmTaskUser.getCompletedAt());
                 handle.setD(confirmTaskUser.getD());
                 handles.add(handle);
+
             }
 
             // 将 arbitrationTaskUsers 转换为 Handle
             for (ArbitrationTaskUser arbitrationTaskUser : arbitrationTaskUsers) {
                 Handle handle = new Handle();
                 handle.setTaskId(arbitrationTaskUser.getTaskId());
-                handle.setFileId("无");
+                Task task = taskMapper.findTaskById(arbitrationTaskUser.getTaskId());
+                System.out.println(task.getFileName());
+                handle.setFileName(task.getFileName());
                 handle.setTaskType(arbitrationTaskUser.getTaskType());
                 handle.setStatus(arbitrationTaskUser.getStatus());
                 handle.setCompletedAt(arbitrationTaskUser.getCompletedAt());
@@ -182,8 +191,9 @@ public class TaskController {
                 handle.setR(arbitrationTaskUser.getR());
                 handle.setNum(arbitrationTaskUser.getNum());
                 handles.add(handle);
+                System.out.println(handle);
             }
-
+            handles.sort((a1, a2) -> a2.getCompletedAt().compareTo(a1.getCompletedAt()));
             return APIResponse.success(handles); // 返回成功响应
         } catch (Exception e) {
             return APIResponse.error(500, "发生错误: " + e.getMessage()); // 捕获异常并返回错误信息
@@ -279,9 +289,9 @@ public class TaskController {
                 }
 
                 applicationMapper.updateApplication(String.valueOf(id), "确权验证失败" ,"");
+                applicationMapper.updateApplication(String.valueOf(task.getSignApplicationId()), "该签名任务确权验证失败" ,"不允许下载该数据");
                 taskMapper.updateTaskFields(taskId, "completed", task.getY(), task.getB());
                 return APIResponse.error(500, "确权验证失败");
-
             }
         } catch (NumberFormatException e){
             System.err.println("Error parsing number: " + e.getMessage());
@@ -519,15 +529,15 @@ public class TaskController {
         BigInteger ans = b.modPow(ch, p).multiply(g.modPow(s, p)).mod(p);
         BigInteger ans1 = d1.modPow(ch, p).multiply(d2.modPow(s, p)).mod(p);
 
-        System.out.println("b = " + b);
-        System.out.println("ans = " + ans);
-
-        System.out.println("d1 = " + d1);
-        System.out.println("ch = " + ch);
-        System.out.println("p = " + p);
-        System.out.println("d2 = " + d2);
-        System.out.println("s = " + s);
-        System.out.println("ans1 = " + ans1);
+//        System.out.println("b = " + b);
+//        System.out.println("ans = " + ans);
+//
+//        System.out.println("d1 = " + d1);
+//        System.out.println("ch = " + ch);
+//        System.out.println("p = " + p);
+//        System.out.println("d2 = " + d2);
+//        System.out.println("s = " + s);
+//        System.out.println("ans1 = " + ans1);
 
         // 返回用户的诚信状态
         return (t.equals(ans) && t1.equals(ans1)) ? user.getUserName() + "诚实" : user.getUserName() + "欺骗";
@@ -541,11 +551,15 @@ public class TaskController {
      */
     public void createSignUser(CreateTaskRequest createTaskRequest, int taskId) {
         try {
-            String m = createTaskRequest.getSelectFile(); // 获取文件 ID
+            String m = fileMapper.findFileIdByFileName(createTaskRequest.getSelectFile()); // 获取文件名
+            String Outline = fileMapper.findFileOutlineByFileName(createTaskRequest.getSelectFile());
+            String usagePolicy = createTaskRequest.getUsagePolicy();
             List<CreateTaskRequest.SignerMember> members = createTaskRequest.getSigner().getMembers(); // 提取成员列表
 
             // 拼接 members 的用户名和文件 ID
             StringBuilder combined = new StringBuilder(m);
+            combined.append(Outline);
+            combined.append(usagePolicy);
             for (CreateTaskRequest.SignerMember member : members) {
                 combined.append(member.getUsername()); // 拼接每个成员的用户名
             }
@@ -567,7 +581,7 @@ public class TaskController {
                 signTaskUser.setTaskId(taskId);
                 signTaskUser.setStatus(i == 0 ? "in_progress" : "pending"); // 第一个成员进行中，其他为待处理
                 signTaskUser.setTaskType(createTaskRequest.getTaskType()); // 设置任务类型
-                signTaskUser.setFileId(createTaskRequest.getSelectFile()); // 设置文件 ID
+                signTaskUser.setFileName(createTaskRequest.getSelectFile()); // 设置文件名
                 signTaskUser.setCompletedAt(new Timestamp(System.currentTimeMillis())); // 当前时间作为完成时间
                 signTaskUser.setB1("0");
                 // 对第一个成员设置 B 和 Y 为 g 和 x，其他成员设置为 0
@@ -711,11 +725,11 @@ public class TaskController {
                 DataRequset data = new DataRequset();
 
                 // 根据文件名查询文件信息
-                File file = fileMapper.findFileByFileName(task.getFileId());
-
+                File file = fileMapper.findFileByFileName(task.getFileName());
+                System.out.println(file);
                 // 如果文件不存在，跳过当前任务
                 if (file == null) {
-                    System.err.println("File not found for fileId: " + task.getFileId());
+                    System.err.println("File not found for fileId: " + task.getFileName());
                     continue;
                 }
 
@@ -724,11 +738,12 @@ public class TaskController {
                 data.setTime(task.getCreatedAt());
                 data.setB(task.getB());
                 data.setY(task.getY());
+                data.setFileName(task.getFileName());
                 data.setDataId(file.getFileId());
                 data.setCreator(file.getCreatorName());
                 data.setOutline(file.getFileOutline());
+                data.setUsagePolicy(task.getUsagePolicy());
 
-                // 添加到列表
                 dataRequsetList.add(data);
             }
 

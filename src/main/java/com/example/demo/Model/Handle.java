@@ -2,7 +2,7 @@ package com.example.demo.Model;
 
 public class Handle {
     private Integer taskId;
-    private String fileId;
+    private String fileName;
     private String taskType;
     private String status;
     private String d;
@@ -20,11 +20,11 @@ public class Handle {
     }
 
     // 带参数的构造函数
-    public Handle(Integer taskId, String fileId, String taskType, String status,
+    public Handle(Integer taskId, String fileName, String taskType, String status,
                   String d, String d1, String b, String y, String ch, String r, String num,
                   java.sql.Timestamp completedAt) {
         this.taskId = taskId;
-        this.fileId = fileId;
+        this.fileName = fileName;
         this.taskType = taskType;
         this.status = status;
         this.d = d;
@@ -46,12 +46,12 @@ public class Handle {
         this.taskId = taskId;
     }
 
-    public String getFileId() {
-        return fileId;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getTaskType() {
@@ -139,7 +139,7 @@ public class Handle {
     public String toString() {
         return "Handle{" +
                 "taskId=" + taskId +
-                ", fileId='" + fileId + '\'' +
+                ", fileName='" + fileName + '\'' +
                 ", taskType='" + taskType + '\'' +
                 ", status='" + status + '\'' +
                 ", d='" + d + '\'' +

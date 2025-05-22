@@ -17,6 +17,7 @@ import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,15 +41,20 @@ public class AuthController {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    public AuthController(JwtTokenUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
 
     @PostMapping("/find-username")
     public APIResponse<String> findUsername(@RequestBody Map<String, Object> requestBody) {
         try{
             String username = (String) requestBody.get("username");
             if(userMapper.findByUsername(username) == null){
-                return APIResponse.success(null);
+                return APIResponse.success("用户名不存在");
             }else{
-                return APIResponse.error(400, "用户名重复");
+                return APIResponse.success("用户名已存在");
             }
         }catch (Exception e){
             return APIResponse.error(500, "查找用户名失败: " + e.getMessage());
@@ -135,7 +141,8 @@ public class AuthController {
             // 从 requestBody 提取 username 和加密后的 password 和加密后的 public_key
             String username = (String) requestBody.get("username");
             String encryptedPassword = (String) requestBody.get("password");
-            String encryptedPublicKey = (String) requestBody.get("public_key");
+            String securityQuestion = (String) requestBody.get("securityQuestion");
+            String securityAnswer = (String) requestBody.get("securityAnswer");
 
             // 1. 从会话中获取先前存储的共享密钥
             byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
@@ -147,15 +154,16 @@ public class AuthController {
 
             // 2. 使用共享密钥解密客户端发送的密码和公钥
             String decryptedPassword = dhService.decrypt(encryptedPassword, sharedSecret);
-            String decryptedPublicKey = dhService.decrypt(encryptedPublicKey, sharedSecret);
 
             // 3. 创建用户对象并保存到数据库
             User user = new User();
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(decryptedPassword)); // 对解密后的密码进行加密
-            user.setPublic_key(passwordEncoder.encode(decryptedPublicKey)); // 对解密后的公钥进行加密
             user.setRole("普通用户"); // 获取其他字段如角色
-            System.out.println(user);
+            user.setSecurity_question(securityQuestion);
+            user.setSecurity_answer(securityAnswer);
+            user.setPublic_key("");
+
             customUserDetailsService.saveUser(user); // 保存用户到数据库
 
             // 4. 注册完成后，清除会话中的共享密钥
@@ -209,8 +217,11 @@ public class AuthController {
                 // 获取用户的角色信息
                 String role = customUserDetailsService.findUserRoleByUsername(username);
 
+                // 获取用户的角色信息
+                int id = customUserDetailsService.findUserIDByUsername(username);
+
                 // 如果认证成功，生成 JWT token
-                String token = jwtUtil.generateToken(username, role);
+                String token = jwtUtil.generateToken(username, role, id);
                 return APIResponse.success(token);
             } else {
                 // 用户名或密码错误，返回未授权响应
@@ -220,11 +231,6 @@ public class AuthController {
             // 如果发生异常，返回错误响应
             return APIResponse.error(500, "登录失败: " + e.getMessage());
         }
-    }
-
-    @Autowired
-    public AuthController(JwtTokenUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/validateToken")
@@ -239,5 +245,50 @@ public class AuthController {
         // 这里可以进一步验证用户身份（比如查询数据库确认用户是否存在）懒得写了
 
         return APIResponse.success(token);
+    }
+
+    @PostMapping("/validate")
+    public APIResponse<String> validateCode(@RequestBody Map<String, String> requestBody) {
+        String username = requestBody.get("username");
+        String securityQuestion = requestBody.get("securityQuestion");
+        String securityAnswer =  requestBody.get("securityAnswer");
+
+        String SecurityQuestion = userMapper.findSecurityQuestion(username);
+        String SecurityAnswer = userMapper.findSecurityAnswer(username);
+        if(!SecurityQuestion.equals(securityQuestion)) {
+            return APIResponse.error(400,"密保问题不正确");
+        }
+        if(!SecurityAnswer.equals(securityAnswer)) {
+            return APIResponse.error(400,"密保答案不正确");
+        } else
+        {
+            return APIResponse.success("验证成功");
+        }
+    }
+
+    @PostMapping("/update_password")
+    public APIResponse<String> updatePassword(@RequestBody Map<String, String> requestBody, HttpSession session) {
+        try {
+            String username = requestBody.get("username");
+            String encryptedPassword = requestBody.get("password");
+
+            // 1. 从会话中获取先前存储的共享密钥
+            byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
+
+            // 如果共享密钥不存在，返回错误响应
+            if (sharedSecret == null) {
+                return APIResponse.error(400, "共享密钥未找到，请重新进行密钥交换");
+            }
+
+            // 2. 使用共享密钥解密客户端发送的密码和公钥
+            String decryptedPassword = dhService.decrypt(encryptedPassword, sharedSecret);
+
+            String password = passwordEncoder.encode(decryptedPassword);
+            userMapper.update4(password, username);
+            return APIResponse.success("修改密码成功");
+        }catch (Exception e) {
+            // 如果发生异常，返回错误响应
+            return APIResponse.error(500, "修改密码失败: " + e.getMessage());
+        }
     }
 }

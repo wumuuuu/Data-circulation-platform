@@ -2,14 +2,15 @@ package com.example.demo.Controller;
 
 import com.example.demo.Mapper.UserMapper;
 import com.example.demo.Model.APIResponse;
+import com.example.demo.Service.ECDHService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/user")
@@ -17,6 +18,12 @@ public class HomeController {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private ECDHService dhService;
+
+    // 注入 PasswordEncoder，用于对密码进行加密和验证
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     /**
      * 根据用户名模糊查询用户
      * @param username 用户名搜索关键字
@@ -29,6 +36,36 @@ public class HomeController {
             return APIResponse.success(users);
         } catch (Exception e) {
             return APIResponse.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+    @PostMapping("/key-status")
+    public APIResponse<String> keyStatus(@RequestParam String username) {
+        try {
+            String keyStatus = userMapper.KeyStatus(username);
+            if(!Objects.equals(keyStatus, null)){
+
+                return APIResponse.success("公钥已保存");
+            } else {
+                return APIResponse.error(500, "公钥未保存");
+            }
+
+        } catch (Exception e) {
+            return APIResponse.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+    @PostMapping("/update-publicKey")
+    public APIResponse<String> keyStatus(@RequestBody Map<String, Object> requestBody, HttpSession session) {
+        try {
+            byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
+
+            String encryptedPublicKey = (String) requestBody.get("public_key");
+            String decryptedPublicKey = dhService.decrypt(encryptedPublicKey, sharedSecret);
+            String public_key = passwordEncoder.encode(decryptedPublicKey);
+            String username =(String) requestBody.get("username");
+            userMapper.UpdatePublicKey(username, public_key);
+            return APIResponse.success("成功插入公钥");
+        } catch (Exception e) {
+            return APIResponse.error(500, "插入公钥失败: " + e.getMessage());
         }
     }
 }

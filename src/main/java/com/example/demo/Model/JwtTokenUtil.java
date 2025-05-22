@@ -13,10 +13,11 @@ public class JwtTokenUtil {
     private String secretKey = "9Krj29fVGkP8GtbvCo7m4cWUsQdf8WbIh6tJgw5Xt9c="; // 最好存放在配置文件中
 
     // 生成 JWT
-    public String generateToken(String username, String role) {
+    public String generateToken(String username, String role, int id) {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("role", role)  // 在 token 中携带 role 信息
+                .claim("id", id)  // 在 token 中携带 id 信息
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 3600000))  // 设置1小时过期
                 .signWith(SignatureAlgorithm.HS256, secretKey)

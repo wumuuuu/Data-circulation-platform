@@ -50,28 +50,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
     }
 
-    // 获取用户的共享密钥
-    public String getSharedSecret(String userId) {
-        User user = userMapper.findById(userId);
-        if (user != null) {
-
-            return user.getShared_secret();
-        } else {
-            throw new UsernameNotFoundException("User not found");
-        }
-    }
-
-    // 删除用户的共享密钥
-    public void deleteSharedSecret(String userId) {
-        User user = userMapper.findById(userId);
-        if (user != null) {
-            user.setShared_secret("");  // 清除共享密钥
-            userMapper.update(user); // 更新用户数据
-        } else {
-            throw new UsernameNotFoundException("User not found");
-        }
-    }
-
     // 修改用户角色
     public void modifyUserRole(String username, String newRole) {
         User user = userMapper.findByUsername(username);
@@ -91,7 +69,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public void deleteUser(String username) {
         User user = userMapper.findByUsername(username);
         if (user != null) {
-            userMapper.deleteById(user.getId()); // 根据用户ID删除用户
+            userMapper.deleteByUsername(username);
         } else {
             throw new UsernameNotFoundException("User not found");
         }
@@ -107,10 +85,20 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
     }
 
+    // 通过用户名查找用户id
+    public int findUserIDByUsername(String username) {
+        User user = userMapper.findByUsername(username);
+        if (user != null) {
+            return user.getId();
+        } else {
+            throw new UsernameNotFoundException("User not found");
+        }
+    }
+
     /**
      * 获取所有用户
      *
-     * @return List<User> 所有用户的列表
+     * @return List<User> 所有用户信息的列表
      */
     public List<User> getAllUsers() {
         return userMapper.findAllUsers();

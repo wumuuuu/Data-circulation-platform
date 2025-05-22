@@ -11,7 +11,7 @@ public class Task {
     @TableId(value = "task_id", type = IdType.AUTO)
     private Integer taskId; // 任务ID
     private String taskType; // 任务类型
-    private String fileId; // 文件ID
+    private String fileName; // 文件ID
     private String confirmId; // 确认ID
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss") // JSON序列化格式
     private java.sql.Timestamp createdAt; // 创建时间
@@ -25,18 +25,21 @@ public class Task {
     private String f2;
     private String username;
     private Integer applicationId;
+    private Integer signApplicationId;
+    private String usagePolicy;
 
     // 无参构造函数
     public Task() {
     }
 
     // 带参构造函数（包含所有字段）
-    public Task(Integer taskId, String taskType, String fileId, String confirmId,
+    public Task(Integer taskId, String taskType, String fileName, String confirmId,
                 java.sql.Timestamp createdAt, String status, String y,
-                String b, String x, String e1, String e2, String f1, String f2, String username, Integer applicationId) {
+                String b, String x, String e1, String e2, String f1, String f2, String username,
+                Integer applicationId, Integer signApplicationId, String usagePolicy) {
         this.taskId = taskId;
         this.taskType = taskType;
-        this.fileId = fileId;
+        this.fileName = fileName;
         this.confirmId = confirmId;
         this.createdAt = createdAt;
         this.status = status;
@@ -49,6 +52,9 @@ public class Task {
         this.f2 = f2;
         this.username = username;
         this.applicationId = applicationId;
+        this.signApplicationId = signApplicationId;
+        this.usagePolicy = usagePolicy;
+
     }
 
     // Getter 和 Setter 方法
@@ -102,12 +108,12 @@ public class Task {
         this.b = b;
     }
 
-    public String getFileId() {
-        return fileId;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getTaskType() {
@@ -176,6 +182,21 @@ public class Task {
         this.f2 = f2;
     }
 
+    public Integer getSignApplicationId() {
+        return signApplicationId;
+    }
+
+    public void setSignApplicationId(Integer signApplicationId) {
+        this.signApplicationId = signApplicationId;
+    }
+
+    public String getUsagePolicy() {
+        return usagePolicy;
+    }
+
+    public void setUsagePolicy(String usagePolicy) {
+        this.usagePolicy = usagePolicy;
+    }
 
     // toString 方法
     @Override
@@ -183,7 +204,7 @@ public class Task {
         return "Task{" +
                 "taskId=" + taskId +
                 ", taskType='" + taskType + '\'' +
-                ", fileId='" + fileId + '\'' +
+                ", fileName='" + fileName + '\'' +
                 ", confirmId='" + confirmId + '\'' +
                 ", createdAt=" + createdAt +
                 ", status='" + status + '\'' +
@@ -196,6 +217,8 @@ public class Task {
                 ", f2='" + f2 + '\'' +
                 ", username='" + username + '\'' +
                 ", applicationId=" + applicationId +
+                ", signApplicationId=" + signApplicationId +
+                ", usagePolicy='" + usagePolicy + '\'' +
                 '}';
     }
 }

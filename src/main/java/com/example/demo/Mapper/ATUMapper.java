@@ -51,17 +51,6 @@ public interface ATUMapper {
     @Select("SELECT arbitration_number FROM ARBITRATION_USER WHERE task_id = #{taskId} AND user_name = #{username}")
     int findArbitrationNumber(int taskId, String username);
 
-    // 根据 taskId 和 username 查找 D
-    @Select("SELECT d FROM ARBITRATION_USER WHERE task_id = #{taskId} AND user_name = #{username}")
-    String findTaskD(int taskId, String username);
-
-    // 根据 taskId 和 username 查找 D1
-    @Select("SELECT d1 FROM ARBITRATION_USER WHERE task_id = #{taskId} AND user_name = #{username}")
-    String findTaskD1(int taskId, String username);
-
-    // 根据 taskId 查找 所有 username
-    @Select("SELECT user_name FROM ARBITRATION_USER WHERE task_id = #{taskId}")
-    List<String> findAllUser(int taskId);
 
     // 根据 taskId 查找 所有 delta
     @Select("SELECT delta FROM ARBITRATION_USER WHERE task_id = #{taskId}")

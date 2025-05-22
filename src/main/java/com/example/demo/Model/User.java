@@ -13,19 +13,20 @@ import com.baomidou.mybatisplus.annotation.TableName;
 public class User {
 
     @TableId(type = IdType.INPUT) // 改为手动控制主键
-    private String id;
+    private int id;
     private String username;
     private String password;
-    private String rePassword;// 映射数据库字段
     private String public_key;
     private String role;
     private String shared_secret;
+    private String security_question;
+    private String security_answer;
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -45,7 +46,6 @@ public class User {
         this.role = role;
     }
 
-    // getter 和 setter 方法
     public String getUsername() {
         return username;
     }
@@ -62,13 +62,6 @@ public class User {
         this.password = password;
     }
 
-    public String getPublicKey() {
-        return public_key;
-    }
-
-    public void setPublicKey(String public_key) {
-        this.public_key = public_key;
-    }
 
     public String getPublic_key() {
         return public_key;
@@ -76,6 +69,22 @@ public class User {
 
     public void setPublic_key(String public_key) {
         this.public_key = public_key;
+    }
+
+    public String getSecurity_question() {
+        return security_question;
+    }
+
+    public void setSecurity_question(String security_question) {
+        this.security_question = security_question;
+    }
+
+    public String getSecurity_answer() {
+        return security_answer;
+    }
+
+    public void setSecurity_answer(String security_answer) {
+        this.security_answer = security_answer;
     }
 
     @Override
@@ -87,6 +96,8 @@ public class User {
                 ", public_key='" + public_key + '\'' +
                 ", role='" + role + '\'' +
                 ", shared_secret='" + shared_secret + '\'' +
+                ", security_question='" + security_question + '\'' +
+                ", security_answer='" + security_answer + '\'' +
                 '}';
     }
 }

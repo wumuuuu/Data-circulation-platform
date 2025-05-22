@@ -11,8 +11,8 @@ import java.util.List;
 public interface STUMapper {
 
     // 插入新的 task_user 记录
-    @Insert("INSERT INTO signtask_user (task_id, file_id, task_type, user_name, status, B, Y, completed_at, signer_number, b1) " +
-            "VALUES (#{taskId}, #{fileId}, #{taskType}, #{userName}, #{status}, #{b}, #{y}, #{completedAt}, #{signerNumber}, #{b1})")
+    @Insert("INSERT INTO signtask_user (task_id, file_name, task_type, user_name, status, B, Y, completed_at, signer_number, b1) " +
+            "VALUES (#{taskId}, #{fileName}, #{taskType}, #{userName}, #{status}, #{b}, #{y}, #{completedAt}, #{signerNumber}, #{b1})")
     void insertTaskUser(SignTaskUser taskUser);
 
     // 根据用户名查找状态为 in_progress 的所有记录

@@ -9,7 +9,7 @@ public class SignTaskUser {
     private Integer Id; // 每个记录的唯一 ID
     private Integer taskId; // 任务 ID（关联 task 表）
     private Integer signerNumber;
-    private String fileId;
+    private String fileName;
     private String taskType;
     private String userName; // 用户 ID（参与者）
     private String status; // 用户在此任务中的状态（pending, in_progress, completed）
@@ -23,11 +23,11 @@ public class SignTaskUser {
     }
 
     // 带参构造函数
-    public SignTaskUser(Integer Id, Integer taskId, Integer signerNumber, String fileId, String taskType, String userName, String status, String b, String y, java.sql.Timestamp completedAt, String b1) {
+    public SignTaskUser(Integer Id, Integer taskId, Integer signerNumber, String fileName, String taskType, String userName, String status, String b, String y, java.sql.Timestamp completedAt, String b1) {
         this.Id = Id;
         this.taskId = taskId;
         this.signerNumber = signerNumber;
-        this.fileId = fileId;
+        this.fileName = fileName;
         this.taskType = taskType;
         this.userName = userName;
         this.status = status;
@@ -53,12 +53,12 @@ public class SignTaskUser {
     public void setTaskType(String taskType) {
         this.taskType = taskType;
     }
-    public String getFileId() {
-        return fileId;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public Integer getId() {
@@ -131,7 +131,7 @@ public class SignTaskUser {
                 "Id=" + Id +
                 ", taskId=" + taskId +
                 ", signerNumber=" + signerNumber +
-                ", fileId='" + fileId + '\'' +
+                ", fileName='" + fileName + '\'' +
                 ", taskType='" + taskType + '\'' +
                 ", userName='" + userName + '\'' +
                 ", status='" + status + '\'' +
