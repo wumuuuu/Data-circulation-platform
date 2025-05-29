@@ -54,6 +54,36 @@ public class TaskController {
             return APIResponse.error(500, "没有找到对应流转任务");
     }
 
+    @PostMapping("/testTime")
+    public APIResponse<String> testTime(
+            @RequestParam("username") String username,
+            @RequestParam("taskId") String taskId,
+            @RequestParam("executionTime") String executionTime
+            ) {
+        try {
+
+            // 1. 转换执行时间为数值
+            double execTime;
+            execTime = Double.parseDouble(executionTime);
+
+            // 2. 记录不同级别的日志
+            logger.info("接收到性能数据 - 用户: {}, 任务ID: {}, 耗时: {}ms", username, taskId, execTime);
+
+            // 耗时过长警告
+            if (execTime > 1000) {
+                logger.warn("耗时过长警告 - 用户: {}, 任务ID: {}, 耗时: {}ms", username, taskId, execTime);
+            }
+
+            // 3. 返回成功响应
+            return APIResponse.success("性能数据记录成功");
+
+        } catch (Exception e) {
+            logger.error("记录性能数据异常 - 用户: {}, 任务ID: {}", username, taskId, e);
+            return APIResponse.error(500,"服务器内部错误");
+        }
+
+    }
+
     /**
      * 处理前端的 POST 请求，创建新任务并返回操作结果
      *
@@ -105,7 +135,7 @@ public class TaskController {
                 task.setF2(String.valueOf(f2));
             }
 
-            System.out.println(task);
+//            System.out.println(task);
 
             // 将任务插入数据库，并获取返回结果
             int result = taskMapper.insert(task);
@@ -350,7 +380,7 @@ public class TaskController {
                     BigInteger k = x.modPow(e1, p).multiply(g.modPow(e2, p)).mod(p); // 计算 k 的值
                     if (String.valueOf(k).equals(d)){
                         //验证成功
-                        System.out.println("第一轮验证成功");
+//                        System.out.println("第一轮验证成功");
                         // 更新申请状态为“仲裁验证无误”
                         applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", "签名值没有问题");
                         // 更新任务状态为“已完成”
@@ -361,7 +391,7 @@ public class TaskController {
                         return APIResponse.success("第一轮验证成功"); // 返回成功响应
                     } else {
                         // 验证失败
-                        System.out.println("第一轮验证失败");
+//                        System.out.println("第一轮验证失败");
 //                        System.out.println(k);
 //                        System.out.println(d);
                         // 更新每个用户的到第二轮验证
@@ -389,7 +419,7 @@ public class TaskController {
             } else if (num.equals("2")) {
                 // 第二轮验证
                 String d1 = request.getD1();     // 获取参数 d
-                System.out.println(d1);
+//                System.out.println(d1);
                 if (nextUser != null){
 
                     atuMapper.updateStatus2(taskId, userName, "completed", d1); // 更新当前用户状态为“已完成”
@@ -405,7 +435,7 @@ public class TaskController {
 
                     if (String.valueOf(k).equals(d1)){
                         // 验证成功
-                        System.out.println("第二轮验证成功");
+//                        System.out.println("第二轮验证成功");
                         // 更新申请状态为“仲裁验证无误”
                         applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", "签名值没有问题");
                         // 更新任务状态为“已完成”
@@ -416,9 +446,9 @@ public class TaskController {
                         return APIResponse.success("第二轮验证成功"); // 返回成功响应
                     } else {
                         // 验证失败
-                        System.out.println("第二轮验证失败");
-                        System.out.println(k);
-                        System.out.println(d1);
+//                        System.out.println("第二轮验证失败");
+//                        System.out.println(k);
+//                        System.out.println(d1);
 
                         atuMapper.updateStatus3(taskId, "in_progress", "3");
 
@@ -441,9 +471,9 @@ public class TaskController {
                         BigInteger ans2 = new BigInteger(d1).multiply(g.modPow(f2.modInverse(p), p)).mod(p).modPow(e1, p);
 
                         if(ans1.equals(ans2)){
-                            System.out.println("签名并非联合签名人的联合签名");
-                            System.out.println("ans1 = " + ans1);
-                            System.out.println("ans2 = " + ans2);
+//                            System.out.println("签名并非联合签名人的联合签名");
+//                            System.out.println("ans1 = " + ans1);
+//                            System.out.println("ans2 = " + ans2);
 
                             applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", "签名并非联合签名人的联合签名");
                             taskMapper.updateTaskStatus(taskId, "completed");
@@ -467,12 +497,12 @@ public class TaskController {
                 }
             } else {
                 // 前两轮验证均失败，第三轮验证欺骗者
-                System.out.println(request);
+//                System.out.println(request);
                 String S = request.getS();
                 atuMapper.updateStatus5(taskId, userName, S);
                 atuMapper.updateStatus0(taskId, userName, "pending");
                 if (atuMapper.countEmptySByTaskId(taskId) == 0) {
-                    System.out.println("验证欺骗者");
+//                    System.out.println("验证欺骗者");
                     // 所有用户的 s 都计算完了，开始验证欺骗者
                     Task task1 = taskMapper.findTaskById(taskId);
                     String confirmId = task1.getConfirmId();
@@ -496,7 +526,7 @@ public class TaskController {
                     }
 
                     String finalResult = resultBuilder.toString();
-                    System.out.println(finalResult);
+//                    System.out.println(finalResult);
 
                     // 更新数据库状态
                     applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", finalResult);
@@ -593,7 +623,7 @@ public class TaskController {
 
                 signTaskUser.setUserName(member.getUsername()); // 设置用户名
 
-                System.out.println(signTaskUser);
+//                System.out.println(signTaskUser);
 
                 stuMapper.insertTaskUser(signTaskUser); // 插入签名用户信息
             }
@@ -641,7 +671,7 @@ public class TaskController {
 
 
                     // 插入记录到数据库
-                    System.out.println(confirm);
+//                    System.out.println(confirm);
                     ctuMapper.insertTaskUser(confirm);
                 }
             }
@@ -699,7 +729,7 @@ public class TaskController {
 
 
                     // 插入记录到数据库
-                    System.out.println(arbitration);
+//                    System.out.println(arbitration);
                     atuMapper.insertTaskUser(arbitration);
                 }
             }
@@ -726,7 +756,7 @@ public class TaskController {
 
                 // 根据文件名查询文件信息
                 File file = fileMapper.findFileByFileName(task.getFileName());
-                System.out.println(file);
+//                System.out.println(file);
                 // 如果文件不存在，跳过当前任务
                 if (file == null) {
                     System.err.println("File not found for fileId: " + task.getFileName());
