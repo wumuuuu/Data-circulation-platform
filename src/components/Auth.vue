@@ -201,56 +201,65 @@ const forgetRules = ref({
 });
 const register = async () => {
   try {
-    formRef.value.validate(async (valid) => {
-      if (valid) {
-        // 提交前再次去除用户名空格
-        registerData.value.username = trimUsername(registerData.value.username);
-        if (await onRegister(registerData.value)) {
-          toLogin();
-        }
-      } else {
-        return false;
-      }
-    });
+    const valid = await formRef.value.validate(); // 直接 await 返回校验结果
 
-    clearRegisterData();
+    if (valid) {
+      registerData.value.username = trimUsername(registerData.value.username);
+
+      const success = await onRegister(registerData.value);
+      if (success) {
+        clearRegisterData();
+        toLogin();
+      }
+    } else {
+      console.log('表单验证未通过');
+    }
   } catch (error) {
     console.error('注册失败', error);
   }
 };
 
+
 const ResetCode = async (forgetData) => {
   try {
-    forgetFormRef.value.validate(async (valid) => {
-      if (valid) {
-        const data = await validateResetCode(forgetData);
-        if (data === "修改密码成功") {
-          ElMessage.success("修改密码成功");
-        } else {
-          ElMessage.error("修改密码失败");
-        }
+    const valid = await forgetFormRef.value.validate(); // await 简洁写法
+
+    if (valid) {
+      const data = await validateResetCode(forgetData);
+
+      if (data === "修改密码成功") {
+        ElMessage.success("修改密码成功");
         clearForgetData();
         toLogin();
       } else {
-        return false;
+        ElMessage.error("修改密码失败");
       }
-    });
+
+    } else {
+      console.warn("表单校验未通过");
+    }
   } catch (error) {
     console.error('修改密码报错', error);
   }
 };
 
+
 const login = async () => {
-  form.value.validate(async (valid) => {
+  try {
+    const valid = await form.value.validate();
+
     if (valid) {
       // 提交前去除用户名空格
       loginData.value.username = trimUsername(loginData.value.username);
       await onLogin(loginData.value, rememberMe.value);
     } else {
-      return false
+      console.warn("表单校验未通过");
     }
-  });
+  } catch (error) {
+    console.error("登录校验出错", error);
+  }
 };
+
 
 // 清空数据模型
 const clearRegisterData = () => {
