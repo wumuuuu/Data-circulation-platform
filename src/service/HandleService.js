@@ -23,109 +23,161 @@ export async function fetchTask(userName) {
 }
 
 export async function calculateSign(file, Data, username) {
+  const startTime = performance.now(); // 开始计时
 
-  let y = BigInt(Data.y);
-  let b = BigInt(Data.b);
-  let b1;
+  try {
+    let y = BigInt(Data.y);
+    let b = BigInt(Data.b);
+    let b1;
 
-  const pemContent = await readFileContent(file);
-  const privateKey = BigInt(await extractKeyFromPem(pemContent));
-  y = BigInt(await modularExponentiation(y, privateKey, p));
-  b = BigInt(await modularExponentiation(b, privateKey, p));
-  b1 = BigInt(await modularExponentiation(g, privateKey, p));
-  const response = await post('/task/signUpdate', {
-    taskId: Data.taskId,
-    username: username,
-    y: y.toString(),
-    b: b.toString(),
-    b1: b1.toString(),
-  });
-  if(response.success) {
-    ElMessage.success('计算完成');
-  }else{
-    ElMessage.error('计算出错');
+    const pemContent = await readFileContent(file);
+    const privateKey = BigInt(await extractKeyFromPem(pemContent));
+    y = BigInt(await modularExponentiation(y, privateKey, p));
+    b = BigInt(await modularExponentiation(b, privateKey, p));
+    b1 = BigInt(await modularExponentiation(g, privateKey, p));
+
+    const response = await post('/task/signUpdate', {
+      taskId: Data.taskId,
+      username: username,
+      y: y.toString(),
+      b: b.toString(),
+      b1: b1.toString(),
+      timestamp: new Date().toISOString() // 添加时间戳
+    });
+    const endTime = performance.now(); // 结束计时
+    const executionTime = endTime - startTime; // 计算耗时
+
+    await TransferTestingTime(username, Data.taskId, executionTime);
+    if(response.success) {
+      ElMessage.success('计算完成');
+    } else {
+      ElMessage.error('计算出错');
+    }
+  } catch (error) {
+    console.error('calculateSign error:', error);
+    ElMessage.error('计算过程中出错');
+  } finally {
+    window.location.reload();
   }
-
-  window.location.reload(); // 刷新当前页面
 }
 
 export async function calculateConfirm(file, Data, username) {
+  const startTime = performance.now(); // 开始计时
 
+  try {
+    const pemContent = await readFileContent(file);
+    const privateKey = BigInt(await extractKeyFromPem(pemContent));
 
-  const pemContent = await readFileContent(file);
-  const privateKey = BigInt(await extractKeyFromPem(pemContent));
+    const c = BigInt(Data.d);
+    const a_inv = modInv(privateKey, q);
+    const d = modPow(c, a_inv, p);
 
-  const c = BigInt(Data.d);
-  const a_inv = modInv(privateKey, q);
-  const d = modPow(c, a_inv, p);
+    const response = await post('/task/confirmUpdate', {
+      taskId: Data.taskId,
+      username: username,
+      d: d.toString(),
+      timestamp: new Date().toISOString() // 添加时间戳
+    });
+    const endTime = performance.now(); // 结束计时
+    const executionTime = endTime - startTime; // 计算耗时
 
-  const response = await post('/task/confirmUpdate', {
-    taskId: Data.taskId,
-    username: username,
-    d: d.toString(),
-  });
-  if(response.success) {
-    ElMessage.success('计算完成');
-  }else{
-    ElMessage.error('计算出错');
+    await TransferTestingTime(username, Data.taskId, executionTime);
+    if(response.success) {
+      ElMessage.success('计算完成');
+    } else {
+      ElMessage.error('计算出错');
+    }
+  } catch (error) {
+    console.error('calculateConfirm error:', error);
+    ElMessage.error('计算过程中出错');
+  } finally {
+    window.location.reload();
   }
-  window.location.reload(); // 刷新当前页面
-
 }
 
 export async function calculateArbitration(file, Data, username) {
+  const startTime = performance.now(); // 开始计时
 
-  const pemContent = await readFileContent(file);
-  const privateKey = BigInt(await extractKeyFromPem(pemContent));
-  let c, d = 0, d1 = 0, a_inv,t = 0;
-  let t1 = 0, t2 = 0, r=0, delta=0;
-  let s = 0, ch;
+  try {
+    const pemContent = await readFileContent(file);
+    const privateKey = BigInt(await extractKeyFromPem(pemContent));
+    let c, d = 0, d1 = 0, a_inv, t = 0;
+    let t1 = 0, t2 = 0, r=0, delta=0;
+    let s = 0, ch;
 
-  console.log(Data);
-  if(Data.num === '1'){
-    c = BigInt(Data.d);
-    a_inv = modInv(privateKey, q);
+    if(Data.num === '1'){
+      c = BigInt(Data.d);
+      a_inv = modInv(privateKey, q);
+      d = modPow(c, a_inv, p);
+      r = generateRandom1024BitBigInt();
+      delta = generateRandom1024BitBigInt();
+      t = modPow(g, r, p);
+      t1 = modPow(d, r, p);
+      t2 = modPow(g, delta, p);
+    } else if(Data.num === '2'){
+      c = BigInt(Data.d1);
+      a_inv = modInv(privateKey, q);
+      d1 = modPow(c, a_inv, p);
+    } else {
+      r = BigInt(Data.r);
+      ch = BigInt(Data.ch);
+      s = r - ch * privateKey;
+    }
 
-    d = modPow(c, a_inv, p);
-    r = generateRandom1024BitBigInt();
-    delta = generateRandom1024BitBigInt();
+    const response = await fetch('/task/arbitrationUpdate', {
+      taskId: Data.taskId,
+      username: username,
+      d: d.toString(),
+      d1: d1.toString(),
+      t: t.toString(),
+      t1: t1.toString(),
+      t2: t2.toString(),
+      r: r.toString(),
+      delta: delta.toString(),
+      s: s.toString(),
+      num: Data.num,
+      timestamp: new Date().toISOString() // 添加时间戳
+    });
 
-    t = modPow(g, r, p);
-    t1 = modPow(d, r, p);
-    t2 = modPow(g, delta, p);
-  }else if(Data.num === '2'){
-    c = BigInt(Data.d1);
-    a_inv = modInv(privateKey, q);
-    d1 = modPow(c, a_inv, p);
-  } else{
-    r = BigInt(Data.r);
-    ch = BigInt(Data.ch);
-    s = r - ch * privateKey;
+    const endTime = performance.now(); // 结束计时
+    const executionTime = endTime - startTime; // 计算耗时
+
+    await TransferTestingTime(username, Data.taskId, executionTime);
+
+    if(response.success) {
+      ElMessage.success('计算完成');
+    } else {
+      ElMessage.error('计算出错');
+    }
+  } catch (error) {
+    console.error('calculateArbitration error:', error);
+    ElMessage.error('计算过程中出错');
+  } finally {
+    window.location.reload();
   }
+}
+async function TransferTestingTime(username, taskId, executionTime){
 
+  const params = new URLSearchParams();
+  params.append('username', username);
+  params.append('taskId', taskId);
+  params.append('executionTime', executionTime);
 
-  const response = await post('/task/arbitrationUpdate', {
-    taskId: Data.taskId,
-    username: username,
-    d: d.toString(),
-    d1: d1.toString(),
-    t: t.toString(),
-    t1: t1.toString(),
-    t2: t2.toString(),
-    r: r.toString(),
-    delta: delta.toString(),
-    s : s.toString(),
-    num : Data.num,
+  const response = await fetch('/api/task/testTime', {
+    method: 'POST',
+    body: params.toString(),
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
   });
-  if(response.success) {
-    ElMessage.success('计算完成');
-  }else{
-    ElMessage.error('计算出错');
+  const apiResponse = await response.json();
+  if (apiResponse.code === 200) {
+    // console.log("记录耗时成功");
+  } else {
+    console.log(apiResponse.data);
   }
-  window.location.reload(); // 刷新当前页面
 
 }
-
 
 // 用于读取文件内容的异步函数
 function readFileContent(file) {
