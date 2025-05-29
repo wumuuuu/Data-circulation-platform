@@ -519,7 +519,7 @@ const toForget = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 110vh;
+  height: 150vh;
 
   /* 背景 */
   background: url("../assets/login_bg.jpg") no-repeat center center fixed;
