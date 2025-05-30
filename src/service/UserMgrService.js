@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 export const fetchUser = async () => {
   try {
-    const response = await get('/allUsers'); // 这里假设后端的接口路径为 /users
+    const response = await get('/allUsers');
     if (response.success) {
       return response.data; // 返回用户信息
     } else {

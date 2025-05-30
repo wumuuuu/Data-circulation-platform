@@ -121,12 +121,6 @@ const cancelEdit = () => {
                         <span v-else>{{ scope.row.username }}</span>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="email" label="邮箱" align="center" >
-                      <template #default="scope">
-                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.email" />
-                        <span v-else>{{ scope.row.email }}</span>
-                      </template>
-                    </el-table-column>
                     <el-table-column prop="role" label="用户权限" align="center" >
                       <template #default="scope">
                         <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">

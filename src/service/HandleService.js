@@ -28,20 +28,17 @@ export async function calculateSign(file, Data, username) {
   try {
     let y = BigInt(Data.y);
     let b = BigInt(Data.b);
-    let b1;
 
     const pemContent = await readFileContent(file);
     const privateKey = BigInt(await extractKeyFromPem(pemContent));
     y = BigInt(await modularExponentiation(y, privateKey, p));
     b = BigInt(await modularExponentiation(b, privateKey, p));
-    b1 = BigInt(await modularExponentiation(g, privateKey, p));
 
     const response = await post('/task/signUpdate', {
       taskId: Data.taskId,
       username: username,
       y: y.toString(),
       b: b.toString(),
-      b1: b1.toString(),
       timestamp: new Date().toISOString() // 添加时间戳
     });
     const endTime = performance.now(); // 结束计时
@@ -124,7 +121,10 @@ export async function calculateArbitration(file, Data, username) {
       s = r - ch * privateKey;
     }
 
-    const response = await fetch('/task/arbitrationUpdate', {
+
+    // console.log(c);
+
+    const response = await post('/task/arbitrationUpdate', {
       taskId: Data.taskId,
       username: username,
       d: d.toString(),
@@ -147,7 +147,7 @@ export async function calculateArbitration(file, Data, username) {
     if(response.success) {
       ElMessage.success('计算完成');
     } else {
-      ElMessage.error('计算出错');
+      ElMessage.error(response.date);
     }
   } catch (error) {
     console.error('calculateArbitration error:', error);
