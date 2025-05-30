@@ -60,9 +60,8 @@ public class HomeController {
 
             String encryptedPublicKey = (String) requestBody.get("public_key");
             String decryptedPublicKey = dhService.decrypt(encryptedPublicKey, sharedSecret);
-            String public_key = passwordEncoder.encode(decryptedPublicKey);
             String username =(String) requestBody.get("username");
-            userMapper.UpdatePublicKey(username, public_key);
+            userMapper.UpdatePublicKey(username, decryptedPublicKey);
             return APIResponse.success("成功插入公钥");
         } catch (Exception e) {
             return APIResponse.error(500, "插入公钥失败: " + e.getMessage());

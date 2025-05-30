@@ -40,6 +40,9 @@ public class TaskController {
     @Autowired
     private FileMapper fileMapper;
 
+    @Autowired
+    private UserMapper userMapper;
+
     private static final Logger logger = LoggerFactory.getLogger(TaskController.class);  // 日志记录器
 
     // 大整数 p 和 g 用于后续的加密计算
@@ -221,7 +224,7 @@ public class TaskController {
                 handle.setR(arbitrationTaskUser.getR());
                 handle.setNum(arbitrationTaskUser.getNum());
                 handles.add(handle);
-                System.out.println(handle);
+//                System.out.println(handle);
             }
             handles.sort((a1, a2) -> a2.getCompletedAt().compareTo(a1.getCompletedAt()));
             return APIResponse.success(handles); // 返回成功响应
@@ -241,13 +244,12 @@ public class TaskController {
         try {
             String y = request.getY(); // 获取 y 值
             String b = request.getB(); // 获取 b 值
-            String b1 = request.getB1(); // 获取 b 值
             String userName = request.getUsername(); // 获取用户名
             int taskId = request.getTaskId(); // 获取任务 ID
             Task task = taskMapper.findTaskById(taskId);
             Integer id = task.getApplicationId();
             // 更新当前用户的状态
-            stuMapper.updateStatus(taskId, userName, "completed", y, b, b1);
+            stuMapper.updateStatus(taskId, userName, "completed", y, b);
 
             // 查找当前用户的 signerNumber
             int currentSignerNumber = stuMapper.findSignerNumber(taskId, userName);
@@ -255,7 +257,7 @@ public class TaskController {
             SignTaskUser nextUser = stuMapper.findNextSigner(taskId, currentSignerNumber + 1);
 
             if (nextUser != null) {
-                stuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", y, b, "0");
+                stuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", y, b);
             } else {
                 // 如果没有下一个用户，标记任务为完成
 
@@ -321,7 +323,7 @@ public class TaskController {
                 applicationMapper.updateApplication(String.valueOf(id), "确权验证失败" ,"");
                 applicationMapper.updateApplication(String.valueOf(task.getSignApplicationId()), "该签名任务确权验证失败" ,"不允许下载该数据");
                 taskMapper.updateTaskFields(taskId, "completed", task.getY(), task.getB());
-                return APIResponse.error(500, "确权验证失败");
+                return APIResponse.success("确权验证失败");
             }
         } catch (NumberFormatException e){
             System.err.println("Error parsing number: " + e.getMessage());
@@ -346,7 +348,6 @@ public class TaskController {
             int taskId = request.getTaskId(); // 获取任务 ID
             Task task = taskMapper.findTaskById(taskId); // 查找当前任务
             Integer id = task.getApplicationId(); // 获取申请 ID
-
             // 获取任务相关的参数
             BigInteger x = new BigInteger(task.getX());
             String userName = request.getUsername();
@@ -380,7 +381,7 @@ public class TaskController {
                     BigInteger k = x.modPow(e1, p).multiply(g.modPow(e2, p)).mod(p); // 计算 k 的值
                     if (String.valueOf(k).equals(d)){
                         //验证成功
-//                        System.out.println("第一轮验证成功");
+                        System.out.println("第一轮验证成功");
                         // 更新申请状态为“仲裁验证无误”
                         applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", "签名值没有问题");
                         // 更新任务状态为“已完成”
@@ -391,7 +392,7 @@ public class TaskController {
                         return APIResponse.success("第一轮验证成功"); // 返回成功响应
                     } else {
                         // 验证失败
-//                        System.out.println("第一轮验证失败");
+                        System.out.println("第一轮验证失败");
 //                        System.out.println(k);
 //                        System.out.println(d);
                         // 更新每个用户的到第二轮验证
@@ -435,7 +436,7 @@ public class TaskController {
 
                     if (String.valueOf(k).equals(d1)){
                         // 验证成功
-//                        System.out.println("第二轮验证成功");
+                        System.out.println("第二轮验证成功");
                         // 更新申请状态为“仲裁验证无误”
                         applicationMapper.updateApplication(String.valueOf(id), "仲裁验证完成", "签名值没有问题");
                         // 更新任务状态为“已完成”
@@ -446,11 +447,12 @@ public class TaskController {
                         return APIResponse.success("第二轮验证成功"); // 返回成功响应
                     } else {
                         // 验证失败
-//                        System.out.println("第二轮验证失败");
+                        System.out.println("第二轮验证失败");
 //                        System.out.println(k);
 //                        System.out.println(d1);
 
                         atuMapper.updateStatus3(taskId, "in_progress", "3");
+                        applicationMapper.updateApplication(String.valueOf(id), "第二次验证失败，进行下一步验证", "在处理界面添加私钥计算");
 
                         // 验证t2
                         List<ArbitrationTaskUser> ATU = atuMapper.findAll(taskId);
@@ -471,7 +473,7 @@ public class TaskController {
                         BigInteger ans2 = new BigInteger(d1).multiply(g.modPow(f2.modInverse(p), p)).mod(p).modPow(e1, p);
 
                         if(ans1.equals(ans2)){
-//                            System.out.println("签名并非联合签名人的联合签名");
+                            System.out.println("签名并非联合签名人的联合签名");
 //                            System.out.println("ans1 = " + ans1);
 //                            System.out.println("ans2 = " + ans2);
 
@@ -502,10 +504,10 @@ public class TaskController {
                 atuMapper.updateStatus5(taskId, userName, S);
                 atuMapper.updateStatus0(taskId, userName, "pending");
                 if (atuMapper.countEmptySByTaskId(taskId) == 0) {
-//                    System.out.println("验证欺骗者");
+                    System.out.println("验证欺骗者");
                     // 所有用户的 s 都计算完了，开始验证欺骗者
                     Task task1 = taskMapper.findTaskById(taskId);
-                    String confirmId = task1.getConfirmId();
+
                     StringBuilder resultBuilder = new StringBuilder();
                     int index = 1;
                     int i = 1;
@@ -520,7 +522,7 @@ public class TaskController {
                         // 验证用户诚实性
                         d1 = i == 1 ? new BigInteger(user.getC()) : d2;
                         d2 = new BigInteger(user.getD());
-                        String result = verifyHonesty(user, Integer.parseInt(confirmId), p, g, d1, d2);
+                        String result = verifyHonesty(user, p, g, d1, d2);
                         i = 0;
                         resultBuilder.append(result);
                     }
@@ -549,12 +551,14 @@ public class TaskController {
     }
 
     // 验证用户的诚实性的方法
-    private String verifyHonesty(ArbitrationTaskUser user, int confirmId, BigInteger p, BigInteger g, BigInteger d1, BigInteger d2) {
+    private String verifyHonesty(ArbitrationTaskUser user, BigInteger p, BigInteger g, BigInteger d1, BigInteger d2) {
         BigInteger t = new BigInteger(user.getT());
         BigInteger t1 = new BigInteger(user.getT1());
-        BigInteger b = new BigInteger(stuMapper.findB1(confirmId, user.getUserName()));
+        BigInteger b = new BigInteger(userMapper.KeyStatus(user.getUserName()));
         BigInteger s = new BigInteger(user.getS());
         BigInteger ch = new BigInteger(user.getCh());
+
+        System.out.println("b = " + b);
 
         BigInteger ans = b.modPow(ch, p).multiply(g.modPow(s, p)).mod(p);
         BigInteger ans1 = d1.modPow(ch, p).multiply(d2.modPow(s, p)).mod(p);

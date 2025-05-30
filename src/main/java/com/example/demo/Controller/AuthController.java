@@ -152,7 +152,7 @@ public class AuthController {
                 return APIResponse.error(400, "共享密钥未找到，请重新进行密钥交换");
             }
 
-            // 2. 使用共享密钥解密客户端发送的密码和公钥
+            // 2. 使用共享密钥解密客户端发送的密码
             String decryptedPassword = dhService.decrypt(encryptedPassword, sharedSecret);
 
             // 3. 创建用户对象并保存到数据库

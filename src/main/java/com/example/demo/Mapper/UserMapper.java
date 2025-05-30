@@ -47,7 +47,7 @@ public interface UserMapper extends BaseMapper<User> {
     @Delete("DELETE FROM users WHERE username = #{username}")
     void deleteByUsername(String username);
 
-    @Select("SELECT id, username, role, email FROM users")
+    @Select("SELECT id, username, role FROM users")
     List<User> findAllUsers();
 
     @Select("SELECT username FROM users WHERE role = '数据所有方'")
