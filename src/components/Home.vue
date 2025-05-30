@@ -1,10 +1,10 @@
 <script setup>
-import { ref, computed, onMounted} from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {handleCommand, handleSelect} from '@/router.js'
 import { fetchDataRecord, searchUsernamesAPI, toSavePrivateKey } from '@/service/HomeService.js'
 import { get, post } from '@/utils/request.js'
-import { Search } from '@element-plus/icons-vue'
+import {Expand, Fold, Search} from '@element-plus/icons-vue'
 import { useMenu } from '@/service/useMenu.js'
 import { jwtDecode } from 'jwt-decode'
 import { string } from 'sockjs-client/lib/utils/random.js'
@@ -174,22 +174,70 @@ const savePrivateKey = async () => {
     document.body.classList.remove('blur-active');
   }
 };
+const isCollapse = ref(false); // 侧边栏折叠状态
+const isMobile = ref(false); // 是否移动设备
+const asideWidth = ref('240px'); // 动态侧边栏宽度
+
+// 切换侧边栏折叠状态
+const toggleCollapse = () => {
+  isCollapse.value = !isCollapse.value
+  asideWidth.value = isCollapse.value ? '80px' : '240px'
+}
+
+onMounted(async () => {
+  handleResize();
+  window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+
+const handleResize = () => {
+  const width = window.innerWidth;
+  isMobile.value = width < 768;
+  if (width < 768) {
+    asideWidth.value = '64px';
+    isCollapse.value = true;
+  } else if (width < 992) {
+    asideWidth.value = '180px';
+    isCollapse.value = true;
+  } else if (width < 1200) {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  } else {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  }
+};
 
 </script>
 
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
-    <el-aside width="205px" class="custom-aside">
-      <div class="logo"><strong>宁波市民卡联合确权数据流转平台</strong></div>
-      <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
+    <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
+      <div class="sidebar-header">
+        <transition name="fade">
+          <span class="logo-text" v-if="!isCollapse">宁波市民卡联合确权数据流转平台</span>
+        </transition>
+      </div>
+      <el-menu
+          :default-active="activeMenu"
+          class="custom-menu"
+          @select="handleSelect"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+      >
         <!-- 动态渲染菜单项 -->
         <el-menu-item
-          v-for="menu in availableMenus"
-          :key="menu.index"
-          :index="menu.index"
+            v-for="menu in availableMenus"
+            :key="menu.index"
+            :index="menu.index"
         >
-          <span>{{ menu.name }}</span>
+          <el-icon v-if="menu.icon"><component :is="menu.icon" /></el-icon>
+          <span v-if="!isCollapse">{{ menu.name }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -197,50 +245,54 @@ const savePrivateKey = async () => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header style="display: flex; align-items: center; gap: 10px;">
-        <el-dropdown @command="handleCommand">
-          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
-          <template v-slot:dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">登出</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+      <el-header class="app-header">
+          <el-button @click="toggleCollapse" :icon="isCollapse ? Expand : Fold" circle />
+        <div class="header-spacer" />
+        <div class="header-right">
+          <el-dropdown @command="handleCommand">
+            <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
+            <template v-slot:dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">登出</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+        </div>
       </el-header>
 
       <!-- 主内容区 -->
       <el-container>
-        <el-aside width="100%" style="padding: 20px;">
+        <el-main width="100%" style="padding: 1.5rem;">
           <el-row :gutter="20">
-            <el-col :span="16">
-              <el-card style="height: 87vh;">
+            <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
+              <el-card class="main-card">
                 <div class="sign">数据流转记录</div>
                 <el-divider />
-                <div style="height: 66vh;">
+                <div class="table-container">
                   <el-table height="66vh" :data="formattedTableData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="time" label="流转时间" align="center" />
                     <el-table-column prop="taskId" label="任务ID" align="center"/>
                     <el-table-column prop="fileName" label="数据名称" align="center" width="200px" />
-<!--                    <el-table-column prop="dataId" label="数据ID" align="center" width="70">-->
-<!--                      <template #default="scope">-->
-<!--                        <el-tooltip :content="scope.row.dataId" placement="top">-->
-<!--                          <span>{{ scope.row.dataIdShortened }}</span>-->
-<!--                        </el-tooltip>-->
-<!--                      </template>-->
-<!--                    </el-table-column>-->
+                    <!--                    <el-table-column prop="dataId" label="数据ID" align="center" width="70">-->
+                    <!--                      <template #default="scope">-->
+                    <!--                        <el-tooltip :content="scope.row.dataId" placement="top">-->
+                    <!--                          <span>{{ scope.row.dataIdShortened }}</span>-->
+                    <!--                        </el-tooltip>-->
+                    <!--                      </template>-->
+                    <!--                    </el-table-column>-->
 
                     <el-table-column prop="creator" label="数据所有方" align="center"/>
-<!--                    <el-table-column prop="b" label="联合公钥" align="center">-->
-<!--                      <template #default="scope">-->
-<!--                        <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.b)">复制公钥</el-button>-->
-<!--                      </template>-->
-<!--                    </el-table-column>-->
-<!--                    <el-table-column prop="y" label="联合签名" align="center">-->
-<!--                      <template #default="scope">-->
-<!--                        <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.y)">复制签名</el-button>-->
-<!--                      </template>-->
-<!--                    </el-table-column>-->
+                    <!--                    <el-table-column prop="b" label="联合公钥" align="center">-->
+                    <!--                      <template #default="scope">-->
+                    <!--                        <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.b)">复制公钥</el-button>-->
+                    <!--                      </template>-->
+                    <!--                    </el-table-column>-->
+                    <!--                    <el-table-column prop="y" label="联合签名" align="center">-->
+                    <!--                      <template #default="scope">-->
+                    <!--                        <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.y)">复制签名</el-button>-->
+                    <!--                      </template>-->
+                    <!--                    </el-table-column>-->
 
                     <el-table-column  label="数据概要" align="center" >
                       <template #default="scope">
@@ -251,11 +303,11 @@ const savePrivateKey = async () => {
 
                   <!-- 详情对话框 -->
                   <el-dialog
-                    v-model="dialogVisible"
-                    title="数据大纲"
-                    width="50%"
-                    @close="dialogVisible = false"
-                    :append-to-body="true"
+                      v-model="dialogVisible"
+                      title="数据大纲"
+                      width="50%"
+                      @close="dialogVisible = false"
+                      :append-to-body="true"
                   >
                     <el-descriptions header="详细信息" :title="Outline" style="white-space: pre-wrap;">
                       {{Outline}}
@@ -268,26 +320,31 @@ const savePrivateKey = async () => {
                 </div>
 
                 <!-- 分页控件 -->
-                <el-pagination
-                  background
-                  layout="prev, pager, next"
-                  :total="tableData.length"
-                  :page-size="pageSize"
-                  v-model:currentPage="currentPage"
-                  style="margin-top: 20px; text-align: center; display: flex; justify-content: center;"
-                />
+                <div style="margin-top: 20px; overflow-x: auto;">  <!-- 新增容器 -->
+                  <el-pagination
+                      background
+                      layout="prev, pager, next"
+                      :total="tableData.length"
+                      :page-size="pageSize"
+                      v-model:currentPage="currentPage"
+                      class="pagination"
+                      :small="isMobile"
+                      :pager-count="isMobile ? 3 : 5"
+                  />
+                </div>
               </el-card>
             </el-col>
-            <el-col :span="8">
-              <el-card style="height: 87vh;">
-                 <el-form-item label="搜索用户：" style="margin-top: 20px">
-                   <el-row>
-                     <el-col>
-                     <el-input v-model="name" placeholder="输入用户名" />
-                     </el-col>
-                   </el-row>
-                   <el-button :icon="Search" primary style="margin-left: 10px" @click="searchUsernames"/>
-                 </el-form-item>
+            <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
+              <el-card class="form-select-card" style="justify-content: flex-start"
+                       :class="{ 'mobile-form-card': isMobile }">
+                <div style="display: flex; justify-content: center;">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-top: 40px; white-space: nowrap;">
+                    <label style="white-space: nowrap;">搜索用户：</label>
+                    <el-input v-model="name" placeholder="输入用户名" style=" width: 150px;"/>
+                    <el-button :icon="Search" type="primary" @click="searchUsernames"></el-button>
+                  </div>
+                </div>
+
                 <!-- 显示模糊搜索到的用户 -->
                 <el-table :data="usernameSuggestions" style="width: 100%" v-if="usernameSuggestions.length > 0" stripe :header-cell-style="{'text-align': 'center'}">
                   <el-table-column label="用户名" prop="USERNAME"  align="center"/>
@@ -302,222 +359,13 @@ const savePrivateKey = async () => {
             </el-col>
 
           </el-row>
-        </el-aside>
+        </el-main>
       </el-container>
     </el-container>
   </el-container>
 </template>
 
 
-<style scoped>
-/* 基本设置 */
-body, html {
-  font-family: 'Arial', sans-serif;
-  color: #333;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-size: 14px; /* 设置基础字体大小，方便整体适配 */
-}
+<style scoped src="@/css/main.css">
 
-/* 全局容器 */
-.el-container {
-  background-color: #f0f2f5;
-  min-height: 100vh;
-}
-
-/* 侧边栏 */
-.custom-aside {
-  background: linear-gradient(135deg, #1f2f47, #304156);
-  color: #fff;
-}
-
-.logo {
-  font-size: 18px;
-  font-weight: bold;
-  color: #fff;
-  text-align: center;
-  padding: 20px 0;
-  border-bottom: 1px solid #3a4a5f;
-  letter-spacing: 1px;
-}
-
-.custom-menu {
-  background-color: transparent;
-  font-size: 15px; /* 侧边栏菜单字体大小适中 */
-}
-
-.custom-menu .el-menu-item {
-  color: #c0c4cc;
-  padding: 15px 20px;
-  transition: all 0.3s ease;
-}
-
-.custom-menu .el-menu-item:hover {
-  color: #ffd04b;
-  background-color: rgba(255, 208, 75, 0.1);
-}
-
-.custom-menu .el-menu-item.is-active {
-  background-color: #ffd04b;
-  color: #333;
-  font-weight: bold;
-  border-radius: 5px;
-}
-
-/* 顶部栏 */
-.el-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0 20px;
-  background-color: #fff;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
-  height: 60px;
-}
-
-.el-avatar {
-  cursor: pointer;
-  font-weight: bold;
-  color: #409eff;
-  font-size: 15px; /* 顶部栏头像文字大小 */
-  transition: color 0.3s ease;
-}
-
-.el-avatar:hover {
-  color: #ffd04b;
-}
-
-/* 内容区 */
-.sign {
-  font-size: 16px; /* 调整内容区标题大小 */
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.el-divider {
-  margin: 15px 0;
-}
-
-/* 卡片 */
-.el-card {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background-color: #fff;
-  transition: all 0.3s ease;
-}
-
-.el-card:hover {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
-}
-
-.el-table th, .el-table td {
-  font-size: 13px; /* 表格内容字体小而精炼 */
-}
-
-/* 表单 */
-.form-row {
-  margin-top: 15px;
-}
-
-.label-col {
-  font-size: 14px;
-  font-weight: bold;
-  text-align: right;
-  color: #333;
-}
-
-.input-col {
-  padding-left: 10px;
-}
-
-.el-input,
-.el-select {
-  width: 100%;
-  transition: border-color 0.3s ease;
-}
-
-.el-input:focus,
-.el-select:focus {
-  border-color: #ffd04b;
-}
-
-.button-col {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.el-button {
-  font-size: 14px;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* 上传部分 */
-.el-upload .el-button {
-  margin-right: 10px;
-}
-
-.el-progress {
-  width: 100%;
-  font-size: 13px; /* 调整进度条文字大小 */
-}
-
-/* 分页 */
-.el-pagination {
-  margin-top: 20px;
-  font-size: 13px; /* 分页文字适配 */
-}
-
-/* 弹出卡片 */
-.el-card .close-btn {
-  font-size: 24px;
-  color: #409eff;
-  position: absolute;
-  right: 15px;
-  top: 10px;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.el-card .close-btn:hover {
-  color: #ffd04b;
-}
-
-/* 按钮颜色 */
-.el-button--primary {
-  background-color: white;
-  border-color: #409eff;
-  font-size: 14px;
-}
-
-.el-button--primary:hover {
-  background-color: #ffd04b;
-  border-color: #ffd04b;
-  color: #333;
-}
-/* 模糊化效果 + 遮罩层 */
-.blur-active .el-container {
-  filter: blur(5px);
-  transition: filter 0.3s ease;
-  pointer-events: none; /* 阻止交互 */
-}
-
-/* 半透明遮罩层（增强聚焦效果） */
-.blur-active::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  z-index: 999; /* 确保遮罩在内容之上、弹窗之下 */
-}
-
-/* 确保 Element UI 弹窗在遮罩层之上 */
-.el-message-box {
-  z-index: 1000 !important;
-}
 </style>

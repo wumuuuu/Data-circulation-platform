@@ -1,7 +1,7 @@
 
 <!--Examine1.vue-->
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h, onBeforeUnmount } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
 import {
   onSubmit,
@@ -13,6 +13,7 @@ import {
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { useMenu } from '@/service/useMenu.js'
 import { jwtDecode } from 'jwt-decode'
+import {Expand, Fold} from "@element-plus/icons-vue";
 const activeMenu = ref('4');
 const token = sessionStorage.getItem('authToken');
 const decoded = jwtDecode(token);  // 解析 JWT Token
@@ -180,21 +181,71 @@ const onExplain = (id) => {
   });
 };
 
+const isCollapse = ref(false); // 侧边栏折叠状态
+const isMobile = ref(false); // 是否移动设备
+const asideWidth = ref('240px'); // 动态侧边栏宽度
+
+// 切换侧边栏折叠状态
+const toggleCollapse = () => {
+  isCollapse.value = !isCollapse.value
+  asideWidth.value = isCollapse.value ? '80px' : '240px'
+}
+
+onMounted(async () => {
+  handleResize();
+  window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+
+const handleResize = () => {
+  const width = window.innerWidth;
+  isMobile.value = width < 768;
+  if (width < 768) {
+    asideWidth.value = '64px';
+    isCollapse.value = true;
+  } else if (width < 992) {
+    asideWidth.value = '180px';
+    isCollapse.value = true;
+  } else if (width < 1200) {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  } else {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  }
+};
+
 </script>
 
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
-    <el-aside width="205px" class="custom-aside">
-      <div class="logo"><strong>宁波市民卡联合确权数据流转平台</strong></div>
-      <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
+    <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
+      <div class="sidebar-header">
+        <transition name="fade">
+          <span class="logo-text" v-if="!isCollapse">宁波市民卡联合确权数据流转平台</span>
+        </transition>
+
+      </div>
+      <el-menu
+          :default-active="activeMenu"
+          class="custom-menu"
+          @select="handleSelect"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+      >
         <!-- 动态渲染菜单项 -->
         <el-menu-item
-          v-for="menu in availableMenus"
-          :key="menu.index"
-          :index="menu.index"
+            v-for="menu in availableMenus"
+            :key="menu.index"
+            :index="menu.index"
         >
-          <span>{{ menu.name }}</span>
+          <el-icon v-if="menu.icon"><component :is="menu.icon" /></el-icon>
+          <span v-if="!isCollapse">{{ menu.name }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -202,107 +253,131 @@ const onExplain = (id) => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header style="display: flex; align-items: center; gap: 10px;">
-        <el-dropdown @command="handleCommand">
-          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
-          <template v-slot:dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">登出</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+      <el-header class="app-header">
+
+          <el-button @click="toggleCollapse" :icon="isCollapse ? Expand : Fold" circle />
+
+        <div class="header-spacer" />
+        <div class="header-right">
+          <el-dropdown @command="handleCommand">
+            <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
+            <template v-slot:dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">登出</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+        </div>
       </el-header>
 
       <!-- 主内容区 -->
       <el-container>
-        <el-aside width="100%" style="padding: 20px;">
+        <el-main width="100%" style="padding: 20px;">
           <el-row :gutter="20">
-            <el-col :span="16">
-              <el-card style="height: 87vh;">
+            <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
+              <el-card class="main-card">
                 <div class="sign">待处理的申请</div>
                 <el-divider />
-                <div style="height: 66vh;">
+                <div class="table-container">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center"/>
                     <el-table-column prop="id" label="申请ID" align="center"/>
                     <el-table-column prop="username" label="用户名" align="center" width="100"/>
                     <el-table-column prop="text" label="申请内容" width="300">
                       <template #default="scope">
-                        <div>
+                        <div class="application-content">
                           <div>需求：{{ scope.row.text }}</div>
                           <div>时间范围：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
                       </template>
                     </el-table-column>
                     <el-table-column label="操作" align="center" width="100">
-                    <template #default="scope">
-                      <el-button type="primary" size="small" @click="open(); showDetails(scope.row)">
-                        处理
-                      </el-button>
-                    </template>
+                      <template #default="scope">
+                        <el-button type="primary" size="small" @click="open(); showDetails(scope.row)">
+                          处理
+                        </el-button>
+                      </template>
                     </el-table-column>
                   </el-table>
                 </div>
 
                 <!-- 分页控件 -->
                 <el-pagination
-                  background
-                  layout="prev, pager, next"
-                  :total="tableData.length"
-                  :page-size="pageSize"
-                  v-model:currentPage="currentPage"
-                  style="margin-top: 20px; text-align: center; display: flex; justify-content: center;"
+                    background
+                    layout="prev, pager, next"
+                    :total="tableData.length"
+                    :page-size="pageSize"
+                    v-model:currentPage="currentPage"
+                    class="pagination"
                 />
               </el-card>
             </el-col>
-            <el-col :span="8" v-if="!isCardVisible">
-              <el-card style="height: 87vh; position: relative;">
+            <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8" v-if="!isCardVisible">
+              <el-card class="form-card">
                 <div class="sign">上传新数据</div>
                 <el-divider />
-                <el-row class="form-row">
-                  <el-col :span="6" class="label-col" style="margin-top: 20px" >数据集名称：</el-col>
-                  <el-col :span="16" class="input-col" style="margin-top: 20px">
-                    <el-input v-model="fileName"/>
-                  </el-col>
-                  <el-col :span="6" class="label-col" style="margin-top: 20px" >数据集描述：</el-col>
-                  <el-col :span="18" class="input-col" style="margin-top: 20px">
-                    <el-input style="height: 12vh" :rows="4" type="textarea" v-model="fileOutline"/>
+                <el-row class="form-content" :gutter="20">
+                  <el-col :span="24">
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                      <!-- Dataset Name -->
+                      <div style="display: flex; align-items: center;">
+                        <el-col :span="6" class="label-text">数据集名称：</el-col>
+                        <el-col :span="18">
+                          <el-input v-model="fileName" />
+                        </el-col>
+                      </div>
+
+                      <!-- Dataset Description -->
+                      <div style="display: flex;">
+                        <el-col :span="6" class="label-text">数据集描述：</el-col>
+                        <el-col :span="18">
+                          <el-input style="width: 100%;" :rows="4" type="textarea" v-model="fileOutline"/>
+                        </el-col>
+                      </div>
+                    </div>
                   </el-col>
                 </el-row>
-                <!-- 文件选择和加密上传按钮部分 -->
-                <div style="display: flex; justify-content: center; margin-top: 20px;">
-                  <!-- 文件选择 -->
-                  <el-upload
-                    :before-upload="handleBeforeUpload"
-                    :show-file-list="true"
-                  >
-                    <el-button type="primary">选择数据文件</el-button>
-                  </el-upload>
 
-                  <!-- 加密并上传按钮，文件选择后显示 -->
-                  <el-button v-if="showUpload" type="success" @click="encryptAndUpload" style="margin-left: 20px;">加密并且上传</el-button>
+                <!-- File upload section with proper spacing -->
+                <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 20px; align-items: center;">
+                  <!-- File selection and upload buttons -->
+                  <div style="display: flex; justify-content: center; gap: 20px; width: 100%;">
+                    <el-upload
+                        :before-upload="handleBeforeUpload"
+                        :show-file-list="true"
+                    >
+                      <el-button type="primary">选择数据文件</el-button>
+                    </el-upload>
+
+                    <el-button
+                        v-if="showUpload"
+                        type="success"
+                        @click="encryptAndUpload"
+                    >
+                      加密并且上传
+                    </el-button>
+                  </div>
+
+                  <!-- Progress indicators -->
+                  <div v-if="isProcessing && progress !== 100" style="width: 100%;">
+                    <el-progress
+                        :text-inside="true"
+                        :stroke-width="18"
+                        :percentage="progress"
+                        style="width: 100%"
+                    />
+                    <p style="text-align: center; margin-top: 8px;">预计剩余时间：{{ estimatedTime }}</p>
+                  </div>
                 </div>
-
-                <!-- 加密和上传进度条 -->
-                <div v-if="isProcessing && progress !== 100" style="justify-content: center; margin-top: 20px;">
-                  <el-progress
-                    :text-inside="true"
-                    :stroke-width="18"
-                    :percentage="progress"
-                    :style="{ width: '100%' }"
-                  />
-                </div>
-                <p v-if="isProcessing && progress !== 100">预计剩余时间：{{ estimatedTime }}</p>
-
               </el-card>
             </el-col>
             <el-col :span="8" v-if="isCardVisible">
               <el-card style="height: 87vh; position: relative;">
                 <el-button
-                  type="text"
-                  style="position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer;"
-                  @click="isCardVisible = false"
+                    type="text"
+                    style="position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer;"
+                    @click="isCardVisible = false"
                 >×</el-button>
                 <div class="sign">{{ selectedRow?.username }}的申请</div>
                 <el-divider />
@@ -310,14 +385,14 @@ const onExplain = (id) => {
                   <el-row class="form-row">
                     <el-col :span="6" class="label-col">选择数据：</el-col>
                     <el-select
-                      v-model="formData.selectFile"
-                      style="width: 73%"
+                        v-model="formData.selectFile"
+                        style="width: 73%"
                     >
                       <el-option
-                        v-for="(file, index) in files"
-                        :key="index"
-                        :label="file"
-                        :value="file"
+                          v-for="(file, index) in files"
+                          :key="index"
+                          :label="file"
+                          :value="file"
                       ></el-option>
                     </el-select>
 
@@ -363,12 +438,12 @@ const onExplain = (id) => {
 
             </el-col>
           </el-row>
-        </el-aside>
+        </el-main>
       </el-container>
     </el-container>
   </el-container>
 </template>
 
-<style scoped src="@/css/Examine1.css">
+<style scoped src="@/css/main.css">
 
 </style>

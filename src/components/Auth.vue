@@ -392,7 +392,7 @@ const toForget = () => {
       <!-- 登录表单 -->
       <el-form ref="form" size="large" autocomplete="off" v-if="isLogin" :model="loginData" :rules="loginRules" @submit.prevent="login">
         <el-form-item class="reg-log_wrapper">
-          <h1 class="title">数据流转平台</h1>
+          <h1 class="title">宁波市民卡联合确权数据流转平台</h1>
         </el-form-item>
         <el-form-item prop="username" class="reg-log">
           <label for="username" class="reg-log_name">用户名</label>
@@ -430,7 +430,7 @@ const toForget = () => {
       <!-- 忘记密码表单 -->
       <el-form ref="forgetFormRef" size="large" autocomplete="off" v-if="isForget" :model="forgetData" :rules="forgetRules">
         <el-form-item class="reg-log_wrapper">
-          <h1 class="title">数据流转平台</h1>
+          <h1 class="title">宁波市民卡联合确权数据流转平台</h1>
         </el-form-item>
         <el-form-item prop="username" class="reg-log">
           <label for="username" class="reg-log_name">用户名</label>

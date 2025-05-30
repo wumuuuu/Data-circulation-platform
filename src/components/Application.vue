@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import {ref, computed, onMounted, onBeforeUnmount} from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
 import {
   Download,
@@ -7,7 +7,7 @@ import {
   fetchDataOwners,
   onSubmit, onSubmit1
 } from '@/service/ApplicationService.js'
-import { CircleCheckFilled, CircleCloseFilled, Clock } from '@element-plus/icons-vue'
+import {CircleCheckFilled, CircleCloseFilled, Clock, Expand, Fold} from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useMenu } from '@/service/useMenu.js'
 import { jwtDecode } from 'jwt-decode'
@@ -92,22 +92,71 @@ const onReset = () => {
 const onReset1 = () => {
   taskId.value = null;
 };
+const isCollapse = ref(false); // 侧边栏折叠状态
+const isMobile = ref(false); // 是否移动设备
+const asideWidth = ref('240px'); // 动态侧边栏宽度
+
+// 切换侧边栏折叠状态
+const toggleCollapse = () => {
+  isCollapse.value = !isCollapse.value
+  asideWidth.value = isCollapse.value ? '80px' : '240px'
+}
+
+onMounted(async () => {
+  handleResize();
+  window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+
+const handleResize = () => {
+  const width = window.innerWidth;
+  isMobile.value = width < 768;
+  if (width < 768) {
+    asideWidth.value = '64px';
+    isCollapse.value = true;
+  } else if (width < 992) {
+    asideWidth.value = '180px';
+    isCollapse.value = true;
+  } else if (width < 1200) {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  } else {
+    asideWidth.value = '240px';
+    isCollapse.value = false;
+  }
+};
+
 
 </script>
 
 <template>
   <el-container style="height: 100vh; width: 100%;">
     <!-- 侧边栏 -->
-    <el-aside width="205px" class="custom-aside">
-      <div class="logo"><strong>宁波市民卡联合确权数据流转平台</strong></div>
-      <el-menu :default-active="activeMenu" class="custom-menu" @select="handleSelect">
+    <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
+      <div class="sidebar-header">
+        <transition name="fade">
+          <span class="logo-text" v-if="!isCollapse">宁波市民卡联合确权数据流转平台</span>
+        </transition>
+      </div>
+      <el-menu
+          :default-active="activeMenu"
+          class="custom-menu"
+          @select="handleSelect"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+      >
         <!-- 动态渲染菜单项 -->
         <el-menu-item
-          v-for="menu in availableMenus"
-          :key="menu.index"
-          :index="menu.index"
+            v-for="menu in availableMenus"
+            :key="menu.index"
+            :index="menu.index"
         >
-          <span>{{ menu.name }}</span>
+          <el-icon v-if="menu.icon"><component :is="menu.icon" /></el-icon>
+          <span v-if="!isCollapse">{{ menu.name }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -115,53 +164,58 @@ const onReset1 = () => {
     <!-- 右侧内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header style="display: flex; align-items: center; gap: 10px;">
-        <el-dropdown @command="handleCommand">
-          <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
-          <template v-slot:dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="logout">登出</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+      <el-header class="app-header">
+          <el-button @click="toggleCollapse" :icon="isCollapse ? Expand : Fold" circle />
+        <div class="header-spacer" />
+        <div class="header-right">
+          <el-dropdown @command="handleCommand">
+            <el-check-tag type="primary" size="large" checked>{{username}}</el-check-tag>
+            <template v-slot:dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">登出</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+          <el-tag :disable-transitions="true" type="danger" effect="dark">{{userRole}}</el-tag>
+        </div>
       </el-header>
+
 
       <!-- 主内容区 -->
       <el-container>
-        <el-aside width="100%" style="padding: 20px;">
+        <el-main width="100%" style="padding: 1.5rem;">
           <el-row :gutter="20">
-            <el-col :span="16">
-              <el-card style="height: 87vh;">
+            <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
+              <el-card class="main-card">
                 <div class="sign">申请记录</div>
                 <el-divider />
-                <div style="height: 66vh;">
+                <div class="table-container">
                   <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                    <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165"/>
+                    <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165" :show-overflow-tooltip="true"/>
                     <el-table-column prop="applicationType" label="申请类型" align="center" width = "85"/>
                     <el-table-column label="状态" align="center">
                       <template #default="scope">
-                        <div style="display: flex; align-items: center; justify-content: center;">
+                        <div class="status-cell">
                           <span>{{ scope.row.status }}</span>
-                          <el-icon v-if="scope.row.status.includes('未通过')|| scope.row.status.includes('失败')" style="color: red; margin-left: 8px;"><CircleCloseFilled /></el-icon>
-                          <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('完成')" style="color: green; margin-left: 8px;"><CircleCheckFilled /></el-icon>
+                          <el-icon v-if="scope.row.status.includes('未通过')|| scope.row.status.includes('失败')" class="status-icon error"><CircleCloseFilled /></el-icon>
+                          <el-icon v-else-if="scope.row.status.includes('已') || scope.row.status.includes('成功') || scope.row.status.includes('完成')" class="status-icon success"><CircleCheckFilled /></el-icon>
                           <el-icon v-else style="margin-left: 8px;"><Clock /></el-icon>
                         </div>
                       </template>
                     </el-table-column>
-                    <el-table-column  prop="text" label="申请内容" width = "250" >
+                    <el-table-column  prop="text" label="申请内容" width = "200" >
                       <template #default="scope">
-                        <div v-if="scope.row.applicationType === '签名'">
-                          <div >需求：{{ scope.row.text }}</div>
-                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        <div v-if="scope.row.applicationType === '签名'" class="application-content">
+                          <div class="content-text">需求：{{ scope.row.text }}</div>
+                          <div class="content-date">时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
-                        <div v-if="scope.row.applicationType === '确权'">
-                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行确权</div>
-                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        <div v-if="scope.row.applicationType === '确权'" class="application-content">
+                          <div class="content-text">需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行确权</div>
+                          <div class="content-date">时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
-                        <div v-if="scope.row.applicationType === '仲裁'">
-                          <div>需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行仲裁</div>
-                          <div>时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
+                        <div v-if="scope.row.applicationType === '仲裁'" class="application-content">
+                          <div class="content-text">需求：对任务ID为 {{ scope.row.text }} ，文件名为“{{ scope.row.fileName }}”的流转数据进行仲裁</div>
+                          <div class="content-date">时间：{{ scope.row.startDate }} - {{ scope.row.endDate }}</div>
                         </div>
                       </template>
                     </el-table-column>
@@ -169,27 +223,29 @@ const onReset1 = () => {
                       <template #default="scope">
 
                         <el-tooltip
-                          :disabled="scope.row.explanation !== '不允许下载该数据'"
-                          content="确权验证失败，无法继续下载该数据"
-                          placement="top"
+                            :disabled="scope.row.explanation !== '不允许下载该数据'"
+                            content="确权验证失败，无法继续下载该数据"
+                            placement="top"
                         >
                           <el-button
-                            v-if="scope.row.explanation === '已允许下载该数据' || scope.row.explanation === '不允许下载该数据'"
-                            link
-                            type="primary"
-                            size="small"
-                            :disabled="scope.row.explanation === '不允许下载该数据'"
-                            @click="Download(scope.row)"
+                              v-if="scope.row.explanation === '已允许下载该数据' || scope.row.explanation === '不允许下载该数据'"
+                              link
+                              type="primary"
+                              size="small"
+                              :disabled="scope.row.explanation === '不允许下载该数据'"
+                              @click="Download(scope.row)"
+                              class="action-btn"
                           >
                             下载
                           </el-button>
                           <el-button
-                            v-else
-                            link
-                            type="primary"
-                            size="small"
-                            :disabled="!scope.row.explanation || scope.row.explanation === ''"
-                            @click="openDialog(scope.row.explanation)"
+                              v-else
+                              link
+                              type="primary"
+                              size="small"
+                              :disabled="!scope.row.explanation || scope.row.explanation === ''"
+                              @click="openDialog(scope.row.explanation)"
+                              class="action-btn"
                           >
                             详情
                           </el-button>
@@ -199,7 +255,7 @@ const onReset1 = () => {
                     </el-table-column>
                   </el-table>
                   <!-- 对话框 -->
-                  <el-dialog title="详细信息"  v-model="dialogVisible" width="30%">
+                  <el-dialog title="详细信息"  v-model="dialogVisible" :width="isMobile ? '90%' : '30%'" custom-class="detail-dialog">
                     <p>{{ dialogContent }}</p>
                     <template #footer>
                       <el-button @click="dialogVisible = false">关闭</el-button>
@@ -209,89 +265,108 @@ const onReset1 = () => {
 
                 <!-- 分页控件 -->
                 <el-pagination
-                  background
-                  layout="prev, pager, next"
-                  :total="tableData.length"
-                  :page-size="pageSize"
-                  v-model:currentPage="currentPage"
-                  style="margin-top: 20px; text-align: center; display: flex; justify-content: center;"
+                    background
+                    layout="prev, pager, next"
+                    :total="tableData.length"
+                    :page-size="pageSize"
+                    v-model:currentPage="currentPage"
+                    class="pagination"
                 />
               </el-card>
             </el-col>
-            <el-col :span="8" >
+            <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
               <!-- 按钮卡片，点击按钮后隐藏 -->
-              <el-card v-if="!formSelected" style="height: 87vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <el-card v-if="!formSelected"
+                       class="form-select-card"
+                       :class="{ 'mobile-form-card': isMobile }"
+              >
+
                 <!-- 按钮排列 -->
-                <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
-                  <el-col>
-                    <el-button type="primary" @click="showForm('签名')" class="custom-button custom-button-text">数据申请</el-button>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
-                  <el-col>
-                    <el-button type="primary" @click="showForm('确权')" class="custom-button custom-button-text">确权申请</el-button>
-                  </el-col>
-                </el-row>
-                <el-row :gutter="20" type="flex" justify="center" style="height: 100px;">
-                  <el-col>
-                    <el-button type="primary" @click="showForm('仲裁')" class="custom-button custom-button-text">仲裁申请</el-button>
-                  </el-col>
-                </el-row>
+                <div class="form-btn-wrapper">
+                  <el-row :gutter="20" type="flex" justify="center">
+                    <el-col :span="24">
+                      <el-button type="primary" @click="showForm('签名')" class="form-select-btn">
+                        <span class="btn-icon">✍️</span>
+                        <span class="btn-text">数据申请</span>
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="20" type="flex" justify="center">
+                    <el-col :span="24">
+                      <el-button type="primary" @click="showForm('确权')" class="form-select-btn">
+                        <span class="btn-icon">🔍</span>
+                        <span class="btn-text">确权申请</span>
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                  <el-row :gutter="20" type="flex" justify="center">
+                    <el-col :span="24">
+                      <el-button type="primary" @click="showForm('仲裁')" class="form-select-btn">
+                        <span class="btn-icon">⚖️</span>
+                        <span class="btn-text">仲裁申请</span>
+                      </el-button>
+                    </el-col>
+                  </el-row>
+                </div>
               </el-card>
 
 
               <!-- 根据选择显示对应的表单卡片 -->
-              <el-card v-if="formSelected" style="height: 87vh; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;" >
+
+              <el-card v-if="formSelected" class="form-card"
+                       :class="{ 'mobile-form-card': isMobile }" >
                 <el-button
-                  type="text"
-                  style="position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer;"
-                  @click="formSelected = false"
+                    type="text"
+                    class="close-form-btn"
+                    @click="formSelected = false"
                 >×</el-button>
+
                 <!-- 根据选择的表单类型显示不同的内容 -->
-                <div v-if="selectedForm === '签名'" style="height: 70vh; overflow: auto;  width: 350px">
+                <div v-if="selectedForm === '签名'" class="form-content">
                   <div class = "sign">
                     提交签名申请
                   </div>
                   <el-divider />
                   <el-form>
                     <el-form-item label="选择数据所有方：" :rules="{required: true}">
-                      <el-select placeholder="请选择" v-model="formData.dataUser">
+                      <el-select placeholder="请选择" v-model="formData.dataUser" class="form-input">
                         <!-- 动态生成选项 -->
                         <el-option
-                          v-for="username in options"
-                          :key="username"
-                          :label="username"
-                          :value="username"
+                            v-for="username in options"
+                            :key="username"
+                            :label="username"
+                            :value="username"
                         />
                       </el-select>
 
                     </el-form-item>
                     <el-form-item :rules="{required: true}">
-                      <el-input style="height: 30vh" type="textarea" :rows="10" placeholder="说明此次申请具体要求"  v-model="formData.text"/>
+                      <el-input class="form-textarea" type="textarea" :rows="10" placeholder="说明此次申请具体要求"  v-model="formData.text"/>
                     </el-form-item>
                     <el-form-item :rules="{required: true}">
                       <el-date-picker
-                        v-model="formData.dateTimeRange"
-                        type="datetimerange"
-                        range-separator="至"
-                        start-placeholder="开始日期"
-                        end-placeholder="结束日期"
-                        format="YYYY-MM-DD HH:mm:ss"
-                        value-format="YYYY-MM-DD HH:mm:ss"
+                          v-model="formData.dateTimeRange"
+                          type="datetimerange"
+                          range-separator="至"
+                          start-placeholder="开始日期"
+                          end-placeholder="结束日期"
+                          format="YYYY-MM-DD HH:mm:ss"
+                          value-format="YYYY-MM-DD HH:mm:ss"
+                          class="form-datepicker"
                       ></el-date-picker>
                     </el-form-item>
                     <el-divider />
                   </el-form>
 
-                  <el-row class="form-row">
-                    <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit(formData, username); onReset();">提交</el-button>
-                      <el-button @click="onReset()">重置</el-button>
+                  <el-row class="form-actions">
+                    <el-col :span="24" class="btn-sr">
+                      <el-button type="primary" @click="onSubmit(formData, username); onReset();" class="submit-btn">提交</el-button>
+                      <el-button @click="onReset()" class="reset-btn">重置</el-button>
                     </el-col>
                   </el-row>
                 </div>
 
-                <div v-else-if="selectedForm === '确权'" style="height: 70vh; overflow: auto; width: 350px">
+                <div v-else-if="selectedForm === '确权'" class="form-content">
                   <!-- 确权申请表单内容 -->
                   <div class = "sign">
                     提交确权申请
@@ -299,19 +374,19 @@ const onReset1 = () => {
                   <el-divider />
                   <el-form>
                     <el-form-item label="输入要确权的任务ID：" :rules="{required: true}">
-                      <el-input v-model="taskId"/>
+                      <el-input v-model="taskId" class="form-input"/>
                     </el-form-item>
                     <el-divider />
                   </el-form>
 
-                  <el-row class="form-row">
-                    <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit1(taskId, '确权',username); onReset1();">提交</el-button>
+                  <el-row class="form-actions">
+                    <el-col :span="24" class="btn-sr">
+                      <el-button type="primary" @click="onSubmit1(taskId, '确权',username); onReset1();" class="submit-btn">提交</el-button>
                       <el-button @click="onReset1()">重置</el-button>
                     </el-col>
                   </el-row>
                 </div>
-                <div v-else-if="selectedForm === '仲裁'" style="height: 70vh; overflow: auto; width: 350px">
+                <div v-else-if="selectedForm === '仲裁'" class="form-content">
                   <!-- 仲裁申请表单内容 -->
                   <div class = "sign">
                     提交仲裁申请
@@ -319,27 +394,27 @@ const onReset1 = () => {
                   <el-divider />
                   <el-form>
                     <el-form-item label="输入要仲裁的任务ID：" :rules="{required: true}">
-                      <el-input v-model="taskId"/>
+                      <el-input v-model="taskId" class="form-input"/>
                     </el-form-item>
                     <el-divider />
                   </el-form>
 
-                  <el-row class="form-row">
-                    <el-col :span="24" class="input-col">
-                      <el-button type="primary" @click="onSubmit1(taskId, '仲裁',username); onReset1();">提交</el-button>
-                      <el-button @click="onReset1()">重置</el-button>
+                  <el-row class="form-actions">
+                    <el-col :span="24" class="btn-sr">
+                      <el-button type="primary" @click="onSubmit1(taskId, '仲裁',username); onReset1();" class="submit-btn">提交</el-button>
+                      <el-button @click="onReset1()" class="reset-btn">重置</el-button>
                     </el-col>
                   </el-row>
                 </div>
               </el-card>
             </el-col>
           </el-row>
-        </el-aside>
+        </el-main>
       </el-container>
     </el-container>
   </el-container>
 </template>
 
-<style scoped src="@/css/Application.css">
+<style scoped src="@/css/main.css">
 
 </style>

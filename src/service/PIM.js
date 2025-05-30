@@ -3,7 +3,7 @@ import { post } from '@/utils/request.js'
 import { encryptData } from '@/service/cryptoWorkerService.js';
 import { ref } from 'vue'
 import { getSharedKey } from '@/cryptoUtils.js'
-const sharedKey = await getSharedKey();
+
 export const onSubmit = async (form) => {
 
   if(form.username !== '') {
@@ -18,6 +18,7 @@ export const onSubmit = async (form) => {
   }
   if(form.password !== '')
   {
+    const sharedKey = await getSharedKey();
     // 使用生成的共享密钥加密用户的密码和公钥
     form.password = await encryptData(sharedKey, stringToArrayBuffer(form.password));
   }
