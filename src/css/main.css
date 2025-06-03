@@ -193,13 +193,6 @@ body, html {
     padding: 0.3rem 0;
 }
 
-.content-text {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 0.3rem;
-}
-
 .content-date {
     font-size: 0.85rem;
     color: #666;

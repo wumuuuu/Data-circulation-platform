@@ -109,7 +109,7 @@ const handleResize = () => {
 </script>
 
 <template>
-  <el-container style="height: 100vh; width: 100%;">
+  <el-container style="height: 100vh; width: 100%;overflow: hidden;">
     <!-- 侧边栏 -->
     <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
       <div class="sidebar-header">

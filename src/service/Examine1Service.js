@@ -114,10 +114,10 @@ export async function fetchApplications(username) {
     }
   } catch (error) {
     // 判断错误类型
-    if (error.message === '未找到等待数据所有方审核的申请记录') {
-      // ElMessage.success('暂无数据');
+    if (error.message === '未找到等待数据提供方审核的申请记录') {
+      ElMessage.success('暂无数据');
     } else {
-      ElMessage.error('获取等待数据所有方审核的申请记录失败');
+      ElMessage.error('获取等待数据提供方审核的申请记录失败');
     }
 
     console.error('Error fetching pending applications:', error);

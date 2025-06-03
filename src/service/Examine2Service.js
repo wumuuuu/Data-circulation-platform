@@ -48,7 +48,7 @@ export const update = async (Username, id, tableData, status, explanation) => {
 
     if (response.success) {
       // 显示成功消息，并从列表中移除该申请
-      ElMessage.success(`${status === '等待数据所有方审核'|| status === '申请已通过' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}申请`);
+      ElMessage.success(`${status === '等待数据提供方审核'|| status === '申请已通过' ? '已同意' : '已拒绝'}${row.username}的${row.applicationType}申请`);
       tableData.value = tableData.value.filter(item => item.id !== id);
     } else {
       // 如果后端返回错误，显示错误信息

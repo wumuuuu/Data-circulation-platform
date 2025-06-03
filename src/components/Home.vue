@@ -215,7 +215,7 @@ const handleResize = () => {
 </script>
 
 <template>
-  <el-container style="height: 100vh; width: 100%;">
+  <el-container style="height: 100vh; width: 100%;overflow: hidden;">
     <!-- 侧边栏 -->
     <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
       <div class="sidebar-header">
@@ -282,7 +282,7 @@ const handleResize = () => {
                     <!--                      </template>-->
                     <!--                    </el-table-column>-->
 
-                    <el-table-column prop="creator" label="数据所有方" align="center"/>
+                    <el-table-column prop="creator" label="数据提供方" align="center"/>
                     <!--                    <el-table-column prop="b" label="联合公钥" align="center">-->
                     <!--                      <template #default="scope">-->
                     <!--                        <el-button link type="primary" size="small" @click="copyToClipboard(scope.row.b)">复制公钥</el-button>-->

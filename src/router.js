@@ -27,25 +27,25 @@ const routes = [
     path: '/application',
     name: 'Application',
     component: Application,
-    meta: { requiresAuth: true, roles: ['数据所有方', '普通用户','测试账号'] }  // 需要登录权限，且只允许 数据所有方 和 普通用户 角色访问
+    meta: { requiresAuth: true, roles: ['数据提供方', '普通用户','测试账号'] }  // 需要登录权限，且只允许 数据所有方 和 普通用户 角色访问
   },
   {
     path: '/handle',
     name: 'Handle',
     component: Handle,
-    meta: { requiresAuth: true, roles: ['数据所有方', '普通用户','测试账号'] }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['数据提供方', '普通用户','测试账号'] }  // 需要登录权限
   },
   {
     path: '/examine1',
     name: 'Examine1',
     component: Examine1,
-    meta: { requiresAuth: true, roles: ['测试账号','数据所有方'] }  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','数据提供方'] }  // 需要登录权限
   },
   {
     path: '/examine2',
     name: 'Examine2',
     component: Examine2,
-    meta: { requiresAuth: true, roles: ['测试账号','审核人员'] } // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','审批员'] } // 需要登录权限
   },
 
   {
@@ -64,7 +64,7 @@ const routes = [
     path: '/File',
     name: 'File',
     component: File,
-    meta: { requiresAuth: true, roles: ['测试账号','数据所有方']}  // 需要登录权限
+    meta: { requiresAuth: true, roles: ['测试账号','数据提供方']}  // 需要登录权限
   }
 ];
 

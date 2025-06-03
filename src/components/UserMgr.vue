@@ -57,6 +57,7 @@ const onModify = (id) => {
 // 保存修改后的用户信息
 const saveChanges = async () => {
   try {
+    console.log(editingUser.value);
     await updateUser(editingUser.value);
     isEditing.value = false; // 退出编辑模式
   } catch (error) {
@@ -111,7 +112,7 @@ const handleResize = () => {
 </script>
 
 <template>
-  <el-container style="height: 100vh; width: 100%;">
+  <el-container style="height: 100vh; width: 100%; overflow: hidden;">
     <!-- 侧边栏 -->
     <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
       <div class="sidebar-header">
@@ -175,19 +176,13 @@ const handleResize = () => {
                         <span v-else>{{ scope.row.username }}</span>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="email" label="邮箱" align="center" >
-                      <template #default="scope">
-                        <el-input v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.email" />
-                        <span v-else>{{ scope.row.email }}</span>
-                      </template>
-                    </el-table-column>
                     <el-table-column prop="role" label="用户权限" align="center" >
                       <template #default="scope">
                         <el-select v-if="isEditing && editingUser.id === scope.row.id" v-model="editingUser.role" placeholder="请选择角色">
                           <el-option label="Admin" value="Admin"></el-option>
                           <el-option label="普通用户" value="普通用户"></el-option>
-                          <el-option label="数据所有方" value="数据所有方"></el-option>
-                          <el-option label="审核人员" value="审核人员"></el-option>
+                          <el-option label="数据提供方" value="数据提供方"></el-option>
+                          <el-option label="审批员" value="审批员"></el-option>
                           <el-option label="测试账号" value="测试账号"></el-option>
                         </el-select>
                         <span v-else>{{ scope.row.role }}</span>

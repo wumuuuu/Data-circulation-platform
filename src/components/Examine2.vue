@@ -51,7 +51,7 @@ const onCancel = (id) => {
 // 同意申请
 const onAgree = async (id, Type, username) => {
   if(Type === '签名') {
-    await update(username, id, tableData, '等待数据所有方审核', '');
+    await update(username, id, tableData, '等待数据提供方审核', '');
   }else{
     await update(username, id, tableData, '申请已通过', '等待验证');
   }
@@ -106,7 +106,7 @@ const handleResize = () => {
 </script>
 
 <template>
-  <el-container style="height: 100vh; width: 100%;">
+  <el-container style="height: 100vh; width: 100%;overflow: hidden;">
     <!-- 侧边栏 -->
     <el-aside :width="asideWidth" class="custom-aside" :class="{ 'is-collapse': isCollapse }">
       <div class="sidebar-header">
@@ -159,8 +159,8 @@ const handleResize = () => {
       <el-container>
         <el-main width="100%" style="padding: 1.5rem;">
           <el-row :gutter="20">
-            <el-col :span="3"/>
-            <el-col :span="18">
+            <el-col :span="1"/>
+            <el-col :span="22">
               <el-card class="main-card">
                 <div class="sign">待处理的申请</div>
                 <el-divider />
