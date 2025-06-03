@@ -263,7 +263,7 @@ const handleResize = () => {
 
       <!-- 主内容区 -->
       <el-container>
-        <el-main width="100%" style="padding: 1.5rem;">
+        <el-main width="100%">
           <el-row :gutter="20">
             <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
               <el-card class="main-card">
@@ -334,7 +334,9 @@ const handleResize = () => {
                 </div>
               </el-card>
             </el-col>
-            <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
+
+
+            <el-col :md="8" :lg="8" :xl="8">
               <el-card class="form-select-card" style="justify-content: flex-start"
                        :class="{ 'mobile-form-card': isMobile }">
                 <div style="display: flex; justify-content: center;">

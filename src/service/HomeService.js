@@ -1,6 +1,6 @@
 import { get, post } from '@/utils/request.js'
 import { ElMessage } from 'element-plus'
-import { getSharedKey } from '@/cryptoUtils.js'
+import { getSharedKey } from '@/utils/cryptoUtils.js'
 import {
   generatePrivateKey, // 使用 Web Worker 生成私钥的函数
   calculatePublicKey, // 使用 Web Worker 计算公钥的函数

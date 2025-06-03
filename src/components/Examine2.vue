@@ -165,7 +165,7 @@ const handleResize = () => {
                 <div class="sign">待处理的申请</div>
                 <el-divider />
                 <div class="table-container">
-                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center"/>、
                     <el-table-column prop="username" label="用户名" align="center"/>
                     <el-table-column prop="applicationType" label="申请类型" align="center"/>
@@ -183,19 +183,25 @@ const handleResize = () => {
                         </div>
                       </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center">
+                    <el-table-column label="操作" align="center" width="280">
                       <template #default="scope">
                         <!-- 如果当前行处于编辑模式，显示输入框和确定/取消按钮，否则显示同意/拒绝按钮 -->
-                        <div v-if="rowStatus[scope.row.id].isEditing">
-                          <el-input v-model="rowStatus[scope.row.id].rejectReason" placeholder="请输入拒绝理由" />
+                        <div v-if="rowStatus[scope.row.id].isEditing" style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+
+
+                          <el-input v-model="rowStatus[scope.row.id].rejectReason" placeholder="请输入拒绝理由" style="flex: 1; min-width: 100px;" />
+
                           <el-button type="primary" size="small" @click="onReject(scope.row.id, scope.row.username)">
                             确定
                           </el-button>
-                          <el-button type="text" size="small" @click="onCancel(scope.row.id)">
+                          <el-button style="margin-left: -10px; margin-right: 10px;" type="text" size="small" @click="onCancel(scope.row.id)">
                             取消
                           </el-button>
+
+
+
                         </div>
-                        <div v-else>
+                        <div v-else style="white-space: nowrap;">
                           <el-button type="primary" size="small" @click="onAgree(scope.row.id, scope.row.applicationType, scope.row.username)">
                             同意
                           </el-button>

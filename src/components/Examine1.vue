@@ -280,7 +280,7 @@ const handleResize = () => {
                 <div class="sign">待处理的申请</div>
                 <el-divider />
                 <div class="table-container">
-                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center"/>
                     <el-table-column prop="id" label="申请ID" align="center"/>
                     <el-table-column prop="username" label="用户名" align="center" width="100"/>
@@ -313,8 +313,11 @@ const handleResize = () => {
                 />
               </el-card>
             </el-col>
+
+
             <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8" v-if="!isCardVisible">
-              <el-card class="form-card">
+              <el-card class="form-select-card" style="justify-content: flex-start"
+                       :class="{ 'mobile-form-card': isMobile }">
                 <div class="sign">上传新数据</div>
                 <el-divider />
                 <el-row class="form-content" :gutter="20">
@@ -372,62 +375,75 @@ const handleResize = () => {
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="8" v-if="isCardVisible">
-              <el-card style="height: 87vh; position: relative;">
+            <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8"  v-if="isCardVisible">
+              <el-card class="form-card">
                 <el-button
                     type="text"
-                    style="position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer;"
+                    class="close-form-btn"
                     @click="isCardVisible = false"
                 >×</el-button>
+
                 <div class="sign">{{ selectedRow?.username }}的申请</div>
                 <el-divider />
-                <el-form label-width="100px">
-                  <el-row class="form-row">
-                    <el-col :span="6" class="label-col">选择数据：</el-col>
-                    <el-select
-                        v-model="formData.selectFile"
-                        style="width: 73%"
-                    >
-                      <el-option
-                          v-for="(file, index) in files"
-                          :key="index"
-                          :label="file"
-                          :value="file"
-                      ></el-option>
-                    </el-select>
+                <el-form label-width="100px" >
+                  <el-row class="form-content" :gutter="20">
+                    <el-col :span="24">
+                      <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- 数据选择 -->
+                        <div style="display: flex; align-items: center;">
+                          <el-col :span="6" class="label-text">数据选择：</el-col>
+                          <el-col :span="24">
+                            <el-select
+                                v-model="formData.selectFile"
+                                style="width: 73%"
+                            >
+                              <el-option
+                                  v-for="(file, index) in files"
+                                  :key="index"
+                                  :label="file"
+                                  :value="file"
+                              ></el-option>
+                            </el-select>
+                          </el-col>
+                        </div>
+                        <!-- 授权细则 -->
+                        <div style="display: flex;">
+                          <el-col :span="6" class="label-text">授权细则：</el-col>
+                          <el-col :span="18" class="input-col">
+                            <el-input style="height: 6vh" :rows="2" type="textarea" v-model="formData.usagePolicy"/>
+                          </el-col>
+                        </div>
+                        <!-- 参与成员 -->
+                        <div style="display: flex;">
+                          <el-col :span="6" class="label-text">参与成员：</el-col>
+                          <el-col :span="15" class="input-col">
+                            <el-input v-model="memberSearch" placeholder="输入用户名"></el-input>
+                          </el-col>
+                          <el-col :span="5" >
+                            <el-button class="button-col" type="primary" @click="addMember(memberSearch, formData.signer); memberSearch = null">添加</el-button>
+                          </el-col>
+                        </div>
+                        <!-- 参与成员部分 -->
+                        <div style="height: 32vh; display: flex;" >
+                          <el-table height="32vh" :data="formData.signer.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                            <el-table-column prop="username" label="成员名称" align="center" />
+                            <el-table-column fixed="right" label="操作" align="center">
+                              <template #default="scope">
+                                <el-button type="text" size="small" @click="removeMember(scope.row)">删除</el-button>
+                              </template>
+                            </el-table-column>
+                          </el-table>
+                        </div>
 
+                      </div>
+                    </el-col>
                   </el-row>
 
-                  <el-row class="form-row">
-                    <el-col :span="6" class="label-col">授权细则：</el-col>
-                    <el-col :span="18" class="input-col">
-                      <el-input style="height: 6vh" :rows="2" type="textarea" v-model="formData.usagePolicy"/>
-                    </el-col>
-                  </el-row >
-                  <!-- 参与成员部分 -->
-                  <el-row class="form-row">
-                    <el-col :span="6" class="label-col">参与成员：</el-col>
-                    <el-col :span="12" class="input-col">
-                      <el-input v-model="memberSearch" placeholder="输入用户名"></el-input>
-                    </el-col>
-                    <el-col :span="5" class="button-col">
-                      <el-button type="primary" @click="addMember(memberSearch, formData.signer); memberSearch = null">添加</el-button>
-                    </el-col>
-                  </el-row>
 
-                  <div style="height: 40vh; margin-bottom: 20px">
-                    <el-table height="40vh" :data="formData.signer.members" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
-                      <el-table-column prop="username" label="成员名称" align="center" />
-                      <el-table-column fixed="right" label="操作" align="center">
-                        <template #default="scope">
-                          <el-button type="text" size="small" @click="removeMember(scope.row)">删除</el-button>
-                        </template>
-                      </el-table-column>
-                    </el-table>
-                  </div>
+
                   <el-divider />
-                  <el-row class="form-row">
-                    <el-col :span="24" class="input-col">
+                  <el-row class="form-actions">
+                    <el-col :span="24" class="btn-sr">
                       <el-button type="primary" @click="onSubmit(formData,selectedRow.id, selectedRow.username); onReset()">提交</el-button>
                       <el-button type="danger" @click="onExplain(selectedRow.id)">拒绝</el-button>
                       <el-button @click="onReset">重置</el-button>
@@ -435,7 +451,6 @@ const handleResize = () => {
                   </el-row>
                 </el-form>
               </el-card>
-
             </el-col>
           </el-row>
         </el-main>

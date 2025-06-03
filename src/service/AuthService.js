@@ -3,7 +3,7 @@ import {
   clearSharedKey, // 用于清除存储的共享密钥
   initKeyExchange, // 用于初始化密钥交换过程
   clientKeyPair, getSharedKey // 存储客户端的密钥对
-} from '@/cryptoUtils.js'
+} from '@/utils/cryptoUtils.js'
 
 import {
   generatePrivateKey, // 使用 Web Worker 生成私钥的函数

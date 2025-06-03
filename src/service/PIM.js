@@ -2,7 +2,7 @@ import { ElMessage } from 'element-plus'
 import { post } from '@/utils/request.js'
 import { encryptData } from '@/service/cryptoWorkerService.js';
 import { ref } from 'vue'
-import { getSharedKey } from '@/cryptoUtils.js'
+import { getSharedKey } from '@/utils/cryptoUtils.js'
 
 export const onSubmit = async (form) => {
 

@@ -161,7 +161,7 @@ const handleResize = () => {
                 <div class="sign">待处理流程</div>
                 <el-divider />
                 <div style="height: 66vh;">
-                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="completedAt" label="时间" align="center" />
                     <el-table-column prop="taskId" label="任务ID" align="center" />
                     <el-table-column prop="fileName" label="数据名" align="center" />

@@ -1,4 +1,4 @@
-import { getSharedKey } from '@/cryptoUtils.js'
+import { getSharedKey } from '@/utils/cryptoUtils.js'
 
 const baseURL = '/api';
 const sharedKey = await getSharedKey();

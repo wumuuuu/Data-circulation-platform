@@ -1,6 +1,5 @@
 // cryptoWorker.js
-importScripts('https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js');
-
+importScripts('/lib/crypto-js.min.js');
 console.log('Web Worker is running');
 
 // 处理来自主线程的消息事件，根据消息类型执行相应的加密或解密任务

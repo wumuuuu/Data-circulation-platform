@@ -2,7 +2,7 @@
 
 import { get, post } from '@/utils/request.js'; // 导入用于发送请求的函数
 import { ElMessage } from 'element-plus';
-import { getSharedKey } from '@/cryptoUtils.js';
+import { getSharedKey } from '@/utils/cryptoUtils.js';
 import { encryptFile } from '@/service/cryptoWorkerService.js';
 
 export const onSubmit = async (formData, id, username) => {

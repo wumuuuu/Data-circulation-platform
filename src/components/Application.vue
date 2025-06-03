@@ -190,7 +190,7 @@ const handleResize = () => {
                 <div class="sign">申请记录</div>
                 <el-divider />
                 <div class="table-container">
-                  <el-table height="62.5vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
+                  <el-table height="66vh" :data="paginatedData" border style="width: 100%" :header-cell-style="{'text-align': 'center'}">
                     <el-table-column prop="applicationTime" label="申请时间" align="center" width = "165" :show-overflow-tooltip="true"/>
                     <el-table-column prop="applicationType" label="申请类型" align="center" width = "85"/>
                     <el-table-column label="状态" align="center">
@@ -254,13 +254,6 @@ const handleResize = () => {
                       </template>
                     </el-table-column>
                   </el-table>
-                  <!-- 对话框 -->
-                  <el-dialog title="详细信息"  v-model="dialogVisible" :width="isMobile ? '90%' : '30%'" custom-class="detail-dialog">
-                    <p>{{ dialogContent }}</p>
-                    <template #footer>
-                      <el-button @click="dialogVisible = false">关闭</el-button>
-                    </template>
-                  </el-dialog>
                 </div>
 
                 <!-- 分页控件 -->
@@ -273,6 +266,13 @@ const handleResize = () => {
                     class="pagination"
                 />
               </el-card>
+              <!-- 对话框 -->
+              <el-dialog title="详细信息"  v-model="dialogVisible" :width="isMobile ? '90%' : '30%'" custom-class="detail-dialog">
+                <p>{{ dialogContent }}</p>
+                <template #footer>
+                  <el-button @click="dialogVisible = false">关闭</el-button>
+                </template>
+              </el-dialog>
             </el-col>
             <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
               <!-- 按钮卡片，点击按钮后隐藏 -->
