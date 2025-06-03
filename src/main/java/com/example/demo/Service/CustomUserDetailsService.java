@@ -51,9 +51,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     // 修改用户角色
-    public void modifyUserRole(String username, String newRole) {
-        User user = userMapper.findByUsername(username);
+    public void modifyUserRole(Integer id, String username, String newRole) {
+        User user = userMapper.findByID(id);
         if (user != null) {
+            user.setUsername(username);
             user.setRole(newRole);
             if(user.getShared_secret() == null){
                 user.setShared_secret("");

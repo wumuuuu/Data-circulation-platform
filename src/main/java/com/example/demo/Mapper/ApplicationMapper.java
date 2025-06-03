@@ -29,7 +29,7 @@ public interface ApplicationMapper extends BaseMapper<Application> {
     @Select("SELECT * FROM application WHERE status = '等待平台审核'")
     List<Application> findApplicationsWaiting2();
 
-    // 查找所有状态为数据管理员是username的"等待数据所有方审核" 的申请记录
-    @Select("SELECT * FROM application WHERE status = '等待数据所有方审核' AND dataUser = #{username}")
+    // 查找所有状态为数据管理员是username的"等待数据提供方审核" 的申请记录
+    @Select("SELECT * FROM application WHERE status = '等待数据提供方审核' AND dataUser = #{username}")
     List<Application> findApplicationsWaiting1(@Param("username") String username);
 }

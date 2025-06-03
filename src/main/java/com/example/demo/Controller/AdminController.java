@@ -47,6 +47,9 @@ public class AdminController {
      */
     @PostMapping("/update-user")
     public APIResponse<String> modifyUserRole(@RequestBody Map<String, Object> requestBody) {
+
+        Integer id = (Integer) requestBody.get("id");
+
         // 从请求体中提取用户名
         String username = (String) requestBody.get("username");
 
@@ -56,7 +59,7 @@ public class AdminController {
 
         try {
             // 调用 CustomUserDetailsService 的 modifyUserRole 方法，根据用户名修改用户的角色信息
-            customUserDetailsService.modifyUserRole(username, newRole);
+            customUserDetailsService.modifyUserRole(id, username, newRole);
 
             // 如果成功修改用户角色，返回成功响应，HTTP状态码为200
             return new APIResponse<>(200, "User role updated successfully", null);

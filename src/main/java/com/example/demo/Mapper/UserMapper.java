@@ -50,7 +50,7 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("SELECT id, username, role FROM users")
     List<User> findAllUsers();
 
-    @Select("SELECT username FROM users WHERE role = '数据所有方'")
+    @Select("SELECT username FROM users WHERE role = '数据提供方'")
     List<User> findAllDataOwners();
 
     @Update("UPDATE users SET public_key = #{public_key} WHERE username = #{username}")

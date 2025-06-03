@@ -121,8 +121,8 @@ public class ApplicationController {
     }
 
     /**
-     * 获取所有状态为 "等待数据所有方审核" 的申请记录。
-     * @return 返回包含所有 "等待数据所有方审核" 状态申请记录的 APIResponse 列表。
+     * 获取所有状态为 "等待数据提供方审核" 的申请记录。
+     * @return 返回包含所有 "等待数据提供方审核" 状态申请记录的 APIResponse 列表。
      */
     @GetMapping("/pending1")
     public APIResponse<List<Application>> getPending1Applications(@RequestParam("username") String username) {
@@ -131,10 +131,10 @@ public class ApplicationController {
             if (pendingApplications != null && !pendingApplications.isEmpty()) {
                 return APIResponse.success(pendingApplications);
             } else {
-                return APIResponse.error(404, "未找到等待数据所有方审核的申请记录");
+                return APIResponse.error(404, "未找到等待数据提供方审核的申请记录");
             }
         } catch (Exception e) {
-            return APIResponse.error(500, "获取等待数据所有方审核的申请记录时发生错误: " + e.getMessage());
+            return APIResponse.error(500, "获取等待数据提供方审核的申请记录时发生错误: " + e.getMessage());
         }
     }
 
