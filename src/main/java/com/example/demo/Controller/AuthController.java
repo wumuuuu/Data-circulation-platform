@@ -5,8 +5,8 @@ import com.example.demo.Model.User;
 import com.example.demo.Service.CustomUserDetailsService;
 import com.example.demo.Service.ECDHService;
 import com.example.demo.Model.APIResponse;
-import com.example.demo.Model.JwtTokenUtil;
-import io.jsonwebtoken.Claims;
+import com.example.demo.Util.JwtTokenUtil;
+
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,7 +17,6 @@ import java.security.PublicKey;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController

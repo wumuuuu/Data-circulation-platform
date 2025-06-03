@@ -2,7 +2,7 @@ package com.example.demo.Controller;
 
 import com.example.demo.Mapper.UserMapper;
 import com.example.demo.Model.APIResponse;
-import com.example.demo.Model.JwtTokenUtil;
+import com.example.demo.Util.JwtTokenUtil;
 import com.example.demo.Model.User;
 import com.example.demo.Service.CustomUserDetailsService;
 import com.example.demo.Service.ECDHService;

@@ -6,6 +6,7 @@ import com.example.demo.Model.File;
 import com.example.demo.Model.Handle;
 import com.example.demo.Service.ECDHService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpSession;
@@ -17,7 +18,6 @@ import java.io.*;
 import java.nio.file.*;
 
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RestController
 public class FileController {
 
-    private static final String DIRECTORY_PATH = "C:\\Users\\zzy\\Desktop\\1";
+    @Value("${file.storage.directory}")
+    private String DIRECTORY_PATH;
     // 上传块计数器，记录成功上传的块数
     private final AtomicInteger uploadedChunksCounter = new AtomicInteger(0);
 

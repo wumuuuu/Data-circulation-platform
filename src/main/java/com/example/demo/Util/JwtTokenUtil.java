@@ -1,6 +1,5 @@
-package com.example.demo.Model;
+package com.example.demo.Util;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;

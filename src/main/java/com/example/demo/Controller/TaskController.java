@@ -585,21 +585,21 @@ public class TaskController {
      */
     public void createSignUser(CreateTaskRequest createTaskRequest, int taskId) {
         try {
-            String m = fileMapper.findFileIdByFileName(createTaskRequest.getSelectFile()); // 获取文件名
+            String FileId = fileMapper.findFileIdByFileName(createTaskRequest.getSelectFile()); // 获取文件名
             String Outline = fileMapper.findFileOutlineByFileName(createTaskRequest.getSelectFile());
             String usagePolicy = createTaskRequest.getUsagePolicy();
             List<CreateTaskRequest.SignerMember> members = createTaskRequest.getSigner().getMembers(); // 提取成员列表
 
-            // 拼接 members 的用户名和文件 ID
-            StringBuilder combined = new StringBuilder(m);
-            combined.append(Outline);
-            combined.append(usagePolicy);
+            // 拼接 members 的用户名和文件 ID和授权细则
+            StringBuilder m = new StringBuilder(FileId);
+            m.append(Outline);
+            m.append(usagePolicy);
             for (CreateTaskRequest.SignerMember member : members) {
-                combined.append(member.getUsername()); // 拼接每个成员的用户名
+                m.append(member.getUsername()); // 拼接每个成员的用户名
             }
 
             // 对拼接结果进行哈希
-            byte[] hashBytes = MessageDigest.getInstance("SHA-256").digest(combined.toString().getBytes());
+            byte[] hashBytes = MessageDigest.getInstance("SHA-256").digest(m.toString().getBytes());
             BigInteger hashValue = new BigInteger(1, hashBytes); // 转换为正的 BigInteger
 
             // 计算哈希值的平方并对 p 取模
@@ -717,7 +717,6 @@ public class TaskController {
             arbitration.setR("");
             arbitration.setS("");
             arbitration.setC(String.valueOf(c));
-
             if (arbitrationUser != null) {
                 for (SignTaskUser user : arbitrationUser) {
                     i++;

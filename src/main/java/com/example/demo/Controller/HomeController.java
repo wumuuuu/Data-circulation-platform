@@ -20,8 +20,8 @@ public class HomeController {
 
     @Autowired
     private ECDHService dhService;
-
     // 注入 PasswordEncoder，用于对密码进行加密和验证
+
     @Autowired
     private PasswordEncoder passwordEncoder;
     /**
@@ -38,6 +38,7 @@ public class HomeController {
             return APIResponse.error(500, "查询失败: " + e.getMessage());
         }
     }
+
     @PostMapping("/key-status")
     public APIResponse<String> keyStatus(@RequestParam String username) {
         try {
@@ -53,6 +54,7 @@ public class HomeController {
             return APIResponse.error(500, "查询失败: " + e.getMessage());
         }
     }
+
     @PostMapping("/update-publicKey")
     public APIResponse<String> keyStatus(@RequestBody Map<String, Object> requestBody, HttpSession session) {
         try {
