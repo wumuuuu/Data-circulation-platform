@@ -13,6 +13,8 @@ public class File {
     private String filePath;
     private String creatorName;
     private String fileOutline;
+    private int totalChunks;
+    private int uploadedChunks;
 
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -67,6 +69,22 @@ public class File {
         this.usageTime = usageTime;
     }
 
+    public int getTotalChunks() {
+        return totalChunks;
+    }
+
+    public void setTotalChunks(int totalChunks) {
+        this.totalChunks = totalChunks;
+    }
+
+    public int getUploadedChunks() {
+        return uploadedChunks;
+    }
+
+    public void setUploadedChunks(int uploadedChunks) {
+        this.uploadedChunks = uploadedChunks;
+    }
+
     @Override
     public String toString() {
         return "File{" +
@@ -75,7 +93,9 @@ public class File {
                 ", filePath='" + filePath + '\'' +
                 ", creatorName='" + creatorName + '\'' +
                 ", fileOutline='" + fileOutline + '\'' +
-                ", usageTime=" + usageTime +
+                ", usageTime=" + usageTime + '\'' +
+                ", totalChunks='" + totalChunks + '\'' +
+                ", uploadedChunks='" + uploadedChunks + '\'' +
                 '}';
     }
 

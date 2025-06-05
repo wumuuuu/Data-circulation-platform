@@ -13,8 +13,8 @@ import java.util.List;
 public interface FileMapper extends BaseMapper<File> {
 
     // 插入新的文件记录
-    @Insert("INSERT INTO files (file_id, file_name, file_path, usage_time, creator_name, FILE_OUTLINE) " +
-            "VALUES (#{fileId}, #{fileName}, #{filePath}, #{usageTime}, #{creatorName}, #{fileOutline})")
+    @Insert("INSERT INTO files (file_id, file_name, file_path, usage_time, creator_name, FILE_OUTLINE, TOTAL_CHUNKS, UPLOADED_CHUNKS) " +
+            "VALUES (#{fileId}, #{fileName}, #{filePath}, #{usageTime}, #{creatorName}, #{fileOutline}, #{totalChunks}, #{uploadedChunks})")
     int insert(File file);
 
     // 根据 creator_name 查找所有 file_name
@@ -36,5 +36,8 @@ public interface FileMapper extends BaseMapper<File> {
     // 根据 file_name 查找 file_id
     @Select("SELECT FILE_OUTLINE FROM files WHERE file_name = #{fileName}")
     String findFileOutlineByFileName(String fileName);
+
+    @Update("UPDATE files SET UPLOADED_CHUNKS = #{uploadedChunks} WHERE file_id = #{fileId}")
+    void updateChunksByFileID(int uploadedChunks, String fileId);
 
 }

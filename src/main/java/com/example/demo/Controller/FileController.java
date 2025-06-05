@@ -28,9 +28,6 @@ public class FileController {
 
     @Value("${file.storage.directory}")
     private String DIRECTORY_PATH;
-    // 上传块计数器，记录成功上传的块数
-    private final AtomicInteger uploadedChunksCounter = new AtomicInteger(0);
-
 
     @Autowired
     private ECDHService ecdhService;
@@ -68,9 +65,9 @@ public class FileController {
         return APIResponse.success(fileId);
     }
 
-    @RequestMapping("/upload-chunk")
+    @PostMapping("/upload-chunk")
     public APIResponse<String> uploadChunk(
-            @RequestParam("chunk") MultipartFile chunk,  // 直接接收 Base64 字符串
+            @RequestParam("chunk") MultipartFile chunk,
             @RequestParam("chunkIndex") int chunkIndex,
             @RequestParam("totalChunks") int totalChunks,
             @RequestParam("fileId") String fileId,
@@ -79,50 +76,40 @@ public class FileController {
             @RequestParam("fileOutline") String fileOutline,
             HttpSession session) {
         try {
-            // **从会话中获取共享密钥**
             byte[] sharedSecret = (byte[]) session.getAttribute("sharedSecret");
             if (sharedSecret == null) {
                 return APIResponse.error(500, "共享密钥不存在于会话中");
             }
-            // **获取上传的二进制数据**
+
             byte[] encryptedChunkBytes = chunk.getBytes();
-
-            // **解密数据**
             byte[] decryptedDataBytes = ecdhService.decryptFile(encryptedChunkBytes, sharedSecret);
-
-            // **保存解密后的块**
             saveChunk(decryptedDataBytes, chunkIndex, fileId);
 
-            // 更新计数器，每次上传成功一个块时计数器加1
-            int uploadedChunks = uploadedChunksCounter.incrementAndGet();
+            if (chunkIndex == 0) {
+                boolean inserted = insertFile(fileId, fileName, creatorName, fileOutline, totalChunks, 1);
+                if (!inserted) {
+                    return APIResponse.error(500, "插入数据库失败");
+                }
+            } else {
+                fileMapper.updateChunksByFileID(chunkIndex + 1, fileId);
+            }
 
-            // 检查是否所有块都上传完毕
-            if (uploadedChunks == totalChunks) {
-                // 重置计数器
-                uploadedChunksCounter.set(0);
-                // 所有块都上传完毕，执行合并
+            if (chunkIndex + 1 == totalChunks) {
                 if (areAllChunksPresent(totalChunks, fileId)) {
                     mergeChunks(totalChunks, fileId, fileName);
-                    if (insertFile(fileId, fileName, creatorName, fileOutline)) {
-
-                        return APIResponse.success("所有块都上传并合并成功其成功插入数据库");
-                    } else {
-                        return APIResponse.error(500, "插入数据库失败");
-                    }
+                    return APIResponse.success("所有块上传并合并成功");
                 } else {
                     return APIResponse.error(500, "数据块缺失");
                 }
-
             }
 
-            // 如果不是最后一个块，返回成功消息
-            return APIResponse.success("Chunk " + (chunkIndex + 1) + " uploaded and decrypted successfully.");
+            return APIResponse.success("Chunk " + (chunkIndex + 1) + " 上传并解密成功");
         } catch (Exception e) {
             e.printStackTrace();
-            // 返回错误响应
-            return APIResponse.error(500, "Error uploading chunk " + (chunkIndex + 1) + ": " + e.getMessage());
+            return APIResponse.error(500, "上传块 " + (chunkIndex + 1) + " 出错: " + e.getMessage());
         }
     }
+
 
     @GetMapping("/download")
     public StreamingResponseBody downloadFile(@RequestParam("fileName") String fileName,
@@ -161,9 +148,6 @@ public class FileController {
             }
         };
     }
-
-
-
 
     // **将字节数组转换为十六进制字符串的方法**
     private String bytesToHex(byte[] bytes) {
@@ -236,7 +220,7 @@ public class FileController {
     }
 
     // 在数据库插入记录
-    private boolean insertFile(String fileId, String fileName, String creatorName, String fileOutline) {
+    private boolean insertFile(String fileId, String fileName, String creatorName, String fileOutline, int totalChunks, int chunkIndex) throws IOException {
         Path chunkDir = Paths.get(DIRECTORY_PATH, fileId);
 
         File file = new File();
@@ -246,6 +230,8 @@ public class FileController {
         file.setUsageTime(new Date());
         file.setCreatorName(creatorName);
         file.setFileOutline(fileOutline);
+        file.setTotalChunks(totalChunks);
+        file.setUploadedChunks(chunkIndex + 1);
         System.out.println(file);
         int result = fileMapper.insert(file);
 
