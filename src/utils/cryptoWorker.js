@@ -1,5 +1,4 @@
 // cryptoWorker.js
-importScripts('/lib/crypto-js.min.js');
 console.log('Web Worker is running');
 
 // 处理来自主线程的消息事件，根据消息类型执行相应的加密或解密任务
@@ -63,9 +62,17 @@ onmessage = async function (e) {
 
 // 生成 1024 位的随机私钥
 function generatePrivateKey() {
-  const privateKey = CryptoJS.lib.WordArray.random(128).toString(CryptoJS.enc.Hex); // 1024 / 8 = 128 bytes
-  return BigInt('0x' + privateKey);
+  const randomBytes = new Uint8Array(128); // 128字节 = 1024位
+  crypto.getRandomValues(randomBytes); // 使用 Web Crypto API 生成安全随机数
+
+  let hexString = '';
+  for (let i = 0; i < randomBytes.length; i++) {
+    hexString += randomBytes[i].toString(16).padStart(2, '0');
+  }
+
+  return BigInt('0x' + hexString); // 返回 BigInt 格式的私钥
 }
+
 
 // 计算公钥，使用大素数 p 和基数 g 进行模幂运算
 function calculatePublicKey(privateKey) {

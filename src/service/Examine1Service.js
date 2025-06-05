@@ -152,10 +152,7 @@ export const encryptCsvFileWithProgress = async (
   creator_name,
   fileOutline
 ) => {
-  const fileSize = file.size;
-  const subsequentChunkSize = 1024 * 1024 * 15; // 15MB
-  const initialChunkSize = fileSize % subsequentChunkSize || subsequentChunkSize;
-  let isFirstChunk = true;
+  const subsequentChunkSize = 1024 * 1024;
   const FileId = await getFileId();
 
   try {
@@ -202,15 +199,6 @@ export const encryptCsvFileWithProgress = async (
             const sec = remainSec % 60;
             estimatedTime.value = `${min} 分 ${sec} 秒`;
 
-            // 首块上传后切换chunkSize
-            if (isFirstChunk) {
-              isFirstChunk = false;
-              worker.postMessage({
-                type: 'updateChunkSize',
-                payload: { chunkSize: subsequentChunkSize },
-              });
-            }
-
             nextExpectedChunk++;
           } catch (uploadError) {
             console.error(`上传第 ${nextExpectedChunk} 块出错:`, uploadError);
@@ -221,7 +209,8 @@ export const encryptCsvFileWithProgress = async (
       } else if (type === 'done') {
         progress.value = 100;
         estimatedTime.value = '0 分 0 秒';
-        ElMessage.success('文件加密完成');
+        console.log('文件加密完成');
+        // ElMessage.success('文件加密完成');
       }
     };
 
@@ -231,7 +220,7 @@ export const encryptCsvFileWithProgress = async (
       payload: {
         file,
         sharedSecret,
-        chunkSize: initialChunkSize,
+        chunkSize: subsequentChunkSize,
       },
     });
   } catch (error) {
@@ -261,15 +250,15 @@ async function uploadEncryptedChunk(chunk, currentChunk, totalChunks, fileId, fi
   formData.append("fileOutline", fileOutline);
   try {
 
-    const response = await fetch('/api/upload-chunk', {
-      method: 'POST',
-      body: formData,
-    });
+    const response = await post('/upload-chunk', formData);
 
-    const apiResponse = await response.json();
 
     // 如果上传成功，处理响应
-    if (response && apiResponse.code === 200) {
+    if(response.data === '所有块上传并合并成功'){
+      console.log(`分片 ${currentChunk + 1}/${totalChunks} 上传成功`);
+      ElMessage.success('文件上传成功');
+    }
+    else if (response.success) {
       console.log(`分片 ${currentChunk + 1}/${totalChunks} 上传成功`);
     } else {
       // 上传失败时，记录错误信息

@@ -54,7 +54,7 @@ export async function calculateSign(file, Data, username) {
     console.error('calculateSign error:', error);
     ElMessage.error('计算过程中出错');
   } finally {
-    window.location.reload();
+    // window.location.reload();
   }
 }
 
@@ -88,7 +88,7 @@ export async function calculateConfirm(file, Data, username) {
     console.error('calculateConfirm error:', error);
     ElMessage.error('计算过程中出错');
   } finally {
-    window.location.reload();
+    // window.location.reload();
   }
 }
 
@@ -153,7 +153,7 @@ export async function calculateArbitration(file, Data, username) {
     console.error('calculateArbitration error:', error);
     ElMessage.error('计算过程中出错');
   } finally {
-    window.location.reload();
+    // window.location.reload();
   }
 }
 async function TransferTestingTime(username, taskId, executionTime){
@@ -163,18 +163,15 @@ async function TransferTestingTime(username, taskId, executionTime){
   params.append('taskId', taskId);
   params.append('executionTime', executionTime);
 
-  const response = await fetch('/api/task/testTime', {
-    method: 'POST',
-    body: params.toString(),
+  const response = await post('/task/testTime', params.toString(), {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
   });
-  const apiResponse = await response.json();
-  if (apiResponse.code === 200) {
+  if (response.success === 200) {
     // console.log("记录耗时成功");
   } else {
-    console.log(apiResponse.data);
+    console.log(response.data);
   }
 
 }

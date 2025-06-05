@@ -1,42 +1,61 @@
-import { getSharedKey } from '@/utils/cryptoUtils.js'
+import { getSharedKey } from '@/utils/cryptoUtils.js';
 
 const baseURL = '/api';
 const sharedKey = await getSharedKey();
+
 // 判断是否需要加密或解密的辅助函数
 const isEncryptionRequired = (url) => {
   return !url.includes('/exchange-keys') && !url.includes('/find-username');
 };
 
-// 包装 Fetch API 的请求函数
 const request = async (url, options = {}) => {
-  options.headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const isFormData = options.body instanceof FormData;
 
-  // 检查并确保 options.body 是对象
-  if (options.body && typeof options.body === 'object') {
-    // 直接字符串化加密后的请求体或普通对象
-    options.body = JSON.stringify(options.body);
-    console.log("Request body:", options.body);
+  const headers = isFormData
+    ? { ...options.headers } // 不设置 Content-Type
+    : {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+  options.headers = headers;
+
+  if (options.body && typeof options.body === 'object' && !(options.body instanceof Blob)) {
+    const contentType = headers['Content-Type'] || '';
+
+    if (contentType && contentType.includes('application/json')) {
+      options.body = JSON.stringify(options.body);
+    } else if (contentType && contentType.includes('application/x-www-form-urlencoded')) {
+      const params = new URLSearchParams();
+      for (const key in options.body) {
+        params.append(key, options.body[key]);
+      }
+      options.body = params.toString();
+    } else if (contentType.includes('application/octet-stream')) {
+      if (!(options.body instanceof ArrayBuffer ||
+        ArrayBuffer.isView(options.body) ||
+        options.body instanceof Blob)) {
+        throw new Error('application/octet-stream 类型下 body 必须是二进制数据');
+      }
+    }
   }
-
-  // 打印最终的请求选项
-  console.log("Final request options:", options);
 
   try {
     const response = await fetch(baseURL + url, options);
-
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    // 针对文件下载的处理
+
     if (options.method === 'GET' && options.responseType === 'blob') {
-      const blob = await response.blob(); // 获取 Blob 数据
+      const blob = await response.blob();
       return {
         success: true,
         data: blob,
       };
+    }
+
+    if (typeof response.json !== 'function') {
+      throw new Error('response.json 不是函数，response对象可能异常');
     }
 
     const apiResponse = await response.json();
@@ -49,19 +68,17 @@ const request = async (url, options = {}) => {
       ? JSON.parse(decryptedData)
       : decryptedData;
 
-    console.log("data  = " + data);
-
     if (apiResponse.code === 200) {
       return {
-        success: apiResponse.code === 200,
-        data: data,
+        success: true,
+        data,
         message: apiResponse.message,
       };
     } else {
       console.error(`Error ${apiResponse.code}: ${apiResponse.message}`);
       return {
-        success: apiResponse.code === 200,
-        data: data,
+        success: false,
+        data,
         message: apiResponse.message,
       };
     }
@@ -71,19 +88,20 @@ const request = async (url, options = {}) => {
   }
 };
 
-// POST 请求封装
-export const post = (url, data) => {
+// POST 封装
+export const post = (url, data, customOptions = {}) => {
   return request(url, {
     method: 'POST',
-    body: data // 不需要在这里进行 JSON.stringify
+    body: data,
+    ...customOptions,
   });
 };
 
-// GET 请求封装
-export const get = (url, options = {}) => {
+// GET 封装
+export const get = (url, customOptions = {}) => {
   return request(url, {
     method: 'GET',
-    ...options // 允许传递其他选项，例如 responseType
+    ...customOptions,
   });
 };
 
