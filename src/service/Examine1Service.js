@@ -6,12 +6,16 @@ import { getSharedKey } from '@/utils/cryptoUtils.js';
 import { encryptFile } from '@/service/cryptoWorkerService.js';
 
 export const onSubmit = async (formData, id, username) => {
+  if (formData.signer.members.length < 3) {
+    ElMessage.error('联合签名成员最少添加三人');
+    return;
+  }
 
   const Data = {
     id: id,
     status: '申请已通过',
     explanation: '请在处理界面完成私钥计算',
-    fileName:formData.selectFile,
+    fileName: formData.selectFile,
   };
   formData.username = username;
   formData.applicationId = id;
@@ -19,18 +23,26 @@ export const onSubmit = async (formData, id, username) => {
   const response = await post('/task/create', formData);
   const response1 = await post('/application/update', Data);
 
-  if (response.success ) {
-    ElMessage.success('签名任务已创建');
+  let messages = [];
+
+  if (response.success) {
+    messages.push({ type: 'success', message: '签名任务已创建' });
   } else {
-    ElMessage.error('签名任务创建失败');
+    messages.push({ type: 'error', message: '签名任务创建失败' });
   }
-  if(response1.success){
-    ElMessage.success('申请已更新');
+
+  if (response1.success) {
+    messages.push({ type: 'success', message: '申请已更新' });
   } else {
-    ElMessage.error('申请更新失败');
+    messages.push({ type: 'error', message: '申请更新失败' });
   }
-  window.location.reload(); // 刷新当前页面
-}
+
+  // 存入 sessionStorage
+  sessionStorage.setItem('reloadMessages', JSON.stringify(messages));
+
+  window.location.reload(); // 刷新页面
+};
+
 
 export const onReject = async (explanation, id) => {
   try {
@@ -58,19 +70,16 @@ export const onReject = async (explanation, id) => {
 
 
 export const addMember = async (memberSearch, signer) => {
-  // 检查签名人列表人数是否已达上限
-  if (signer.members.length >= 3) {
-    ElMessage.error('最多添加三人');
-    return;
-  }
+
   if(memberSearch === null){
     ElMessage.error('用户名不得为空');
     return;
   }
-  if (memberSearch && signer.members.find(m => m.name === memberSearch)) {
+  if (memberSearch && signer.members.find(m => m.username === memberSearch)) {
     ElMessage.error('用户名已在列表');
     return;
   }
+
   // 发送请求到服务器，检查用户名是否已存在
   const response = await post('/find-username', { username: memberSearch });
 

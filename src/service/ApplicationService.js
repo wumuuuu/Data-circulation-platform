@@ -81,6 +81,7 @@ export const onSubmit = async (formData, username) => {
 }
 
 export const onSubmit1 = async (taskId, type, username) => {
+  const messages = [];
   try {
     // 调用接口提交数据
     const response = await get(`/task/find_task?taskId=${taskId}`);
@@ -101,18 +102,24 @@ export const onSubmit1 = async (taskId, type, username) => {
       try {
         // 调用接口提交数据
         const response = await post('/application/add', applicationData);
-        ElMessage.success('申请提交成功');
+        if(response.success) {
+          messages.push({ type: 'success', message: '申请提交成功' });
+        } else {
+          messages.push({ type: 'error', message: response.message });
+        }
+
       } catch (error) {
         console.error('Error:', error);
-        ElMessage.error('申请提交失败');
+        messages.push({ type: 'error', message: error });
       }
 
     }else{
-      ElMessage.error('没有找到对应的任务ID,请重新输入ID');
+      messages.push({ type: 'error', message: '没有找到对应的任务ID,请重新输入ID' });
     }
   } catch (error) {
-    ElMessage.error('申请提交失败');
+    messages.push({ type: 'error', message: '申请提交失败' });
   }
+  sessionStorage.setItem('reloadMessages', JSON.stringify(messages));
   window.location.reload(); // 刷新当前页面
 }
 

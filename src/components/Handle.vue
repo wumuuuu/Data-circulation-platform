@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import {handleCommand, handleSelect} from '@/router.js'
+
 import { calculateArbitration, calculateConfirm, calculateSign, fetchTask } from '@/service/HandleService.js'
 import { useMenu } from '@/service/useMenu.js'
 import { jwtDecode } from 'jwt-decode'
 import {Expand, Fold} from "@element-plus/icons-vue";
+import { ElMessage } from 'element-plus'
 const activeMenu = ref('3');
 const token = sessionStorage.getItem('authToken');
 const decoded = jwtDecode(token);  // 解析 JWT Token
@@ -26,6 +28,11 @@ const pageSize = ref(9); // 每页显示条数
 
 onMounted(async () => {
   tableData.value = await fetchTask(username);
+  const messages = JSON.parse(sessionStorage.getItem('reloadMessages') || '[]');
+  messages.forEach(msg => {
+    ElMessage[msg.type](msg.message);
+  });
+  sessionStorage.removeItem('reloadMessages'); // 显示后清除
 });
 
 // 计算分页后的数据
@@ -174,7 +181,7 @@ const handleResize = () => {
                             :before-upload="(file) => handleBeforeUpload(file, scope.row)"
                             :show-file-list="true"
                         >
-                          <el-button type="primary" size="small" :disabled="scope.row.status !== 'in_progress'">
+                          <el-button type="primary" size="small" :disabled="scope.row.status !== 'in_progress' && scope.row.status !== '私钥无效，请重新提交'">
                             添加私钥
                           </el-button>
                         </el-upload>

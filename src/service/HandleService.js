@@ -23,7 +23,9 @@ export async function fetchTask(userName) {
 }
 
 export async function calculateSign(file, Data, username) {
-  const startTime = performance.now(); // 开始计时
+  const startTime = performance.now();
+
+  const messages = [];
 
   try {
     let y = BigInt(Data.y);
@@ -31,35 +33,44 @@ export async function calculateSign(file, Data, username) {
 
     const pemContent = await readFileContent(file);
     const privateKey = BigInt(await extractKeyFromPem(pemContent));
-    y = BigInt(await modularExponentiation(y, privateKey, p));
-    b = BigInt(await modularExponentiation(b, privateKey, p));
+
+    y = modPow(y, privateKey, p);
+    b = modPow(b, privateKey, p);
+    const b1 = modPow(g, privateKey, p);
 
     const response = await post('/task/signUpdate', {
       taskId: Data.taskId,
       username: username,
       y: y.toString(),
       b: b.toString(),
-      timestamp: new Date().toISOString() // 添加时间戳
+      b1: b1.toString(),
+      timestamp: new Date().toISOString()
     });
-    const endTime = performance.now(); // 结束计时
-    const executionTime = endTime - startTime; // 计算耗时
+
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
 
     await TransferTestingTime(username, Data.taskId, executionTime);
-    if(response.success) {
-      ElMessage.success('计算完成');
+
+    if (response.success) {
+      messages.push({ type: 'success', message: '计算完成' });
     } else {
-      ElMessage.error('计算出错');
+      messages.push({ type: 'error', message: '计算出错' });
     }
+
   } catch (error) {
     console.error('calculateSign error:', error);
-    ElMessage.error('计算过程中出错');
+    messages.push({ type: 'error', message: '计算过程中出错' });
   } finally {
-    // window.location.reload();
+    sessionStorage.setItem('reloadMessages', JSON.stringify(messages));
+    window.location.reload();
   }
 }
 
+
 export async function calculateConfirm(file, Data, username) {
   const startTime = performance.now(); // 开始计时
+  const messages = []; // 用于收集消息
 
   try {
     const pemContent = await readFileContent(file);
@@ -68,41 +79,48 @@ export async function calculateConfirm(file, Data, username) {
     const c = BigInt(Data.d);
     const a_inv = modInv(privateKey, q);
     const d = modPow(c, a_inv, p);
+    const b1 = modPow(g, privateKey, p);
 
     const response = await post('/task/confirmUpdate', {
       taskId: Data.taskId,
       username: username,
       d: d.toString(),
-      timestamp: new Date().toISOString() // 添加时间戳
+      b1: b1.toString(),
+      timestamp: new Date().toISOString()
     });
+
     const endTime = performance.now(); // 结束计时
-    const executionTime = endTime - startTime; // 计算耗时
+    const executionTime = endTime - startTime;
 
     await TransferTestingTime(username, Data.taskId, executionTime);
-    if(response.success) {
-      ElMessage.success('计算完成');
+
+    if (response.success) {
+      messages.push({ type: 'success', message: '计算完成' });
     } else {
-      ElMessage.error('计算出错');
+      messages.push({ type: 'error', message: '计算出错' });
     }
   } catch (error) {
     console.error('calculateConfirm error:', error);
-    ElMessage.error('计算过程中出错');
+    messages.push({ type: 'error', message: '计算过程中出错' });
   } finally {
-    // window.location.reload();
+    sessionStorage.setItem('reloadMessages', JSON.stringify(messages));
+    window.location.reload();
   }
 }
 
+
 export async function calculateArbitration(file, Data, username) {
-  const startTime = performance.now(); // 开始计时
+  const startTime = performance.now();
+  const messages = []; // 用于收集消息
 
   try {
     const pemContent = await readFileContent(file);
     const privateKey = BigInt(await extractKeyFromPem(pemContent));
-    let c, d = 0, d1 = 0, a_inv, t = 0;
-    let t1 = 0, t2 = 0, r=0, delta=0;
-    let s = 0, ch;
+    let c, d = 0n, d1 = 0n, a_inv, t = 0n;
+    let t1 = 0n, t2 = 0n, r = 0n, delta = 0n;
+    let s = 0n, ch;
 
-    if(Data.num === '1'){
+    if (Data.num === '1') {
       c = BigInt(Data.d);
       a_inv = modInv(privateKey, q);
       d = modPow(c, a_inv, p);
@@ -111,7 +129,7 @@ export async function calculateArbitration(file, Data, username) {
       t = modPow(g, r, p);
       t1 = modPow(d, r, p);
       t2 = modPow(g, delta, p);
-    } else if(Data.num === '2'){
+    } else if (Data.num === '2') {
       c = BigInt(Data.d1);
       a_inv = modInv(privateKey, q);
       d1 = modPow(c, a_inv, p);
@@ -120,9 +138,6 @@ export async function calculateArbitration(file, Data, username) {
       ch = BigInt(Data.ch);
       s = r - ch * privateKey;
     }
-
-
-    // console.log(c);
 
     const response = await post('/task/arbitrationUpdate', {
       taskId: Data.taskId,
@@ -136,26 +151,27 @@ export async function calculateArbitration(file, Data, username) {
       delta: delta.toString(),
       s: s.toString(),
       num: Data.num,
-      timestamp: new Date().toISOString() // 添加时间戳
+      timestamp: new Date().toISOString()
     });
 
-    const endTime = performance.now(); // 结束计时
-    const executionTime = endTime - startTime; // 计算耗时
-
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
     await TransferTestingTime(username, Data.taskId, executionTime);
 
-    if(response.success) {
-      ElMessage.success('计算完成');
+    if (response.success) {
+      messages.push({ type: 'success', message: '计算完成' });
     } else {
-      ElMessage.error(response.date);
+      messages.push({ type: 'error', message: response.data || '计算出错' });
     }
   } catch (error) {
     console.error('calculateArbitration error:', error);
-    ElMessage.error('计算过程中出错');
+    messages.push({ type: 'error', message: '计算过程中出错' });
   } finally {
-    // window.location.reload();
+    sessionStorage.setItem('reloadMessages', JSON.stringify(messages));
+    window.location.reload();
   }
 }
+
 async function TransferTestingTime(username, taskId, executionTime){
 
   const params = new URLSearchParams();

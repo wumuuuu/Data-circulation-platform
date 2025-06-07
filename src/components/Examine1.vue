@@ -39,7 +39,6 @@ const currentPage = ref(1); // 当前页
 const pageSize = ref(6); // 每页显示条数
 const fileName = ref();
 const fileOutline = ref();
-const usagePolicy = ref();
 
 // 计算分页后的数据
 const paginatedData = computed(() => {
@@ -51,6 +50,11 @@ const paginatedData = computed(() => {
 onMounted(async () => {
   tableData.value = await fetchApplications(username);
   files.value = await fetchFiles(username);
+  const messages = JSON.parse(sessionStorage.getItem('reloadMessages') || '[]');
+  messages.forEach(msg => {
+    ElMessage[msg.type](msg.message);
+  });
+  sessionStorage.removeItem('reloadMessages'); // 显示后清除
 });
 
 // 用户角色对应的可访问菜单项
@@ -66,10 +70,6 @@ const showDetails = (row) => {
   isCardVisible.value = true; // 设置为 true 显示详情卡片
 };
 
-// 准备上传的签名人
-const signer = ref({
-  members: []
-});
 const memberSearch = ref(null);
 
 // 删除成员

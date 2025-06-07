@@ -47,6 +47,11 @@ const formData = ref({
 const loading = ref(true);  // 数据加载状态
 
 onMounted(async () => {
+  const messages = JSON.parse(sessionStorage.getItem('reloadMessages') || '[]');
+  messages.forEach(msg => {
+    ElMessage[msg.type](msg.message);
+  });
+  sessionStorage.removeItem('reloadMessages'); // 显示后清除
   try {
     tableData.value = await fetchApplications(username);
     options.value = await fetchDataOwners();
@@ -328,7 +333,7 @@ const handleResize = () => {
                   </div>
                   <el-divider />
                   <el-form>
-                    <el-form-item label="选择数据所有方：" :rules="{required: true}">
+                    <el-form-item label="选择数据提供方：" :rules="{required: true}">
                       <el-select placeholder="请选择" v-model="formData.dataUser" class="form-input">
                         <!-- 动态生成选项 -->
                         <el-option
