@@ -1,9 +1,11 @@
 package com.example.demo.Controller;
 
 import com.example.demo.Mapper.ApplicationMapper;
+import com.example.demo.Mapper.STUMapper;
 import com.example.demo.Mapper.TaskMapper;
 import com.example.demo.Model.Application;
 import com.example.demo.Model.APIResponse;
+import com.example.demo.Model.SignTaskUser;
 import com.example.demo.Model.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,8 @@ public class ApplicationController {
     private ApplicationMapper applicationMapper;
     @Autowired
     private TaskMapper taskMapper;
+    @Autowired
+    private STUMapper stuMapper;  // 注入 STUMapper，用于签名任务用户数据操作
 
     /**
      * 插入新的申请记录到数据库
@@ -30,6 +34,22 @@ public class ApplicationController {
     @PostMapping("/add")
     public APIResponse<String> addApplication(@RequestBody Application application) {
         try {
+
+            if(Objects.equals(application.getApplicationType(), "仲裁")){
+                boolean ok = false;
+                String taskId = application.getText();
+                List<SignTaskUser> signTaskUsers = stuMapper.findTaskByTaskId(Integer.parseInt(taskId));
+                for (SignTaskUser signTaskUser : signTaskUsers) {
+                    if(signTaskUser.getUserName().equals(application.getUsername()))
+                    {
+                        ok = true;
+                        break;
+                    }
+                }
+                if(!ok){
+                    return APIResponse.error(400, "没有权限对该任务申请仲裁");
+                }
+            }
 
             // 设置 applicationTime 为当前系统时间
             application.setApplicationTime(new Date());

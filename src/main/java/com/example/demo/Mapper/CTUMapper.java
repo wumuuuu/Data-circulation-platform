@@ -15,14 +15,18 @@ public interface CTUMapper {
             "VALUES (#{taskId}, #{userName}, #{status}, #{taskType},  #{d}, #{confirmNumber}, #{completedAt})")
     void insertTaskUser(ConfirmTaskUser taskUser);
 
-    // 根据用户名查找状态为 in_progress 的所有记录
+    // 根据用户名查找所有记录
     @Select("SELECT * FROM CONFIRM_USER WHERE user_name = #{userName}")
-    List<ConfirmTaskUser> findInProgressTasksByUserName(String userName);
+    List<ConfirmTaskUser> findTasksByUserName(String userName);
+
+    // 根据 taskId 查找所有的任务
+    @Select("SELECT * FROM CONFIRM_USER WHERE task_id = #{taskId}")
+    List<ConfirmTaskUser> findTaskByTaskId(int taskId);
 
     // 根据 taskId 和 userName 更新 status
     @Update("UPDATE CONFIRM_USER SET status = #{status}, d= #{d} " +
             "WHERE task_id = #{taskId} AND user_name = #{userName}")
-    void updateStatus(int taskId, String userName, String status, String d);
+    void updateStatusD(int taskId, String userName, String status, String d);
 
     // 根据 taskId 和 signerNumber 查找用户
     @Select("SELECT * FROM CONFIRM_USER WHERE task_id = #{taskId} AND confirm_number = #{confirmNumber}")
@@ -35,4 +39,15 @@ public interface CTUMapper {
     // 根据 taskId 和 username 查找 D
     @Select("SELECT d FROM CONFIRM_USER WHERE task_id = #{taskId} AND user_name = #{username}")
     String findTask(int taskId, String username);
+
+    // 根据 taskId 和 username 查找用户
+    @Select("SELECT status FROM CONFIRM_USER WHERE task_id = #{taskId} AND user_name = #{username}")
+    String findConfirm(int taskId, String username);
+
+
+    // 根据 taskId 和 userName 更新 status
+    @Update("UPDATE CONFIRM_USER SET status = #{status} WHERE task_id = #{taskId} AND user_name = #{userName}")
+    void updateStatus(int taskId, String userName, String status);
+
+
 }

@@ -166,16 +166,16 @@ public class TaskController {
     }
 
     /**
-     * 处理前端的 GET 请求，根据用户名查找所有进行中的任务
+     * 处理前端的 GET 请求，根据用户名查找所有任务
      *
      * @param userName 要查找的用户名
-     * @return 返回包含进行中任务的 APIResponse 对象
+     * @return 返回包含任务的 APIResponse 对象
      */
     @GetMapping("/getTask")
-    public APIResponse<List<Handle>> getInProgressTasksByUserName(@RequestParam String userName) {
+    public APIResponse<List<Handle>> getTasksByUserName(@RequestParam String userName) {
         try {
-            List<SignTaskUser> signTaskUsers = stuMapper.findInProgressTasksByUserName(userName); // 查找任务
-            List<ConfirmTaskUser> confirmTaskUsers = ctuMapper.findInProgressTasksByUserName(userName);
+            List<SignTaskUser> signTaskUsers = stuMapper.findTasksByUserName(userName); // 查找任务
+            List<ConfirmTaskUser> confirmTaskUsers = ctuMapper.findTasksByUserName(userName);
             List<ArbitrationTaskUser> arbitrationTaskUsers = atuMapper.findInProgressTasksByUserName(userName);
 
             List<Handle> handles = new ArrayList<>(); // 创建一个空的 Handle 列表
@@ -242,14 +242,31 @@ public class TaskController {
     @PostMapping("/signUpdate")
     public APIResponse<String> signUpdateTask(@RequestBody TaskRequest request) {
         try {
+            String userName = request.getUsername(); // 获取用户名
             String y = request.getY(); // 获取 y 值
             String b = request.getB(); // 获取 b 值
-            String userName = request.getUsername(); // 获取用户名
+            String B1 = request.getB1(); // 待验证公钥
+            String B = userMapper.KeyStatus(userName); // 正确的公钥
+            System.out.println(B1);
+            System.out.println(B);
             int taskId = request.getTaskId(); // 获取任务 ID
             Task task = taskMapper.findTaskById(taskId);
-            Integer id = task.getApplicationId();
+            String applicationId = String.valueOf(task.getApplicationId());
+            if(!B1.equals(B)){
+                if(stuMapper.findSigner(taskId, userName).equals("私钥无效，请重新提交")){
+                    applicationMapper.updateApplication(applicationId, "签名失败", userName+"使用非法私钥签名");
+                    List<SignTaskUser> STUser = stuMapper.findTaskByTaskId(taskId);
+                    for (SignTaskUser signTaskUser : STUser) {
+                        stuMapper.updateStatus(taskId, signTaskUser.getUserName(), "completed" );
+                    }
+                    return APIResponse.error(400, "第二次使用非法私钥计算");
+                }
+                stuMapper.updateStatus(taskId, userName, "私钥无效，请重新提交");
+                return APIResponse.error(400, "第一次使用非法私钥计算");
+            }
+
             // 更新当前用户的状态
-            stuMapper.updateStatus(taskId, userName, "completed", y, b);
+            stuMapper.updateStatusYB(taskId, userName, "completed", y, b);
 
             // 查找当前用户的 signerNumber
             int currentSignerNumber = stuMapper.findSignerNumber(taskId, userName);
@@ -257,11 +274,11 @@ public class TaskController {
             SignTaskUser nextUser = stuMapper.findNextSigner(taskId, currentSignerNumber + 1);
 
             if (nextUser != null) {
-                stuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", y, b);
+                stuMapper.updateStatusYB(taskId, nextUser.getUserName(), "in_progress", y, b);
             } else {
                 // 如果没有下一个用户，标记任务为完成
 
-                applicationMapper.updateApplication(String.valueOf(id), "签名已完成", "已允许下载该数据");
+                applicationMapper.updateApplication(applicationId, "签名已完成", "已允许下载该数据");
                 taskMapper.updateTaskFields(taskId, "completed", y, b);
             }
 
@@ -288,13 +305,30 @@ public class TaskController {
     public APIResponse<String> confirmUpdateTask(@RequestBody TaskRequest request) {
         try{
             String d = request.getD(); // 获取 d 值
-
             int taskId = request.getTaskId(); // 获取任务 ID
             String userName = request.getUsername(); // 获取用户名
 
+            String B1 = request.getB1(); // 待验证公钥
+            String B = userMapper.KeyStatus(userName); // 正确的公钥
+
+            Task task = taskMapper.findTaskById(taskId);
+            String applicationId = String.valueOf(task.getApplicationId());
+            if(!B1.equals(B)){
+                if(ctuMapper.findConfirm(taskId, userName).equals("私钥无效，请重新提交")){
+                    applicationMapper.updateApplication(applicationId, "确权失败", userName+"使用非法私钥确权");
+                    List<ConfirmTaskUser> CTUser = ctuMapper.findTaskByTaskId(taskId);
+                    for (ConfirmTaskUser confirmTaskUser : CTUser) {
+                        ctuMapper.updateStatus(taskId, confirmTaskUser.getUserName(), "completed" );
+                    }
+                    return APIResponse.error(400, "第二次使用非法私钥计算");
+                }
+                ctuMapper.updateStatus(taskId, userName, "私钥无效，请重新提交");
+                return APIResponse.error(400, "第一次使用非法私钥计算");
+            }
+
             // 更新当前用户的状态
             String t = ctuMapper.findTask(taskId, userName);
-            ctuMapper.updateStatus(taskId, userName, "completed", t);
+            ctuMapper.updateStatusD(taskId, userName, "completed", t);
 
             // 查找当前用户的 ConfirmNumber
             int currentConfirmNumber = ctuMapper.findConfirmNumber(taskId, userName);
@@ -302,11 +336,10 @@ public class TaskController {
             ConfirmTaskUser nextUser = ctuMapper.findNextConfirm(taskId, currentConfirmNumber + 1);
 
             if (nextUser != null) {
-                ctuMapper.updateStatus(taskId, nextUser.getUserName(), "in_progress", d);
+                ctuMapper.updateStatusD(taskId, nextUser.getUserName(), "in_progress", d);
                 return APIResponse.success("Task updated successfully"); // 返回成功响应
             } else {
                 // 如果没有下一个用户，标记任务为完成
-                Task task = taskMapper.findTaskById(taskId);
                 BigInteger x = new BigInteger(task.getX());
                 BigInteger e1 = new BigInteger(task.getE1());
                 BigInteger e2 = new BigInteger(task.getE2());
@@ -648,7 +681,7 @@ public class TaskController {
      */
     public void createConfirmUser(int confirmId, int taskId, BigInteger e1, BigInteger e2) {
         try {
-            List<SignTaskUser> confirmUser = stuMapper.findUserNamesAndSignerNumbersByTaskId(confirmId);
+            List<SignTaskUser> confirmUser = stuMapper.findTaskByTaskId(confirmId);
             Task task = taskMapper.findTaskById(taskId);
             BigInteger y = new BigInteger(task.getY());
             BigInteger b = new BigInteger(task.getB());
@@ -694,7 +727,7 @@ public class TaskController {
      */
     public void createArbitrationUser(int confirmId, int taskId, BigInteger e1, BigInteger e2) {
         try {
-            List<SignTaskUser> arbitrationUser = stuMapper.findUserNamesAndSignerNumbersByTaskId(confirmId);
+            List<SignTaskUser> arbitrationUser = stuMapper.findTaskByTaskId(confirmId);
             Task task = taskMapper.findTaskById(taskId);
             BigInteger y = new BigInteger(task.getY());
             BigInteger b = new BigInteger(task.getB());

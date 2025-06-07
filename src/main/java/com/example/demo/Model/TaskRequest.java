@@ -18,6 +18,7 @@ public class TaskRequest {
     private String num;
     private String r;
     private String s;
+    private String b1;
 
     // 默认构造函数
     public TaskRequest() {
@@ -26,7 +27,7 @@ public class TaskRequest {
     // 带参数的构造函数
     public TaskRequest(Integer taskId, Integer applicationId, String username, String y, String b,
                        String d, String d1, String t, String t1, String t2, String ch, String delta,
-                       String num, String r, String s) {
+                       String num, String r, String s, String b1) {
         this.taskId = taskId;
         this.applicationId = applicationId;
         this.username = username;
@@ -42,6 +43,7 @@ public class TaskRequest {
         this.num = num;
         this.r = r;
         this.s = s;
+        this.b1 = b1;
     }
 
     // Getters 和 Setters
@@ -165,6 +167,15 @@ public class TaskRequest {
         this.s = s;
     }
 
+    public String getB1() {
+        return b1;
+    }
+
+    public void setB1(String b1) {
+        this.b1 = b1;
+    }
+
+
     @Override
     public String toString() {
         return "TaskRequest{" +
@@ -183,6 +194,7 @@ public class TaskRequest {
                 ", num='" + num + '\'' +
                 ", r='" + r + '\'' +
                 ", s='" + s + '\'' +
+                ", b1='" + b1 + '\'' +
                 '}';
     }
 
